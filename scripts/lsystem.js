@@ -1,46 +1,65 @@
-var testls = `n=30,delta=22.5
-#ignore +-F
-axiom: F1F1F1
-p1: 0 < 0 > 0 -> 0
-p2: 0 < 0 > 1 -> 1[+F1F1]
-p3: 0 < 1 > 0 -> 1
-p4: 0 < 1 > 1 -> 1
-p4: 1 < 0 > 0 -> 0
-p4: 1 < 0 > 1 -> 1F1
-p4: 1 < 1 > 0 -> 0
-p4: 1 < 1 > 1 -> 0
-p5: + -> -
-p5: - -> +
+// dependencies
+// math.js for math.evaluate
+// babylon.js for color, and probably more, like meshes
+// turtle3d.js for actually drawing a tree.
+
+// var testls = `n=30,delta=22.5
+// #ignore +-F
+// axiom: F1F1F1
+// p1: 0 < 0 > 0 -> 0
+// p2: 0 < 0 > 1 -> 1[+F1F1]
+// p3: 0 < 1 > 0 -> 1
+// p4: 0 < 1 > 1 -> 1
+// p4: 1 < 0 > 0 -> 0
+// p4: 1 < 0 > 1 -> 1F1
+// p4: 1 < 1 > 0 -> 0
+// p4: 1 < 1 > 1 -> 0
+// p5: + -> -
+// p5: - -> +
+//`
+
+var testls =`delta = 2
+derivation length: 2
+axiom: ---/\FA(0)F+++
+A(t) : t<10 -> A(t+1)FFF
+A(t)>F : t==10 -> -FFFA(0)
 `
+var numReStr = '\\d+(?:\\.\\d+)?';
+var symbolReStr = "[\\w\\d\\+-\\]['{}\&^\\\\/!\\.~]";
+var varnameReStr = '\\w[\\w\\d]*';
+var startdReStr='^(?:#define|define:)[ \n]+\(';
+var enddReStr = '\) ([^ ].*)';
+var defineRe = new RegExp(`${startdReStr}${varnameReStr}${enddReStr}`);
+var startiReStr = '^(?:#ignore|ignore:) +\(';
+var endiReStr = '\+\)';
+var ignoreRe =new RegExp(`${startiReStr}${symbolReStr}${endiReStr}`);
+var dlengthRe = new RegExp(`^(?:[Dd]erivation length|[Dd]length): *\(\\d+)`);
 
-var numRe = '\\d+(?:\.\\d+)?';
-var symbolRe = "[\\w\\d\\+-\\]['{}\&^\\\\/!\\.~]";
-var varnameRe = '\\w[\\w\\d]*';
-var startdRe='^#?define +\(';
-var enddRe = '\) ([^ ].*)';
-var defineRe = new RegExp(`${startdRe}${varnameRe}${enddRe}`);
-var startiRe = '^#?ignore +\(';
-var endiRe = '\+\)';
-var ignoreRe =new RegExp(`${startiRe}${symbolRe}${endiRe}`);
-var dlengthRe = new RegExp(`^derivation length: *\(\\d+)`);
+var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`;
+var axiomRe = new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
+var param1ReStr=`${numReStr}|${varnameReStr}`;
 
-var moduleRe = `${symbolRe}(?:\\(\[^)]+\\))?`;
-var axiomRe = new RegExp(`(?:^axiom: *)?(${moduleRe})`,'g')
-var param1Re=`${numRe}|${varnameRe}`;
+var expReStr = '(.*(?=->))';
+var prodNameStr = '(?:^[pP]\\d+:)';
+var prodRe= new RegExp(`${prodNameStr}? *(?:${moduleReStr} *< *)?${moduleReStr}(?: *> *${moduleReStr})?(?: *: *${expReStr})? *-> *(.+)`)
 
-var prod0Re=/(?:^[^:]+(:))?(?:[^:]+(:))?(?:.*(->) *)/d;
+var pfindReStr=`(${param1ReStr}),?`
+var pfindRe = new RegExp(pfindReStr, "g"); //use in loop to find parameters
 
-//var pfindReStr=`(${param1Re}),?`
-// var pfindRe = newRegExp(pfindReStr, "g"); //use in loop to find parameters
-
-//var formalparmsre=`(${varnameRe})(,\[^)]+)?`;
-//var mre=`(${symbolRe})(?:\\((${param1Re})(?:,(\[^)]+))*\\))?`;
-//var fmre=`(${symbolRe})(?:\\((${formalparmsre})\\))?`;
+//var formalparmsReStr=`(${varnameReStr})(,\[^)]+)?`;
+//var mRe=`(${symbolReStr})(?:\\((${param1ReStr})(?:,(\[^)]+))*\\))?`;
+//var fmRe=`(${symbolReStr})(?:\\((${formalparmsre})\\))?`;
 
 // the goal is to handle most Lsystems defined in TABOP, The Algorithmic Beauty of Plants,
 // or by the Lsystems programs developed Przemyslaw Prusinkiewicz' group at the University
 //  of Calgary, available here: http://algorithmicbotany.org
 class Lsystem {
+   about() {
+      puts('the goal is to handle most Lsystems defined in TABOP, The Algorithmic Beauty of Plants,');
+      puts("or by the Lsystems programs developed Przemyslaw Prusinkiewicz' group at the University");
+      puts("of Calgary, available here: http://algorithmicbotany.org");
+   }
+   
    constructor(spec) {
       this.spec = null;	// should be a text file/string
       if (spec == null) {
@@ -52,12 +71,12 @@ class Lsystem {
       this.rules = [];
       this.Dlength = 0;	// number of iterations
       this.defs = new Map(); // from define statements
-      this.vars = new Map(); // from variable parameters
+      this.vars = new Map(); // from variable assignment statements
       this.current = [];
       this.next = [];
       this.verbose = 0;
       this.stemsize = 1;
-      this.step = 1;		// default forward step size
+      this.step = 1;    // default forward step size
       this.delta = 90;	// default yaw angle
       this.ctable = [new BABYLON.Color3(0,1,0)]; // default color table
       this.ignore=[];
@@ -100,10 +119,39 @@ class Lsystem {
 	    }
 	 } else if (prop == 'rules') {
 	    s = `rules:= [pre, strict, post] [cond] [succ]\n`
-	    for (const e of this.rules) {
-	       s = s + `\[${e[0]}\] \[${e[1]}\] \[${e[2]}\]\n`;
-	    }
-	 } else {
+	    this.rules.forEach((r) => {
+               console.log(`Showing: ${r}`);
+               r.forEach((e,i) => {
+	          s += '\[';
+                  switch(i) {
+                  case 0: 
+                     e.forEach((p,j) => {
+                        console.log(`looking at ${p}`);
+                        if (p) {s += this.listtostr([p]);}
+                        if (j<2) {s += ',';}
+                        return;
+                     });
+                     break;
+                  case 1:
+                     s += e;
+                     break;
+                  case 2:
+                     s += this.listtostr(e);
+                     break;
+                  }
+                  if (i<2) {
+                     s += '\] ';
+                  } else {
+                     s += '\]';
+                  }
+                  return;
+               });
+               s += '\n';
+               return;
+            });
+	 } else if (prop == 'axiom') {
+            s = `${prop} = ` + this.listtostr(this.axiom) + '\n';
+         } else {
 	    s = `${prop} = ${this[prop]}\n`
 	 }
       }
@@ -133,8 +181,8 @@ class Lsystem {
       let assign;
       let parts;
       let m;			// this is the Re match
-      const varRe = new RegExp(`^${varnameRe}=.+`);
-      const assignRe = new RegExp(`(${varnameRe})=(${numRe}),?`,'g');
+      const varRe = new RegExp(`^${varnameReStr} *=.+`);
+      const assignRe = new RegExp(`(${varnameReStr}) *= *(${numReStr}),?`,'g');
       let preRe = /(?:([^< ]+) *< *)?([^> ]+)(?: *> *([^ ]+))?/;
 
       let have_axiom=false;
@@ -149,8 +197,9 @@ class Lsystem {
          }
          // remove spaces
          //line = [regsub -all " +" [string range $s $pos [expr {$eol - 1}]] " "]
+
 	 line = s.slice(pos,eol).replaceAll(/ +/g,' ').replaceAll(/\r/g,'');
-         puts(`${line}: ${pos} ${eol}`);
+         puts(`${pos}-${eol} : ${line}`);
          pos = eol + 1; // advance file pointer
          if (! have_axiom) {
 	    if (varRe.test(line)) {
@@ -160,7 +209,7 @@ class Lsystem {
 	       }
 	       this.show(this, 'vars');
 	    } else if (null != ( m = line.match(dlengthRe))) {
-	       //puts(`matched "derivation length: digits" got: ${m}`);
+	       puts(`matched "derivation length: " got: ${m[1]}`);
                this.Dlength = m[1];
 	       this.show('Dlength');
 	    } else if (null != (m = line.match(defineRe))) {
@@ -171,67 +220,87 @@ class Lsystem {
 	       this.show('ignore');
 	       // } else if (null != (m = line.match(includere))) {
 	       //     puts("include of m[1] not supported");
-	    } else if ('' != (m = Array.from(line.matchAll(axiomRe), x => x[1]))) {
+	    } else if (m = line.match(/^axiom:(.*)/)) {
                //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
-	       this.axiom = m;
                have_axiom = true;
+               this.axiom = this.strtolist(m[1]);
 	       this.show('axiom');
 	    } else {
-               puts(`unrecognized statement: ${line}`)
+               puts(`unrecognized statement: ${line}`);
 	    }
          } else {
-	    // var prod0Re=/(?:^[^:]+(:))?(?:[^:]+(:))?(?:.*(->) *)/d;
 	    // should be just rules/productions
-	    // break into pieces: [prodname] : predecessor : [condition] : successor
+	    // break into pieces: [prodname] : predecessor : [condition] -> successor
 	    // prodname and condition are optional. condition is only for parameterized
 	    // lsystems. TABOP is fairly consistent for parameterized systems, but
 	    // kinda all over the map in terms of syntax
-	    let predecessor, successor, condition;
+	    let predecessor, condition, successor;
 	    let ix, cx, m, pre, strict, post, dummy ;
+            let scope = {}, needScope=false;
 	    puts(`in rules: looking at ${line}`)
 	    if (line.includes('homomorphism')) {
 	       have_homomorphism = true;
 	       continue;
 	    }
-	    m = prod0Re.exec(line);
+	    m = prodRe.exec(line);
 	    if (m == null) {
 	       puts(`Unrecognized production: ${line}`); 
 	       break;
-	    }
-	    puts(m);
-	    ix = m['indices'][0][1];
-	    successor=line.slice(ix); // string range $line [expr {$ix + 1}] end]
+            }
+	    //puts(m);
+            predecessor = [null, null, null];
 	    condition = '';
-	    if (m['indices'][2]) {
-	       cx = m['indices'][2][0];
-               condition = line.slice(cx, ix - 3); // ix-2?
-	    } else {
-	       //puts(`m.indices[3] is ${m.indices[3][0]}, ${m.indices[3][1]}`)
-               cx = m['indices'][3][0];
-	    }
+            for (let p = 0; p < 3; p++) {
+               let i = 2*p +1;
+               let j = i + 1;
+	       if ( !(m[i] === undefined)) {
+                  if (m[j] === undefined) {
+                     predecessor[p] = m[i];
+                  } else {
+                     predecessor[p] = new ParameterizedModule(m[i],m[j]);
+                     needScope=true;
+                  }
+               } else {}
+            }
+            condition = m[7];   // undefined or not
+            if (condition) {
+               needScope=true;
+            } else {
+               condition = true; // default of no condition
+            }
+            // turn successor into a list of modules
+            // since we need to deal with nested parens, strtolist doesn't work
+	    successor = this.parseSuccessor(m[8]);
+            if (successor.find(e=>'object' == typeof e)) {
+               needScope = true;
+            }
+            if (needScope) {
+               //scope = new LSScope(this.vars); // copy global variables
+               scope = {};
+               initScope(scope, this.vars);
+               //puts("scope before funcs: " + Object.entries(scope));
+
+               scope._bind_ = function (v, exp) {math.eval(v+'='+exp, this);}
+               //puts(`test func: _test_() = ${condition}`);
+               math.eval(`_test_() = ${condition}`, scope)
+               scope._expand_ = function(module) {
+                  for (let a= 0; a< module.p.length; a++) {
+                     module.p[a] = math.eval(module.p[a],this);
+                  }
+
+               }
+            } else {
+               scope._test_ = function(){return true;}
+            }
+            //puts("scope after funcs: " + Object.entries(scope));
+
+            var rule = [predecessor, condition, successor, scope];
+	    // puts(`rule: ${rule}`);
 	    
-	    if (m['indices'][1]) { // have a production name
-	       //puts(`m.indices[1] is ${m.indices[1][0]}, ${m.indices[1][1]}`)
-	       ix=m['indices'][1][1];		
-               predecessor = line.slice(ix, cx);
-	       //puts(`line.slice(${ix},${cx}) is ${predecessor}`)
-	    } else {
-               predecessor = line.slice(0, cx);
-	       //puts(`predecessor is "${predecessor}"`);
-	    }
-	    if (predecessor != '') {
-	       [dummy, pre, strict, post ] = preRe.exec(predecessor);
-	       predecessor = [pre, strict, post];
-	    } else {
-	       predecessor = [];
-	    }
-	    // turn successor into a list of modules
-	    successor = this.strtolist(successor.replaceAll(/ +/g,''));
-	    puts(`rule: [${predecessor} ${condition} ${successor}]`)
 	    if (! have_homomorphism) {
-	       this.rules.push([predecessor, condition, successor]);
+	       this.rules.push(rule);
 	    } else {
-	       this.homorules.push([predecessor, condition, successor]);
+	       this.homorules.push(rule);
 	    }
          }
          //puts(`${pos} ${eol}`);
@@ -247,7 +316,7 @@ class Lsystem {
       this.show();
    }
 
-   static flatten( list) {
+   flatten( list) {
       let r=[];
       for (let i=0;i<list.length;i++) {
 	 v=list[i];
@@ -261,13 +330,101 @@ class Lsystem {
       }
       return r;
    }
-
+   
    strtolist(s) {
-      return s.split('');
+      let l= new Array();
+      let i=0;
+      let m=[];
+      let mRe = new RegExp(`${moduleReStr}`,'g');
+      while ( m = mRe.exec(s)) {
+         //console.log(m);
+         if (m[2] === undefined) {
+            l[i] = m[1];
+         } else {
+	    l[i] = new ParameterizedModule(m[1], m[2]);
+         }
+         //console.log(l[i]);
+         i++;
+      }
+      return l;
    }
 
    listtostr(l) {
-      return l.join('');
+      let r= new String('');
+      if ('string' == typeof l) {return l;}
+      l.forEach(e => { 
+         if (e) {
+            if ('object' == typeof e) {
+               r+= e.m + '(' + e.p + ')';
+            } else  {
+               r  += e;
+            }
+         }
+         return;
+      });
+      return r;
+   }
+
+   parseSuccessor(s) {
+      //puts("parseSuccessor");
+      let l = new Array();
+      let i = 0;
+      let m;
+      let re =  new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
+      while (m = re.exec(s)){
+         // puts(`matched: ${m} : lastIndex = ${re.lastIndex}`);
+         if (m[2] === undefined) {
+            l[i] = m[1];
+         } else {
+            let nested = 1;
+            let j = m.indices[2][0] + 1; // one past initial left paren
+            while (nested > 0 && j < m.indices[2][1]) {
+               if (s[j] == ')') {
+                  nested--;
+               } else if (s[j] == '(') {
+                  nested++;
+               }
+               j++;
+               //puts(`j: ${j}`);
+            }
+            if (nested == 0) {
+               let parms = s.substring(m.indices[2][0]+1, j-1);
+	       l[i] = new ParameterizedModule(m[1], parms);
+               // reset s
+               re.lastIndex = j;
+               //puts(`starting from: ${s.substring}`)
+            } else {
+               let ss = s.substring(m.indices[2][0], s.substring(m.indices[2][1]));
+               puts(`Error: end of input while parsing: ${ss}`);
+               break;
+            }
+         }
+         //puts(`module ${i} = ${l[i]}`);
+         i++;
+      }
+      return l;
+   }
+   // nodeA must be a predecessor node in the rule with formal parameters
+   // nodeB is a node in the expansion with an actual numeric value which
+   // gets bound to the formal parameter from nodeA
+   formalMatch(nodeA, nodeB, scope) {
+      if (typeof nodeA == typeof nodeB) {
+         if (typeof nodeA == 'string') {
+            return nodeA == nodeB;
+         } else if ((nodeA.m == nodeB.m) && (nodeA.p.length == nodeB.p.length)) {
+            // might want to yell if A.m == B.m, but number of arguments differ
+            // go ahead and bind formal parameters
+            // puts('binding formal parameters');
+            for (let fp = 0; fp < nodeA.p.length; fp++) {
+               //puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]}`);
+               scope._bind_(nodeA.p[fp], nodeB.p[fp]);
+               //puts("scope bind: " + Object.entries(scope));
+            }
+            return true;
+         }
+      } else {
+         return false;
+      }
    }
 
    Rewrite (ls = this) {
@@ -283,34 +440,38 @@ class Lsystem {
          for (let n=0; n < clength; n++) {
 	    let node = ls.current[n];
 	    for (const rule of ls.rules) {
-               let p = rule[0];
-               let strictp = p[1];
-               if (node == strictp) { 
-		  //# not parameterized
-		  let lside = p[0];
-		  let rside = p[2];
-		  if (! lside && ! rside) {
+               let pred = rule[0];
+               let scope = rule[3];
+               let strictp = pred[1];
+               if (this.formalMatch(strictp, node, scope)) {
+                  // puts(`strictp: ${strictp} matches ${node}`);
+		  let lside = pred[0];
+		  let rside = pred[2];
+		  if (! lside && ! rside && scope._test_()) {
                      ls.next[n] = this.expand(rule);
+                     //puts(`unconditional expansion to: ${ls.next[n]}`);
+
                      break;
 		  } else {
                      if (lside) {
 			let lsidectxt = this.findcontext(ls, ls.current, n, -1);
-			if (lside != lsidectxt) { 
+			if (! this.formalMatch(lside, lsidectxt, scope)) { 
                            continue;
 			}
-			//puts(`found left context ${lsidectxt} < ${lside}`);
+			// puts(`found left context ${lsidectxt} < ${lside}`);
                      }
                      if (rside) {
-			// # [lindex $current [expr {$n + 1}]]
 			let rsidectxt = this.findcontext(ls, ls.current, n, 1);
-			if (rside != rsidectxt) { 
+			if (! this.formalMatch(rside, rsidectxt, scope)) { 
                            continue;
 			}
-			//puts(`found right condition ${rside} > ${rsidectxt}`);
+			// puts(`found right condition ${rside} > ${rsidectxt}`);
                      }
-                     ls.next[n] = this.expand(rule);
-                     //puts(`this expanded ${n} to ${ls.next[n]}`);
-                     break;
+                     if (scope._test_()) {
+                        ls.next[n] = this.expand(rule);
+                        //puts(`this expanded ${n} to ${ls.next[n]}`);
+                        break;  // stop looking through rules
+                     }
 		  }
                }
 	    }
@@ -326,7 +487,25 @@ class Lsystem {
       return ls.current;
    }
 
-   expand(rule) {return rule[2];}
+   expand(rule) {
+      let successor;
+      let scope=rule[3];
+      if (scope) {
+         successor = rule[2].slice();
+         //puts(`successor after slice: ${successor}`)
+         successor.forEach((mod,ndx) => {if (typeof mod == 'object') {
+            let nmod = mod.clone();
+            scope._expand_(nmod);
+            //puts(`expanded module: ${nmod}`);
+            successor[ndx] = nmod;
+         }});
+         //puts(`successor expanded: ${successor}`);
+         //puts(`rule successor: ${rule[2]}`);
+      } else {
+         successor = rule[2];
+      }
+      return successor;
+   }
 
    // ls is the lsystem we are parsing
    // slist is ls.current, i.e. the current expansion
@@ -420,6 +599,7 @@ class Lsystem {
 
 // flatten a list by one level
 function flatten( list) {
+   // puts('flattening');
    let r=[];
    for (let i=0;i<list.length;i++) {
       v=list[i];
@@ -435,11 +615,80 @@ function flatten( list) {
 }
 
 function strtolist(s) {
-   return s.split('');
+   let l= new Array();
+   let i=0;
+   let m=[];
+   let mRe = new RegExp(`${moduleReStr}`,'g');
+   while ( m = mRe.exec(s)) {
+      //console.log(m);
+      if (m[2] === undefined) {
+         l[i] = m[1];
+      } else {
+	 l[i] = new ParameterizedModule(m[1], m[2]);
+      }
+      //console.log(l[i]);
+      i++;
+   }
+   return l;
 }
 
 function listtostr(l) {
-   return l.join('');
+   let r= new String('');
+   if ('string' == typeof l) {return l;}
+   l.forEach(e => { 
+      if (e) {
+         if ('object' == typeof e) {
+            r+= e.toString();
+         } else  {
+            r  += e;
+         }
+      }
+      return;
+   });
+   return r;
+}
+
+var ParameterizedModule = function(name, parms) {
+   this.m = name;
+   //this.p = parms.split(','); doesn't work for expressions line (x,atan(y,x))
+   // need to recognize nested commas
+   function parseParens(s) {
+      let p=[];
+      let pi = 0; // p array index
+      let nested = 0;
+      for (let i = 0; i < s.length; i++) {
+         //puts(`i: ${i}, pi: ${pi},${s[i]}, nested: ${nested}`)
+         if (s[i] == ',' && nested == 0) {
+            pi++;
+           // puts("onto next param");
+            continue;
+         } else if (s[i] == '(') {
+            nested++;
+         } else if (s[i] == ')') {
+            nested--;
+         }
+         if (p[pi]) {
+            p[pi] += s[i];
+         } else {
+            p[pi] = s[i];
+         }
+      }
+      return p;
+   }
+   this.p = parseParens(parms);
+   this.toString = function() {return this.m + '(' + this.p.toString() + ')';}
+   this.clone = function() {
+      return new ParameterizedModule(this.m, this.p.toString());
+   }
+}
+
+var LSScope = function(map) {
+   if (map) {
+      map.forEach((v,k) => this[k] = v)
+   }
+}
+function initScope(o, map) {
+   map.forEach((v,k) => o[k] = v);
 }
 
 function lappend (larray, ...items) {

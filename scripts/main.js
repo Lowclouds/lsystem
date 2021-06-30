@@ -182,8 +182,9 @@ const lsSrc = document.getElementById('lsSrc');
 const lsFile = document.getElementById('lsFile');
 const lsResult = document.getElementById('lsResult');
 
-lsSrc.value = 'Paste/enter/edit your L-system here';
-lsResult.value = 'Empty';
+lsSrc.placeholder = 'Paste/enter/edit your L-system here';
+lsResult.value = '';
+lsResult.placeholder = 'Empty';
 
 btnParse = document.getElementById('btnParse');
 btnRewrite = document.getElementById('btnRewrite');
@@ -286,25 +287,64 @@ function turtleInterp (t, ls, ...args) {
    puts(`using settings: ` + rwdataShow());
 
    function doModule () {
-      let i;
+      let i; 
+      let isPM = false;
+      
       for (i=rwdata.mi; i < Math.min(tree.length, rwdata.mi+50); i++) {
-         let m = tree[i];
+         let pM = tree[i];
+         //puts(pM.toString());
+         //puts(t.getPos());
+         let m;
+         let pmArg, p0;         // most functions have only one parameter
+         if (typeof pM == 'string') {
+            m = pM
+            pmArg=null;
+            isPm = false;
+         } else {
+            m = pM.m;
+            p0 = pM.p[0];
+            isPm = true;
+         }
          switch (m) {
-         case 'F': {t.forward(rwdata.step); break;}
+         case 'F': {
+            let d = isPm ? p0 : rwdata.step;
+            t.forward(d);
+           // puts('fd: ' + d);
+            break;
+         }
          case 'f': {
+            let d = isPm ? p0 : rwdata.step;
             if (rwdata.notInPolygon) {
-	       t.penUp(); t.forward(rwdata.step); t.penDown();
+	       t.penUp(); t.forward(d); t.penDown();
             } else {
-	       t.setSize(1); t.forward(rwdata.step); t.setSize(rwdata.stemsize);
+	       t.setSize(1); t.forward(d); t.setSize(rwdata.stemsize);
             }
             break;
          }
-         case '+': {t.yaw(rwdata.delta); break; }
-         case '-': {t.yaw(rwdata.ndelta); break; }
-         case '&': {t.pitch(rwdata.delta); break; }
-         case '^': {t.pitch(rwdata.ndelta); break; }
-         case '\\': {t.roll(rwdata.delta); break; }
-         case '/': {t.roll(rwdata.ndelta); break; }
+         case '+': {
+            let a = isPm ? p0 : rwdata.delta;
+            t.yaw(a);
+            //puts('yaw: ' + a);
+            break; }
+         case '-': {
+            let a = isPm ? p0 : rwdata.delta;
+            t.yaw(-1*a); break; }
+         case '&': {
+            let a = isPm ? p0 : rwdata.delta;
+            t.pitch(a); 
+            //puts('pitch: ' + a);
+            break; }
+         case '^': {
+            let a = isPm ? p0 : rwdata.delta;
+            t.pitch(-1*a); break; }
+         case '\\': { 
+            let a = isPm ? p0 : rwdata.delta;
+            t.roll(a);
+            //puts('roll: ' + a);
+            break; }
+         case '/': {
+            let a = isPm ? p0 : rwdata.delta;
+            t.roll(-1*a); break; }
          case '|': {t.yaw(180); break; }
          case '!': {rwdata.stemsize -= 1; t.setSize(rwdata.stemsize); break;}
          case "'": {
@@ -330,7 +370,7 @@ function turtleInterp (t, ls, ...args) {
          case 'L': break;
          case '{': {rwdata.notInPolygon = false; break;}
          case '}': {rwdata.notInPolygon = true; break;}
-         default: { }   //puts(`ignoring module ${i}: ${m}`);}
+         default: {puts(`ignoring module ${i}: ${m}`);}
          }
       }
 
@@ -340,7 +380,7 @@ function turtleInterp (t, ls, ...args) {
          rAF = requestAnimationFrame(doModule); 
 
          // if (i % 2500 != 0) {
-         //    setTimeout(doModule,5);  
+         //    setTimeout(doModule,1000);  
          // } else {
          //    setTimeout(doModule,100);
          // }
