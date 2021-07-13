@@ -10,7 +10,7 @@ class Turtle3d {
 	 IsShown: true,
          TrackMaterial: null,
 	 Color: '0,0,0',
-	 Size: 0.25,
+	 Size: 0.01,
 	 Shape: null,
 	 Track: 'cylinder',
 	 TrackMesh: null
@@ -23,10 +23,8 @@ class Turtle3d {
       function initAll(s, nt, shape) {
 	 this.TurtleState.Shape = getshape.call(this, noturtle, shape);
 	 this.Scene = getscene.call(this, scene);
-         this.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene),
-         let c = new BABYLON.Color3();
-         c.fromArray(Array.from(this.Color.split(','), x=> Number(x)));
-         this.TrackMaterial.diffuseColor = c;
+         this.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
+         this.TrackMaterial.diffuseColor = this.toColorVector();
 	 if (Turtle3d.Turtles == null) {Turtle3d.Turtles  = new Map();}
 	 Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
 	 return true;
@@ -118,40 +116,60 @@ class Turtle3d {
       case 'string': {
 	 let c;
 	 switch  (v.toLowerCase()) {
-	 case 'blue': {c = BABYLON.Color3.Blue().join(); break;}
-	 case 'gray': {c = BABYLON.Color3.Gray().join(); break;}
-	 case 'green': {c = BABYLON.Color3.Green().join(); break;}
-	 case 'magenta': {c = BABYLON.Color3.Magenta().join(); break;}
-	 case 'purple': {c = BABYLON.Color3.Purple().join(); break;}
-	 case 'red': {c = BABYLON.Color3.Red().join(); break;}
-	 case 'teal': {c = BABYLON.Color3.Teal().join(); break;}
-	 case 'white': {c = BABYLON.Color3.White().join(); break;}
-	 case 'yellow': {c = BABYLON.Color3.Yellow().join(); break;}
-	 case 'black':{c = BABYLON.Color3.Black().join(); break;}
+	 case 'blue': {c = BABYLON.Color3.Blue().asArray().join(); break;}
+	 case 'gray': {c = BABYLON.Color3.Gray().asArray().join(); break;}
+	 case 'green': {c = BABYLON.Color3.Green().asArray().join(); break;}
+	 case 'magenta': {c = BABYLON.Color3.Magenta().asArray().join(); break;}
+	 case 'purple': {c = BABYLON.Color3.Purple().asArray().join(); break;}
+	 case 'red': {c = BABYLON.Color3.Red().asArray().join(); break;}
+	 case 'teal': {c = BABYLON.Color3.Teal().asArray().join(); break;}
+	 case 'white': {c = BABYLON.Color3.White().asArray().join(); break;}
+	 case 'yellow': {c = BABYLON.Color3.Yellow().asArray().join(); break;}
+	 case 'black':{c = BABYLON.Color3.Black().asArray().join(); break;}
 	 default: {
-            c = v.split(',');
-            if (c.length == 3 && 
-                c.every(n => Number(n) != NaN && 
-                        Number(n) < 256 && 
-                        Number(n) >= 0)) {
-               c=v;
+            c = v.split(',').map(s => Number(s));
+            if (c.length == 3 && c.every(n => n != NaN)) {
+               let m = vmax(c);
+               if (m > 1 && m < 256)  { // assume we were handed std rgb triplet
+                  c = c.map(x => x/255); // so scale it
+               }
+               c = c.join();
             } else {
                puts(`unrecognized color: ${v}, defaulting to black`);
                c = '0,0,0';
             }
-	 }
+            break;
+         }
          }
 	 this.TurtleState.Color = c;
+         break;
       }
-	 break;
       case 'array': {
-	 this.TurtleState.Color = v.join();
-      }
+         if (v.length == 3) {
+	    this.TurtleState.Color = v.join();
+         } else {
+            this.TurtleState.Color = '0,0,0';
+         }
 	 break;
-      case 'object': { 	// assume it's a color3 object
-	 this.TurtleState.Color = v.asArray().join();}
       }
+      case 'object': { 	// assume it's a color3 object
+	 this.TurtleState.Color = v.asArray().join();
+         break;
+      }
+      }
+      this.TrackMaterial.diffuseColor = this.toColorVector();
       puts(`set color to ${this.TurtleState.Color}`);
+   }
+
+   setMaterial(m=null) {
+      if (m == null) {
+         this.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
+      }
+   }
+
+   toColorVector() {
+      let c = new BABYLON.Color3();
+      return c.fromArray(Array.from(this.TurtleState.Color.split(','), x=> Number(x)));
    }
    setSize(v) {this.TurtleState.Size = v;}
    setTrack(v) {
@@ -272,7 +290,7 @@ class Turtle3d {
 	    segment = BABYLON.MeshBuilder.CreateLines('tpath',
                                                       {points: [oldPos, newPos],
                                                        tessellation: 32}, scene);
-	    segment.color = this.TurtleState.Color;
+	    segment.color = this.toColorVector();
 	    BABYLON.Tags.AddTagsTo(segment, `track${t}`, scene);
 	    segment.isVisible = true;
 
@@ -286,8 +304,8 @@ class Turtle3d {
                                                       cap: BABYLON.Mesh.CAP_ALL},
                                                      scene);
 	    segment.isVisible = true;
-            if (this.trackMaterial != NULL) {
-               segment.material == this.trackMaterial;
+            if (this.TrackMaterial != null) {
+               segment.material = this.TrackMaterial;
             }
             if (this.Tmesh == null) {
                this.Tmesh = segment;
@@ -428,6 +446,7 @@ function acosd (v) { return radtodeg * Math.acos(v);}
 function asind (v) { return radtodeg * Math.asin(v); }
 function smult (s, v) {return v.scale(s);} // v is a BABYLON.Vector3
 
+      
 // create a new BABYLON.Vector3;
 function newV(x=0,y=0,z=0) {return new BABYLON.Vector3(x,y,z);}
 // add two or threeo BABYLON.Vector3;
@@ -436,7 +455,7 @@ function vadd (u, v, w=null ) {
     if (w != null) { r.addInPlace(w);}
     return r;
 }
-function vmax(v){ return Math.max(v.x, v.y, v.z); }
+function vmax(v){ return Math.max(...v); }
 function clamp (v, epsilon = eps) {
     let va = [];
     v.toArray(va);
