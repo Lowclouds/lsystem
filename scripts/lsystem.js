@@ -25,7 +25,7 @@ A(t) : t<10 -> A(t+1)FFF
 A(t)>F : t==10 -> -FFFA(0)
 `
 var numReStr = '\\d+(?:\\.\\d+)?';
-var symbolReStr = "[\\w\\d\\+-\\]['{}\&^\\\\/!\\.~]";
+var symbolReStr = "[\\w\\d\\+-\\]['{}\&^\\\\/!\\.~\\|]";
 var varnameReStr = '\\w[\\w\\d]*';
 var startdReStr='^(?:#define|define:)[ \n]+\(';
 var enddReStr = '\) ([^ ].*)';
@@ -77,7 +77,7 @@ class Lsystem {
       this.verbose = 0;
       this.stemsize = 1;
       this.step = 1;    // default forward step size
-      this.delta = 90;	// default yaw angle
+      this.delta = 90;	// default angle
       this.ctable = [new BABYLON.Color3(0,1,0)]; // default color table
       this.ignore=[];
    }
@@ -126,7 +126,7 @@ class Lsystem {
                   switch(i) {
                   case 0: 
                      e.forEach((p,j) => {
-                        console.log(`looking at ${p}`);
+                        //console.log(`looking at ${p}`);
                         if (p) {s += this.listtostr([p]);}
                         if (j<2) {s += ',';}
                         return;
@@ -237,7 +237,7 @@ class Lsystem {
 	    let predecessor, condition, successor;
 	    let ix, cx, m, pre, strict, post, dummy ;
             let scope = {}, needScope=false;
-	    puts(`in rules: looking at ${line}`)
+	    //puts(`in rules: looking at ${line}`)
 	    if (line.includes('homomorphism')) {
 	       have_homomorphism = true;
 	       continue;
@@ -280,14 +280,13 @@ class Lsystem {
                initScope(scope, this.vars);
                //puts("scope before funcs: " + Object.entries(scope));
 
-               scope._bind_ = function (v, exp) {math.eval(v+'='+exp, this);}
+               scope._bind_ = function (v, exp) {math.evaluate(v+'='+exp, this);}
                //puts(`test func: _test_() = ${condition}`);
-               math.eval(`_test_() = ${condition}`, scope)
+               math.evaluate(`_test_() = ${condition}`, scope)
                scope._expand_ = function(module) {
                   for (let a= 0; a< module.p.length; a++) {
-                     module.p[a] = math.eval(module.p[a],this);
+                     module.p[a] = math.evaluate(module.p[a],this);
                   }
-
                }
             } else {
                scope._test_ = function(){return true;}
@@ -439,6 +438,7 @@ class Lsystem {
 	 ls.next = ls.current.slice();     // default production is to copy
          for (let n=0; n < clength; n++) {
 	    let node = ls.current[n];
+            //puts(`looking at node[${n}] = ${node}`);
 	    for (const rule of ls.rules) {
                let pred = rule[0];
                let scope = rule[3];
@@ -477,7 +477,7 @@ class Lsystem {
 	    }
          }
          ls.current = flatten(ls.next);
-         //puts(`iteration ${i + 1}\n${ls.current}`);
+         // puts(`iteration ${i + 1}\n${ls.current}`);
       }
       ls.next = null;
       puts(`Expanded tree has ${ls.current.length} nodes`);
@@ -605,7 +605,8 @@ function flatten( list) {
       v=list[i];
       if (Array.isArray(v)) {
 	 //puts('list[' + i + ']: ' + v + ' is an array');
-	 for (let j=0, m; m=v[j]; j++) {r.push(m)}
+	 //for (let j=0, m; m=v[j]; j++) {r.push(m)}
+	 v.forEach(m => {r.push(m)});
       } else {
 	 //puts('list[' + i + ']: ' + v + ' is NOT an array');
 	 r.push(v);
@@ -698,3 +699,17 @@ function lappend (larray, ...items) {
 function puts(o) {console.log(o);}
 
 
+function flattenv( list) {
+   let r=[];
+   for (let i=0;i<list.length;i++) {
+      v=list[i].asArray();
+      if (Array.isArray(v)) {
+	 puts('list[' + i + ']: ' + v + ' is an array');
+	 v.forEach(m => {r.push(m)});
+      } else {
+	 puts('list[' + i + ']: ' + v + ' is NOT an array');
+	 r.push(v);
+      }
+   }
+   return r;
+}
