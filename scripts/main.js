@@ -1,3 +1,4 @@
+
 const myHeading = document.querySelector('h1');
 myHeading.textContent = 'An L-system interpreter';
 
@@ -11,8 +12,11 @@ clearbtn.textContent = "Clear";
 var homebtn = document.getElementById('btn3');
 homebtn.textContent = "Home";
 
-var selectbtn = document.getElementById('btn4');
-selectbtn.textContent = "ActiveTurtle";
+var resetbtn = document.getElementById('btn4');
+resetbtn.textContent = "Reset";
+
+var cameraTargetbtn = document.getElementById('btn5');
+cameraTargetbtn.textContent = "Camera Lookat Turtle"
 
 var turtleInfo = [
     [document.getElementById('t1'),
@@ -37,25 +41,63 @@ function updateTurtleInfo(t,idx) {
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
+const cameraHomePosition = new BABYLON.Vector3(10, 15,-20);
+//const cameraHomeDirection = new BABYLON.Vector3(-2, -5, 10);
+const cameraHomeTarget = BABYLON.Vector3.Zero();
+var camera;
+
+const skysize = 1000;
+
 // Add your code here matching the playground format
 const createScene = function () {
     
-    const scene = new BABYLON.Scene(engine);  
+   const scene = new BABYLON.Scene(engine);  
     
-    const camera = new BABYLON.ArcRotateCamera("Camera",0,0,20, BABYLON.Vector3.Zero(), scene);
-    camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-    //camera.zoomToMouseLocation= false;
-    camera.wheelDeltaPercentage = 0.001;
-    //const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 1, new BABYLON.Vector3(0, 0, 0));
-    camera.attachControl(canvas, true);
-    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(5, 5, 10));
-    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:20, height:20});
-    var gMaterial = new BABYLON.StandardMaterial("gMaterial", scene);
-    
-    gMaterial.diffuseColor = new BABYLON.Color3(.1, .8, .2);
-    ground.material = gMaterial;
-    
-    return scene;
+  // const camera = new BABYLON.ArcRotateCamera("Camera",0,0,20, BABYLON.Vector3.Zero(), scene);
+  //  camera.setPosition(new BABYLON.Vector3(2, 5,-10));
+  //  camera.wheelDeltaPercentage = 0.001;
+  //  camera.zoomToMouseLocation = true;
+   camera = 
+      new BABYLON.UniversalCamera("camera",
+                                     cameraHomePosition, scene);
+   camera.setTarget(cameraHomeTarget);
+   camera.inputs.addMouseWheel();
+   camera.wheelDeltaPercentage = 0.0001;
+   //camera.inputs.attached["mousewheel"].wheelYMoveRelative = BABYLON.Coordinate.Y;
+
+   camera.attachControl(canvas, true);
+
+   const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 10, 0));
+   light.intensity = 1.5;
+   light.diffuse = new BABYLON.Color3(206/255, 227/255, 240/255);
+   light.groundColor = new BABYLON.Color3(1, 1, 1);
+   var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:2000, height:2000});
+   var gMaterial = new BABYLON.StandardMaterial("gMaterial", scene);
+   
+   gMaterial.diffuseColor = new BABYLON.Color3(.2, .9, .3);
+   ground.material = gMaterial;
+   
+   var skyOpts = {
+      diameter: skysize, slice: 0.5, sideOrientation: BABYLON.Mesh.DOUBLESIDE
+   };
+   var sky = BABYLON.MeshBuilder.CreateSphere("sky", skyOpts, scene);
+   //var sky = BABYLON.Mesh.CreateBox("sky", 1000.0, scene);
+   //sky.position = new BABYLON.Vector3(0, 0, 0);
+   var skyMaterial = new BABYLON.StandardMaterial("skyMaterial", scene);
+
+   skyMaterial.backFaceCulling = false;
+   skyMaterial.diffuseColor = new BABYLON.Color3(93/255, 173/255, 220/255); //206/255, 227/255, 240/255);
+   skyMaterial.ambientColor = new BABYLON.Color3(206/255, 227/255, 240/255);
+   //skyMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1);
+   // sky.diffuseColor = new BABYLON.Color3(206, 227, 240);
+   // sky.ambientColor = new BABYLON.Color3(206, 227, 240);
+   // sky.emissiveColor = new BABYLON.Color3(255, 255, 255);
+   //sky.specularColor = new BABYLON.Color3(206, 227, 240);
+
+   sky.material = skyMaterial;
+
+
+   return scene;
 };
 
 const scene = createScene(); //Call the createScene function
@@ -64,30 +106,107 @@ const scene = createScene(); //Call the createScene function
 engine.runRenderLoop(function () {
     scene.render();
 });
-
+7
 // Watch for browser/canvas resize events
 window.addEventListener("resize", function () {
     engine.resize();
 });
 
-function make_axes () {
-    var axes_displayed = true;
-    var xaxis = BABYLON.Mesh.CreateLines('xaxis',[
-        new BABYLON.Vector3(-20,0,0), new BABYLON.Vector3(20,0,0)
-    ], scene);
-    xaxis.color = BABYLON.Color3.Red();
-    BABYLON.Tags.AddTagsTo(xaxis, `axes`); 
-    var yaxis = BABYLON.Mesh.CreateLines('yaxis', [ 
-        new BABYLON.Vector3(0, -20 ,0), new BABYLON.Vector3(0,20,0)
-    ] , scene);
-    yaxis.color = BABYLON.Color3.Green();
-    BABYLON.Tags.AddTagsTo(yaxis, `axes`); 
-    var zaxis = BABYLON.Mesh.CreateLines('zaxis',[
-        new BABYLON.Vector3(0,0,-20),new BABYLON.Vector3(0, 0, 20)
-    ], scene);
-    zaxis.color = BABYLON.Color3.Blue();
-    BABYLON.Tags.AddTagsTo(zaxis, `axes`); 
+function markSky(t,axis='x', r=skysize/2) {
+   var savedState = t.getState();
+   let s = 100,
+       len = r * Math.PI/2,
+       theta = radtodeg*Math.PI/2;
+   len = len/s;
+   theta=theta/s;
+   puts(`r: ${r}, len: ${len}, theta: ${theta}, s: ${s}`);
+
+   t.setTrack('line');
+   t.penUp();
+   t.home();
+   switch(axis) {
+   case 'x': { 
+      t.setColor('red'); break; }
+   case 'y': {
+      t.setColor('yellow'); t.yaw(-90); break; }
+   case 'z': {
+      t.setColor('blue'); t.yaw(90); break;}
+   default: { puts(`unrecognized direction`); break;}
+   }
+   t.fd(r);
+   t.pitch(90 +theta/2);
+   t.penDown();
+   for (let seg=0; seg < s; seg++) {
+      t.fd(len);
+      t.pitch(theta);
+   }
+   
+   t.setState(savedState);
 }
+      
+
+function make_axes (t, size=10) {
+   var axes_displayed = true;
+   var savedState = t.getState();
+   var axis = [-size, 0, 0];;
+   t.setTrack('line');
+   t.home();                    // heading is xaxis
+   t.setColor('red');
+   t.penUp();
+   t.goto(axis);
+   t.penDown();
+   t.fd(2*size);
+   t.yaw(150);
+   t.fd(1); t.fd(-1);
+   t.yaw(60);
+   t.fd(1);
+
+   t.penUp();
+   t.home();
+   t.setColor([0,0.7,0]);
+   t.pitch(90);
+   axis = roll(axis);
+   t.goto(axis);
+   t.penDown()
+   t.fd(2*size);
+   t.pitch(150);
+   t.fd(1); t.fd(-1);
+   t.pitch(60);
+   t.fd(1);
+
+   t.penUp();
+   t.home();
+   t.setColor('blue');
+   t.yaw(90);
+   axis = roll(axis);
+   t.goto(axis);
+   t.penDown()
+   t.fd(2*size);
+   t.yaw(150);
+   t.fd(1); t.fd(-1);
+   t.yaw(60);
+   t.fd(1);
+
+   t.setState(savedState);
+}
+
+// {
+//    var xaxis = BABYLON.Mesh.CreateLines('xaxis',[
+//       new BABYLON.Vector3(-20,0,0), new BABYLON.Vector3(20,0,0)
+//    ], scene);
+//    xaxis.color = BABYLON.Color3.Red();
+//    BABYLON.Tags.AddTagsTo(xaxis, `axes`); 
+//    var yaxis = BABYLON.Mesh.CreateLines('yaxis', [ 
+//       new BABYLON.Vector3(0, -20 ,0), new BABYLON.Vector3(0,20,0)
+//    ] , scene);
+//    yaxis.color = BABYLON.Color3.Green();
+//    BABYLON.Tags.AddTagsTo(yaxis, `axes`); 
+//    var zaxis = BABYLON.Mesh.CreateLines('zaxis',[
+//       new BABYLON.Vector3(0,0,-20),new BABYLON.Vector3(0, 0, 20)
+//    ], scene);
+//    zaxis.color = BABYLON.Color3.Blue();
+//    BABYLON.Tags.AddTagsTo(zaxis, `axes`); 
+// }
 
 var t = new Turtle3d(scene);
 updateTurtleInfo(t,0);
@@ -97,7 +216,8 @@ updateTurtleInfo(t,0);
 // console.log(Turtle3d.prototype.t3dIDTag);
 // console.log(t1.TurtleState);
 
-make_axes();
+make_axes(t);
+markSky(t);
 
 showhidebtn.addEventListener("click", () => {
     try {
@@ -129,57 +249,75 @@ clearbtn.addEventListener("click", () => {
 });
 homebtn.addEventListener("click", () => {
     try {
-        t.home();
+       t.home();
+       camera.setTarget(t.getPos());
     } catch (error) {}
     try {
-        t1.home();
+       t1.home();
+       camera.setTarget(t1.getPos());
     } catch (e) {}
 });
 
-var walking = false;
-selectbtn.addEventListener("click", () => {
-   if (! walking ) {
-      let count=0;
-      let tt = new Turtle3d();
-      turtleInfo[1][0].textContent = tt.getTurtle();
-      tt.setColor([0,.6,.8]);
-      function randomWalk() {
-         for (let n=0; n<10; n++) {
-            let choice  = Math.random() * 3;
-            if (choice < 1) {
-               tt.yaw(Math.random()*360);
-            } else if(choice < 2) {
-               tt.pitch(Math.random()*360);
-            } else {
-               tt.roll(Math.random()*360);
-            }
-            tt.fd((Math.random() - 0.5) * 10);
-            count++;
-         }
-         let p = tt.getPos();
-         if (p.length() > 50) {
-            tt.penUp();
-            tt.goto([0,0,0]);
-            tt.penDown();
-            tt.setColor([Math.random(),Math.random(),Math.random()]);
-            turtleInfo[1][1].textContent = count;
-            
-         }
-      }
-      scene.registerAfterRender(randomWalk);
-      walking = true;
-   } else {
-      scene.unregisterAfterRender(randomWalk);
-      walking =  false;
-   }
+resetbtn.addEventListener("click", () => {
+   try {
+      t.home();
+      t.clear();
+      camera.setPosition(new BABYLON.Vector3(2, 5,-10));
+      camera.setTarget(t.getPos());
+   } catch (error) {}
 });
 
-function doRandomWalk () {
-}
+cameraTargetbtn.addEventListener("click", () => {
+   puts('trying to reset camera');
+   //       camera.detachControl(canvas);
+   //       camera.position(new BABYLON.Vector3(2,5, -10));
+   //       camera.cameraDirection(new BABYLON.Vector3(0,0,0));
+   //       camera.attachControl(canvas,true);
+   camera.setTarget(t.getPos());
+});
+
+// var walking = false;
+// selectbtn.addEventListener("click", () => {
+//    if (! walking ) {
+//       let count=0;
+//       let tt = new Turtle3d();
+//       turtleInfo[1][0].textContent = tt.getTurtle();
+//       tt.setColor([0,.6,.8]);
+//       function randomWalk() {
+//          for (let n=0; n<10; n++) {
+//             let choice  = Math.random() * 3;
+//             if (choice < 1) {
+//                tt.yaw(Math.random()*360);
+//             } else if(choice < 2) {
+//                tt.pitch(Math.random()*360);
+//             } else {
+//                tt.roll(Math.random()*360);
+//             }
+//             tt.fd((Math.random() - 0.5) * 10);
+//             count++;
+//          }
+//          let p = tt.getPos();
+//          if (p.length() > 50) {
+//             tt.penUp();
+//             tt.goto([0,0,0]);
+//             tt.penDown();
+//             tt.setColor([Math.random(),Math.random(),Math.random()]);
+//             turtleInfo[1][1].textContent = count;
+            
+//          }
+//       }
+//       scene.registerAfterRender(randomWalk);
+//       walking = true;
+//    } else {
+//       scene.unregisterAfterRender(randomWalk);
+//       walking =  false;
+//    }
+// });
 
 
 const lsSrc = document.getElementById('lsSrc');
 const lsFile = document.getElementById('lsFile');
+const lsSave = document.getElementById('lsSave');
 const lsResult = document.getElementById('lsResult');
 
 lsSrc.placeholder = 'Paste/enter/edit your L-system here';
@@ -223,9 +361,21 @@ function loadLSfile(event) {
     }
 }
 
-
-
 lsFile.onchange = loadLSfile;
+
+function saveasLSfile(event) {
+   let file = lsFile.files.item(0).name;
+   if (lsSrc.value != '') {
+      puts(`Saving to file: ${file}`);
+      var blob = new Blob( [lsSrc.value], {type: "text/plain;charset=utf-8"});
+      saveAs.saveAs(blob, file);
+   } else {
+      puts(`failed saving: ${lsSrce.value} to ${file}`);
+   }
+}
+
+lsSave.addEventListener("click", saveasLSfile);
+
 var rwresult=null;
 btnDraw.addEventListener("click", () => {
     try {
@@ -236,31 +386,44 @@ btnDraw.addEventListener("click", () => {
 
 ls = new Lsystem();
 
+var interpdata = {
+   step:  1,
+   stemsize: 1,
+   delta: 90,
+   ctable:  [[0.64, 0.17, 0.17], [0,.8, .8]],       // brownish, greenish
+   ndelta: -90,
+   stack: [],
+   ci: 0,                       // color index
+   notInPolygon: true,
+   mi: 0,                       // module index
+   cpoly: null
+}
+
+function interpdataShow() {
+   return `step: ${interpdata.step}, stemsize: ${interpdata.stemsize}, delta: ${interpdata.delta}`;
+}
 
 function turtleInterp (t, ls, ...args) {
-   var rwdata = {
+   interpdata = {
       step:  1,
       stemsize: 1,
       delta: 90,
-      ctable:  [[0,.8, .8]],       // greenish
+      ctable:  [[0.64, 0.17, 0.17], [0,.8, .8]],       // brownish, greenish
       ndelta: -90,
       stack: [],
       ci: 0,                       // color index
       notInPolygon: true,
       mi: 0,                       // module index
+      cpoly: null
    }
-   function rwdataShow() {
-      return `step: ${rwdata.step}, stemsize: ${rwdata.stemsize}, delta: ${rwdata.delta}`;
-   }
-         
 
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
       if (ls.hasOwnProperty(p)) {
          switch (p) {
-         case 'step': {rwdata.step = ls.step; break;}
-         case 'stemsize': {rwdata.stemsize = ls.stemsize; break;}
-         case 'delta': {rwdata.delta = ls.delta; break;}
-         case 'ctable': {rwdata.ctable = ls.ctable; break;}
+         case 'step': {interpdata.step = ls.step; break;}
+         case 'stemsize': {interpdata.stemsize = ls.stemsize; break;}
+         case 'delta': {interpdata.delta = ls.delta; break;}
+         case 'ctable': {interpdata.ctable = ls.ctable; break;}
          }
       }
    }
@@ -268,29 +431,31 @@ function turtleInterp (t, ls, ...args) {
       puts(`checking for var ${p}`);
       if (ls.vars.has(p)) {
          switch (p) {
-         case 'step': {rwdata.step = ls.vars.get(p); break;}
-         case 'stemsize': {rwdata.stemsize = ls.vars.get(p); break;}
-         case 'delta': {rwdata.delta = ls.vars.get(p); puts("set stemsize"); break;}
-         case 'ctable': {rwdata.ctable = ls.vars.get(p); break;}
+         case 'step': {interpdata.step = ls.vars.get(p); break;}
+         case 'stemsize': {interpdata.stemsize = ls.vars.get(p); break;}
+         case 'delta': {interpdata.delta = ls.vars.get(p); puts("set stemsize"); break;}
+         case 'ctable': {interpdata.ctable = ls.vars.get(p); break;}
          }
       }
    }
-   rwdata.ndelta= -1*rwdata.delta,
-   t.setSize(rwdata.stemsize);
-   t.setColor(rwdata.ctable[0]);
+   
+   interpdata.ndelta= -1*interpdata.delta,
+   t.setSize(interpdata.stemsize);
+   t.setColor(interpdata.ctable[0]);
    t.hide();
    t.penDown();
 
-   rwstack = [];
+   branchstack = [];
+   polygonstack = [];
    let tree = ls.current;
    puts(`lsystem has ${tree.length} modules`);
-   puts(`using settings: ` + rwdataShow());
+   puts(`using settings: ` + interpdataShow());
 
    function doModule () {
       let i; 
       let isPM = false;
       
-      for (i=rwdata.mi; i < Math.min(tree.length, rwdata.mi+50); i++) {
+      for (i=interpdata.mi; i < Math.min(tree.length, interpdata.mi+50); i++) {
          let pM = tree[i];
          //puts(pM.toString());
          //puts(t.getPos());
@@ -307,76 +472,139 @@ function turtleInterp (t, ls, ...args) {
          }
          switch (m) {
          case 'F': {
-            let d = isPm ? p0 : rwdata.step;
+            let d = isPm ? p0 : interpdata.step;
+            t.penDown();
             t.forward(d);
-           // puts('fd: ' + d);
+            if (! interpdata.notInPolygon) {
+               t.updatePolygon();
+            }
+            //puts('fd: ' + d);
             break;
          }
          case 'f': {
-            let d = isPm ? p0 : rwdata.step;
-            if (rwdata.notInPolygon) {
-	       t.penUp(); t.forward(d); t.penDown();
-            } else {
-	       t.setSize(1); t.forward(d); t.setSize(rwdata.stemsize);
+            let d = isPm ? p0 : interpdata.step;
+            let pState = t.isPenDown();
+            if (pState) {
+               t.penUp();
+            }
+	    t.forward(d); 
+            if (! interpdata.notInPolygon) {
+               t.updatePolygon();
+            }
+            if (pState) {
+               t.penDown();
             }
             break;
          }
-         case '+': {
-            let a = isPm ? p0 : rwdata.delta;
+         case 'G': {
+            let d = isPm ? p0 : interpdata.step;
+            t.penDown();
+            t.forward(d);
+            puts('Gfd: ' + d);
+            break;
+         }
+         case 'g': {
+            let d = isPm ? p0 : interpdata.step;
+            t.penUp();
+	    t.forward(d); 
+            t.penDown();
+            puts('gfd: ' + d);
+            break;
+         }
+         case '+': {            // yaw left
+            let a = isPm ? p0 : interpdata.delta;
             t.yaw(a);
-            //puts('yaw: ' + a);
+//            puts('yaw: ' + a);
             break; }
-         case '-': {
-            let a = isPm ? p0 : rwdata.delta;
-            t.yaw(-1*a); break; }
-         case '&': {
-            let a = isPm ? p0 : rwdata.delta;
+         case '-': {            // yaw right
+            let a = -1*(isPm ? p0 : interpdata.delta);
+            t.yaw(a);
+            puts('yaw: ' + a);
+            break; }
+         case '&': {            // pitch down
+            let a = -1*(isPm ? p0 : interpdata.delta);
             t.pitch(a); 
             //puts('pitch: ' + a);
             break; }
-         case '^': {
-            let a = isPm ? p0 : rwdata.delta;
-            t.pitch(-1*a); break; }
-         case '\\': { 
-            let a = isPm ? p0 : rwdata.delta;
+         case '^': {            // pitch up
+            let a = isPm ? p0 : interpdata.delta;
+            t.pitch(a);
+            //puts('pitch: ' + a);
+            break; }
+         case '\\': {           // roll left
+            let a = isPm ? p0 : interpdata.delta;
             t.roll(a);
             //puts('roll: ' + a);
             break; }
-         case '/': {
-            let a = isPm ? p0 : rwdata.delta;
-            t.roll(-1*a); break; }
+         case '/': {            // roll right
+            let a = -1*(isPm ? p0 : interpdata.delta);
+            t.roll(a); 
+            //puts('roll: ' + a);
+            break; }
          case '|': {t.yaw(180); break; }
-         case '!': {rwdata.stemsize -= 1; t.setSize(rwdata.stemsize); break;}
+         case '!': {
+            if (isPm ) {
+               interpdata.stemsize = p0;
+            } else {
+               interpdata.stemsize -= interpdata.stemsize > 1 ? 1 : 0;
+            }
+            puts(`set stemsize to: ${interpdata.stemsize}`);
+            t.setSize(interpdata.stemsize);
+            break;
+         }
+         case '#': {
+            if (isPm ) {
+               interpdata.stemsize = p0;
+            } else {
+               interpdata.stemsize += 1;
+            }
+            puts(`set stemsize to: ${interpdata.stemsize}`);
+            t.setSize(interpdata.stemsize);
+            break;
+         }
          case "'": {
-            rwdata.ci++;
-            if (rwdata.ci == rwdata.ctable.length) { rwdata.ci = 0;}
-            t.setColor(rwdata.ctable[rwdata.ci]);
+            interpdata.ci++;
+            if (interpdata.ci == interpdata.ctable.length) { interpdata.ci = 0;}
+            t.setColor(interpdata.ctable[interpdata.ci]);
             break;
          }
          case '\[': { 
             let s = t.getState();
-            rwstack.push([s, rwdata.ci, rwdata.stemsize]); break;}
+            branchstack.push([s, interpdata.ci, interpdata.stemsize]); break;}
          case '\]': {
-            let s = rwstack.pop();
+            let s = branchstack.pop();
             if (s) {
-	       rwdata.ci = s[1];
-	       rwdata.stemsize = s[2];
+	       interpdata.ci = s[1];
+	       interpdata.stemsize = s[2];
 	       t.setState(s[0]);
             }
+            break;
+         }
+         case '.': {
+            interpdata.cpoly.push(otoa(t.getPos()));
+            puts(`capturing point: ${t.getPos()}`)
             break;
          }
          case 'A':
          case 'S':
          case 'L': break;
-         case '{': {rwdata.notInPolygon = false; break;}
-         case '}': {rwdata.notInPolygon = true; break;}
-         default: {puts(`ignoring module ${i}: ${m}`);}
+         case '{': {
+            interpdata.notInPolygon = false;
+            t.newPolygon();
+            interpdata.cpoly = [];
+            break;}
+         case '}': {
+            interpdata.notInPolygon = true; t.endPolygon();
+            puts(`polygon: ${interpdata.cpoly}`);        
+            break;
+         }
+         default: {}//puts(`no Action for module ${i}: ${m}`);}
          }
       }
-
+      //updateTurtleInfo(t,0);
       lblNumDrawn.textContent=i;
       if (i < tree.length) {
-         rwdata.mi = i;
+         interpdata.mi = i;
          rAF = requestAnimationFrame(doModule); 
 
          // if (i % 2500 != 0) {
@@ -385,13 +613,128 @@ function turtleInterp (t, ls, ...args) {
          //    setTimeout(doModule,100);
          // }
       } else {
-         lblNumDrawn.backgroundColor = "green"
+         updateTurtleInfo(t,0);
+         lblNumDrawn.backgroundColor = "green";
       }
    }
    doModule();
   // for (const m of ls.current) {
-  //   if (rwdata.mi % 500 == 0) {puts(`${rwdata.mi} of ${ls.current.length}`);}
-  //   rwdata = await doModule(t,m,rwdata);
-  //   rwdata.mi++;
+  //   if (interpdata.mi % 500 == 0) {puts(`${interpdata.mi} of ${ls.current.length}`);}
+  //   interpdata = await doModule(t,m,interpdata);
+  //   interpdata.mi++;
   // }
+}
+
+function otoa (o) {
+   let a = new Array();
+   a.push(o.x); a.push(o.y); a.push(o.z);
+   return a;
+}
+function roll(a) { a.unshift(a.pop()); return a;}
+
+function crand() {return new BABYLON.Color3(math.random(), math.random(),math.random())}
+
+function polyTrace(t, ipoly, size=0.1, idelay=0.02) {
+   function Tracer(t, ipoly) {
+      var turtle = t,
+          poly = ipoly,
+          i = 0,
+          oldstate = t.getState();
+
+      function tr () {
+         if (i >= poly.length) {
+            clearInterval(this.timerID);
+            turtle.setColor('red');
+            turtle.goto(poly[0]);
+            turtle.setState(oldstate);
+            return;
+         } else {
+            turtle.goto(poly[i]);
+            i++;
+         }
+      }
+      this.trace  = tr.bind(this);
+      this.timerID =  null;
+
+   }
+   var tracer = new Tracer(t, ipoly);
+   t.setSize(size);
+   t.setColor('black');
+   t.penUp();
+   t.goto(ipoly[0]);
+   t.penDown();
+   tracer.timerID = setInterval(tracer.trace, idelay*1000);
+}
+
+function outliner(t, ipoly, size=0.1, idelay=0.5) {
+   function f(i) {
+      if (i >= this.poly.length) {
+         
+         this.turtle.goto(this.poly[0]);
+         this.turtle.setState(this.oldstate);
+         return;
+      } 
+      this.turtle.goto(this.poly[i]);
+      puts(`waiting ${i}th time`);
+      setTimeout(this.outline, this.delay*1000, i+1);
+   }
+   const bundle = {
+      turtle: t,
+      poly: ipoly,
+      delay: idelay,
+      oldstate: null,
+      timerID: null,
+   }
+   bundle.outline = f.bind(bundle);
+   bundle.oldstate=t.getState(),
+   t.setSize(size);
+   t.setColor('black');
+   t.penUp();
+   t.goto(poly[0]);
+   t.penDown();
+   setTimeout(bundle.outline,0,1);
+}
+
+function showtriangles( t, poly, alg="d",size=0.1) {
+   let verts, tri;
+   if (alg == 'e') {
+      verts=earcut.flatten([poly]);
+      tri = earcut(verts.vertices, verts.holes, verts.dimensions);
+   } else {
+      tri = Delaunator.from(poly).triangles;
+   }
+   let oldstate = t.getState();
+   t.setSize(size);
+   t.setColor(crand());
+   for( let tr=0; tr< tri.length/3; tr++) {
+      puts(`triangle: ${tr} at ${tri[3*tr]}:${poly[tri[3*tr]]}`);
+      t.penUp();
+      t.goto(poly[tri[3*tr]]); 
+      t.penDown(); 
+      t.goto(poly[tri[3*tr+1]]); 
+      t.goto(poly[tri[3*tr+2]]);
+      t.goto(poly[tri[3*tr]]); 
+   }
+   t.setState(oldstate);
+   return tri;
+}
+
+function createMesh(poly) {
+   var vertexData = new BABYLON.VertexData();
+   var everts = earcut.flatten([poly]);
+   var verts = earcut(everts.vertices, everts.holes, 3);
+   vertexData.positions = everts.vertices;
+   vertexData.indices = verts;
+   vertexData.normals = [];
+   BABYLON.VertexData.ComputeNormals(everts.vertices, verts, vertexData.normals);
+
+   var amat = new BABYLON.StandardMaterial("a", scene);
+   mat.backFaceCulling = false;
+   mat.diffuseColor = new BABYLON.Color3(0.6,0.83,0.6);
+   var amesh = new BABYLON.Mesh("a", scene);
+   vertexData.applyToMesh(amesh,true);
+
+   amesh.material = amat;
+
+   return {vdata: vertexData, mat: amat, mesh: amesh};
 }
