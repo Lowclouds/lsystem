@@ -69,7 +69,7 @@ class Turtle3d {
 	 axis = BABYLON.MeshBuilder.CreateLines('yaxis',{points: pts}, scene);
 	 axis.parent = local_origin;
 	 BABYLON.Tags.AddTagsTo(axis, `${tag} L binormal`); 
-	 axis.color = BABYLON.Color3.Green();
+	 axis.color =new BABYLON.Color3(0,0.7,0);
 	 pts[1] = newV(0, 0, 1);
 	 axis = BABYLON.MeshBuilder.CreateLines('zaxis',{points: pts}, scene);
 	 axis.parent = local_origin;
@@ -111,7 +111,8 @@ class Turtle3d {
    isShown() {return this.TurtleState.IsShown;}
 
    // setters
-   setColor(v) {
+   // 
+   setColor(v, newMaterial = true) {
       switch (betterTypeOf(v)) {
       case 'string': {
 	 let c;
@@ -157,13 +158,18 @@ class Turtle3d {
          break;
       }
       }
+      if (newMaterial) {
+         this.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
+      }
       this.TrackMaterial.diffuseColor = this.toColorVector();
-      puts(`set color to ${this.TurtleState.Color}`);
+      //puts(`set color to ${this.TurtleState.Color}`);
    }
 
    setMaterial(m=null) {
       if (m == null) {
          this.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
+      } else {
+         this.TrackMaterial = m;
       }
    }
 
@@ -208,10 +214,14 @@ class Turtle3d {
 
    // some internal setter functions that I'd like to hide
    setPos (val) {
-      if (betterTypeOf(val) == 'array'){
-	 this.TurtleState.P.fromArray(val);
-      } else {			// assume it's a Vector3
-	 this.TurtleState.P = val.clone(); // in case it's a local
+      try {
+         if (betterTypeOf(val) == 'array'){
+	    this.TurtleState.P.fromArray(val);
+         } else {			// assume it's a Vector3
+	    this.TurtleState.P = val.clone(); // in case it's a local
+         }
+      } catch (error) {
+         puts(`${error}, calling setPos(${val})`);
       }
    }
    setH (val) {
@@ -424,6 +434,14 @@ class Turtle3d {
       this.draw(oldP, pos);
    }
 
+   newPolygon() {
+      // save state
+   }
+   updatePolygon() {
+   }
+   endPolygon () {
+      // restore state
+   }
 }
 
 Turtle3d.prototype.t3dIDTag=0;    //  a counter for constructing unique tags
@@ -508,3 +526,4 @@ function crossproduct (v, w) {
     // res[2] =  v.y*w.x - v.x*w.y 
     return new BABYLON.Vector3.FromArray(res);
 }
+
