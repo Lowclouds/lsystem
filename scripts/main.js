@@ -46,7 +46,7 @@ const cameraHomePosition = new BABYLON.Vector3(10, 15,-20);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
 
-const skysize = 1000;
+const skysize = 5000;
 
 // Add your code here matching the playground format
 const createScene = function () {
@@ -57,9 +57,8 @@ const createScene = function () {
   //  camera.setPosition(new BABYLON.Vector3(2, 5,-10));
   //  camera.wheelDeltaPercentage = 0.001;
   //  camera.zoomToMouseLocation = true;
-   camera = 
-      new BABYLON.UniversalCamera("camera",
-                                     cameraHomePosition, scene);
+   camera = new BABYLON.UniversalCamera("camera",
+                                        cameraHomePosition, scene);
    camera.setTarget(cameraHomeTarget);
    camera.inputs.addMouseWheel();
    camera.wheelDeltaPercentage = 0.0001;
@@ -71,31 +70,24 @@ const createScene = function () {
    light.intensity = 1.5;
    light.diffuse = new BABYLON.Color3(206/255, 227/255, 240/255);
    light.groundColor = new BABYLON.Color3(1, 1, 1);
-   var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:2000, height:2000});
+   var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
    var gMaterial = new BABYLON.StandardMaterial("gMaterial", scene);
    
-   gMaterial.diffuseColor = new BABYLON.Color3(.2, .9, .3);
+   gMaterial.diffuseColor = new BABYLON.Color3(.58, .58, .58);
    ground.material = gMaterial;
    
    var skyOpts = {
-      diameter: skysize, slice: 0.5, sideOrientation: BABYLON.Mesh.DOUBLESIDE
-   };
+      diameter: skysize, slice: 0.5, sideOrientation: BABYLON.Mesh.DOUBLESIDE };
    var sky = BABYLON.MeshBuilder.CreateSphere("sky", skyOpts, scene);
-   //var sky = BABYLON.Mesh.CreateBox("sky", 1000.0, scene);
-   //sky.position = new BABYLON.Vector3(0, 0, 0);
    var skyMaterial = new BABYLON.StandardMaterial("skyMaterial", scene);
-
    skyMaterial.backFaceCulling = false;
    skyMaterial.diffuseColor = new BABYLON.Color3(93/255, 173/255, 220/255); //206/255, 227/255, 240/255);
    skyMaterial.ambientColor = new BABYLON.Color3(206/255, 227/255, 240/255);
    //skyMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1);
-   // sky.diffuseColor = new BABYLON.Color3(206, 227, 240);
-   // sky.ambientColor = new BABYLON.Color3(206, 227, 240);
-   // sky.emissiveColor = new BABYLON.Color3(255, 255, 255);
+   //sky.emissiveColor = new BABYLON.Color3(255, 255, 255);
    //sky.specularColor = new BABYLON.Color3(206, 227, 240);
 
    sky.material = skyMaterial;
-
 
    return scene;
 };
@@ -106,7 +98,7 @@ const scene = createScene(); //Call the createScene function
 engine.runRenderLoop(function () {
     scene.render();
 });
-7
+
 // Watch for browser/canvas resize events
 window.addEventListener("resize", function () {
     engine.resize();
@@ -114,7 +106,7 @@ window.addEventListener("resize", function () {
 
 function markSky(t,axis='x', r=skysize/2) {
    var savedState = t.getState();
-   let s = 100,
+   let s = 10000,
        len = r * Math.PI/2,
        theta = radtodeg*Math.PI/2;
    len = len/s;
@@ -145,47 +137,30 @@ function markSky(t,axis='x', r=skysize/2) {
 }
       
 
-function make_axes (t, size=10) {
+function makeAxes (t, size=10) {
    var axes_displayed = true;
    var savedState = t.getState();
-   var axis = [-size, 0, 0];;
+   var axis = [0, 0,size];;
    t.setTrack('line');
-   t.home();                    // heading is xaxis
-   t.setColor('red');
-   t.penUp();
-   t.goto(axis);
-   t.penDown();
-   t.fd(2*size);
-   t.yaw(150);
-   t.fd(1); t.fd(-1);
-   t.yaw(60);
-   t.fd(1);
+   t.setTag('axes');
 
-   t.penUp();
-   t.home();
-   t.setColor([0,0.7,0]);
-   t.pitch(90);
-   axis = roll(axis);
-   t.goto(axis);
-   t.penDown()
-   t.fd(2*size);
-   t.pitch(150);
-   t.fd(1); t.fd(-1);
-   t.pitch(60);
-   t.fd(1);
-
-   t.penUp();
-   t.home();
-   t.setColor('blue');
-   t.yaw(90);
-   axis = roll(axis);
-   t.goto(axis);
-   t.penDown()
-   t.fd(2*size);
-   t.yaw(150);
-   t.fd(1); t.fd(-1);
-   t.yaw(60);
-   t.fd(1);
+   function makeAxis (color) {
+      t.setColor(color);
+      axis = roll(axis);
+      t.penUp();
+      t.home();
+      t.setHeading(axis);
+      t.goto(smult(-1,BABYLON.Vector3.FromArray(axis)));
+      t.penDown();
+      t.fd(2*size);
+      t.pitch(150);
+      t.fd(1); t.fd(-1);
+      t.pitch(60);
+      t.fd(1);
+   }
+   makeAxis('red');
+   makeAxis([0,0.7,0]);
+   makeAxis('blue');
 
    t.setState(savedState);
 }
@@ -216,8 +191,8 @@ updateTurtleInfo(t,0);
 // console.log(Turtle3d.prototype.t3dIDTag);
 // console.log(t1.TurtleState);
 
-make_axes(t);
-markSky(t);
+makeAxes(t);
+//markSky(t);
 
 showhidebtn.addEventListener("click", () => {
     try {
@@ -514,12 +489,12 @@ function turtleInterp (t, ls, ...args) {
          case '+': {            // yaw left
             let a = isPm ? p0 : interpdata.delta;
             t.yaw(a);
-//            puts('yaw: ' + a);
+            // puts('yaw: ' + a);
             break; }
          case '-': {            // yaw right
             let a = -1*(isPm ? p0 : interpdata.delta);
             t.yaw(a);
-            puts('yaw: ' + a);
+            // puts('yaw: ' + a);
             break; }
          case '&': {            // pitch down
             let a = -1*(isPm ? p0 : interpdata.delta);
@@ -569,6 +544,7 @@ function turtleInterp (t, ls, ...args) {
             break;
          }
          case '\[': { 
+            t.newMesh();
             let s = t.getState();
             branchstack.push([s, interpdata.ci, interpdata.stemsize]); break;}
          case '\]': {
@@ -618,6 +594,7 @@ function turtleInterp (t, ls, ...args) {
       }
    }
    doModule();
+   
   // for (const m of ls.current) {
   //   if (interpdata.mi % 500 == 0) {puts(`${interpdata.mi} of ${ls.current.length}`);}
   //   interpdata = await doModule(t,m,interpdata);
