@@ -6,33 +6,40 @@ class Turtle3d {
 	 H: new BABYLON.Vector3(1,0,0),
 	 L: new BABYLON.Vector3(0,0,1), 
 	 U: new BABYLON.Vector3(0,1,0), // up is the yaxis in BABYLON
-	 PenIsDown: true,
-	 IsShown: true,
-	 Color: '0,0,0',
-	 Size: 0.01,
-	 Shape: null,
+	 penIsDown: true,
+	 isShown: true,
+	 color: '0,0,0',
+	 size: 0.01,
+	 turtleShape: null,
 	 Track: 'tube',
-	 TrackMesh: null,
-         TrackMaterial: null,
-         TrackTag: '',          // additional tag
+         trackPath: null,
+	 trackMesh: null,
+         trackTag: '',          // additional tag
+         trackMaterial: 0,      // index into material list
+         drawMode: 'd',             // 'd': draw, 'p': extrude
       }
-      Scene: null;
-      CurrentMesh: null;
-      initDone: initAll.call(this, scene,noturtle,shape);
+
+      this.scene = null;
+      this.materialList = [];
+      this.trackPaths = [];
+      this.branchStack = [];
+      this.initDone = initAll.call(this, scene,noturtle,shape);
+
+      // instrumentation
       this.meshCount = [0,0];
       this.meshList = [];
 
       function initAll(s, nt, shape) {
-	 this.TurtleState.Shape = getshape.call(this, nt, shape);
-	 this.Scene = getscene.call(this, scene);
-         this.TurtleState.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
-         this.TurtleState.TrackMaterial.diffuseColor = this.toColorVector();
+	 this.TurtleState.turtleShape = turtleShape.call(this, nt, shape);
+	 this.scene = getScene.call(this, scene);
+         this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
+         this.materialList[0].diffuseColor = this.toColorVector();
 	 if (Turtle3d.Turtles == null) {Turtle3d.Turtles  = new Map();}
 	 Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
 	 return true;
       }
 
-      function getshape(noturtle, shape) {
+      function turtleShape(noturtle, shape) {
 	 if (noturtle) {
 	    return '';
 	 } else if (shape != null) {
@@ -42,7 +49,7 @@ class Turtle3d {
 	 }
       }
 
-      function getscene(scene) {
+      function getScene(scene) {
 	 if (scene == null) {
 	    if (Turtle3d.t3dScene == null) {
 	       throw "Can't create a turtle without a scene"
@@ -58,27 +65,27 @@ class Turtle3d {
       }
 
       function maketurtle (tag) {
-	 let scene = this.Scene;
-	 var local_origin = BABYLON.MeshBuilder.CreateBox("local_origin",{size: 0.25},scene);
-	 BABYLON.Tags.AddTagsTo(local_origin, `${tag} local_origin`); 
+	 let scene = this.scene;
+	 var tMesh = BABYLON.MeshBuilder.CreateBox("turtle",{size: 0.25},scene);
+	 BABYLON.Tags.AddTagsTo(tMesh, `${tag} turtle`); 
 	 let pts = [ newV(0,0,0), newV(1, 0, 0) ];
 	 let axis;
 	 let xaxis = BABYLON.MeshBuilder.CreateLines('xaxis', {points: pts}, scene);
 	 BABYLON.Tags.AddTagsTo(xaxis, `${tag} H heading`); 
 	 xaxis.color = BABYLON.Color3.Red();
-	 xaxis.parent = local_origin;
+	 xaxis.parent = tMesh;
 	 pts[1] = newV(0, 1, 0);
 	 axis = BABYLON.MeshBuilder.CreateLines('yaxis',{points: pts}, scene);
-	 axis.parent = local_origin;
+	 axis.parent = tMesh;
 	 BABYLON.Tags.AddTagsTo(axis, `${tag} L binormal`); 
 	 axis.color =new BABYLON.Color3(0,0.7,0);
 	 pts[1] = newV(0, 0, 1);
 	 axis = BABYLON.MeshBuilder.CreateLines('zaxis',{points: pts}, scene);
-	 axis.parent = local_origin;
+	 axis.parent = tMesh;
 	 BABYLON.Tags.AddTagsTo(axis, `${tag} U normal`); 
 	 axis.color = BABYLON.Color3.Blue();
 
-	 return local_origin;
+	 return tMesh;
       }
    } // end constructor
 
@@ -87,8 +94,8 @@ class Turtle3d {
       this.clear();
       Turtle3d.Turtles.delete(this.TurtleState.Turtle);
       // make this turtle useless
-      if (this.TurtleState.Shape != null) { this.TurtleState.Shape.dispose(true, true);}
-      if (this.TurtleState.TrackMesh != null) { this.TurtleState.TrackMesh.dispose(true, true);}
+      if (this.TurtleState.turtleShape != null) { this.TurtleState.turtleShape.dispose(true, true);}
+      if (this.TurtleState.trackMesh != null) { this.TurtleState.trackMesh.dispose(true, true);}
       delete this.TurtleState.P;
       delete this.TurtleState.H;
       delete this.TurtleState.L;
@@ -99,91 +106,73 @@ class Turtle3d {
    getH() { return this.TurtleState.H;}
    getL() { return this.TurtleState.L;}
    getU() { return this.TurtleState.U;}
-   getColor() { return this.TurtleState.Color;}
-   getSize() { return this.TurtleState.Size;}
-   getShape() { return this.TurtleState.Shape;}
+   getColor() { return this.TurtleState.color;}
+   getSize() { return this.TurtleState.size;}
+   getTurtleShape() { return this.TurtleState.turtleShape;} // a mesh
+   getTrackShape() {return this.TurtleState.TrackShape;} // array of Vector3
    getTrack() { return this.TurtleState.Track;}
    getTurtle() {return this.TurtleState.Turtle;}
-   getScene() {return this.Scene;}
+   getScene() {return this.scene;}
    getOrientation() {
       return [this.TurtleState.H, this.TurtleState.L, this.TurtleState.U]; 
    }
-   isPenDown() {return this.TurtleState.PenIsDown;}
-   isPenUp() {return ! this.TurtleState.PenIsDown;}
-   isShown() {return this.TurtleState.IsShown;}
+   isPenDown() {return this.TurtleState.penIsDown;}
+   isPenUp() {return ! this.TurtleState.penIsDown;}
+   isShown() {return this.TurtleState.isShown;}
 
    // setters
    // 
-   setColor(v, newMaterial = true) {
-      switch (betterTypeOf(v)) {
-      case 'string': {
-	 let c;
-	 switch  (v.toLowerCase()) {
-	 case 'blue': {c = BABYLON.Color3.Blue().asArray().join(); break;}
-	 case 'gray': {c = BABYLON.Color3.Gray().asArray().join(); break;}
-	 case 'green': {c = BABYLON.Color3.Green().asArray().join(); break;}
-	 case 'magenta': {c = BABYLON.Color3.Magenta().asArray().join(); break;}
-	 case 'purple': {c = BABYLON.Color3.Purple().asArray().join(); break;}
-	 case 'red': {c = BABYLON.Color3.Red().asArray().join(); break;}
-	 case 'teal': {c = BABYLON.Color3.Teal().asArray().join(); break;}
-	 case 'white': {c = BABYLON.Color3.White().asArray().join(); break;}
-	 case 'yellow': {c = BABYLON.Color3.Yellow().asArray().join(); break;}
-	 case 'black':{c = BABYLON.Color3.Black().asArray().join(); break;}
-	 default: {
-            c = v.split(',').map(s => Number(s));
-            if (c.length == 3 && c.every(n => n != NaN)) {
-               let m = vmax(c);
-               if (m > 1 && m < 256)  { // assume we were handed std rgb triplet
-                  c = c.map(x => x/255); // so scale it
-               }
-               c = c.join();
-            } else {
-               puts(`unrecognized color: ${v}, defaulting to black`);
-               c = '0,0,0';
-            }
-            break;
-         }
-         }
-	 this.TurtleState.Color = c;
-         break;
-      }
-      case 'array': {
-         if (v.length == 3) {
-	    this.TurtleState.Color = v.join();
-         } else {
-            this.TurtleState.Color = '0,0,0';
-         }
-	 break;
-      }
-      case 'object': { 	// assume it's a color3 object
-	 this.TurtleState.Color = v.asArray().join();
-         break;
-      }
-      }
-      if (newMaterial) {
-         this.TurtleState.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
-      }
-      this.TurtleState.TrackMaterial.diffuseColor = this.toColorVector();
-      //puts(`set color to ${this.TurtleState.Color}`);
+   setColor(v) {
+      this.TurtleState.color = normalizeColor(v);
+
+      const cidx = this.TurtleState.trackMaterial;
+      this.materialList[cidx].diffuseColor = this.toColorVector();
+
+      //puts(`set color to ${this.TurtleState.color}`);
    }
 
-   setMaterial(m=null) {
+   addMaterial(m=null, color=null) {
       if (m == null) {
-         this.TurtleState.TrackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
+            m = new BABYLON.StandardMaterial("trackMat", scene);
+      } 
+      if (color != null) {
+         color = normalizeColor(color);
       } else {
-         this.TurtleState.TrackMaterial = m;
+         color = this.TurtleState.color;
       }
+      m.diffuseColor = this.toColorVector(color);
+      this.materialList.push(m);
+   }
+   // get the material index
+   getMaterialIdx() {
+      return this.TurtleState.trackMaterial; // return the current material index
+   }
+   getMaterial(i) {
+      return this.materialList[i % this.materialList.length]; // return the index
+   }
+   setMaterial(i) {
+      this.TurtleState.trackMaterial = i % this.materialList.length;
+      this.TurtleState.color = normalizeColor(this.materialList[i].diffuseColor);
    }
 
-   toColorVector() {
+   toColorVector(cv = this.TurtleState.color) {
       let c = new BABYLON.Color3();
-      return c.fromArray(Array.from(this.TurtleState.Color.split(','), x=> Number(x)));
+      return c.fromArray(Array.from(cv.split(','), x=> Number(x)));
    }
-   setSize(v) {this.TurtleState.Size = v;}
-   setTrack(v) {
+   setSize(v) {this.TurtleState.size = v;}
+   setTrack(v, points=null) {
       switch (v) {
       case 'line':
-      case 'tube': { this.TurtleState.Track = v; return true;}
+      case 'tube': {
+         this.TurtleState.Track = v; return true;
+      }
+      case 'cyl':
+      case 'cylinder':
+      case 'extrusion':
+      case 'ext': {
+         this.TurtleState.Track = 'ext';
+         this.TurtleState.TrackShape = points;
+      }
       default: {
 	 console.log(`Track type of ${v} not supported`);
 	 this.TurtleState.Track = 'line';
@@ -197,19 +186,22 @@ class Turtle3d {
       s.H = s.H.clone();
       s.L = s.L.clone();
       s.U = s.U.clone();
-      if (s.TrackMesh != null) { s.TrackMesh = s.TrackMesh.clone();}
-      if (s.TrackMaterial != null) { s.TrackMaterial = s.TrackMaterial.clone();}
+      if (s.trackMesh != null) { s.trackMesh = s.trackMesh.clone();}
+      if (s.trackPath != null) { s.trackPath = s.trackPath.clone();}
       return s;
    }
 
    setState (savedstate) {
       Object.assign(this.TurtleState, savedstate);
-      let s = this.getShape();
+      const cidx = this.TurtleState.trackMaterial;
+      this.materialList[cidx].diffuseColor = this.toColorVector();
+
+      let s = this.getTurtleShape();
       if (s != '') {
 	 s.position = this.getPos();
-	 let meshes = this.Scene.getMeshesByTags(this.TurtleState.Turtle);
+	 let meshes = this.scene.getMeshesByTags(this.TurtleState.Turtle);
 	 for (var index = 0; index < meshes.length; index++) {
-	    meshes[index].isVisible = this.TurtleState.IsShown;
+	    meshes[index].isVisible = this.TurtleState.isShown;
 	 }
 	 this.orientTurtle();
       }
@@ -251,7 +243,7 @@ class Turtle3d {
    }
    //
    orientTurtle () {
-      let shape = this.getShape();
+      let shape = this.getTurtleShape();
       if (shape != "") {
 	 shape.rotation = 
 	    BABYLON.Vector3.RotationFromAxis(this.TurtleState.H,
@@ -260,35 +252,36 @@ class Turtle3d {
       }
    }
 
-   setTurtle(val) {this.TurtleState.Turtle = val;}
-   setTag(val) {this.TurtleState.TrackTag = val;}
+   setTurtleShape(val) {this.TurtleState.turtleShape = val;} // a mesh
+   setTrackShape(val)  {this.TurtleState.TrackShape = val;} // array of Vector3
+   setTag(val) {this.TurtleState.trackTag = val;}
 
-   penUp() {this.TurtleState.PenIsDown = false;}
-   penDown() {this.TurtleState.PenIsDown = true;}
+   penUp() {this.TurtleState.penIsDown = false;}
+   penDown() {this.TurtleState.penIsDown = true;}
 
    hide () {
       let t = this.TurtleState.Turtle;
-      if (t && this.TurtleState.IsShown) {
-	 let meshes = this.Scene.getMeshesByTags(t);
+      if (t && this.TurtleState.isShown) {
+	 let meshes = this.scene.getMeshesByTags(t);
 	 for (var index = 0; index < meshes.length; index++) {
 	    meshes[index].isVisible = false;
 	 }
       }
-      this.TurtleState.IsShown = false;
+      this.TurtleState.isShown = false;
    }
    show () {
       let t = this.TurtleState.Turtle;
-      if (t && ! this.TurtleState.IsShown) {
-	 let meshes = this.Scene.getMeshesByTags(t);
+      if (t && ! this.TurtleState.isShown) {
+	 let meshes = this.scene.getMeshesByTags(t);
 	 for (var index = 0; index < meshes.length; index++) {
 	    meshes[index].isVisible = true;
 	 }
       }
-      this.TurtleState.IsShown = true;
+      this.TurtleState.isShown = true;
    }
 
    clear() {
-      let tracks =this.Scene.getMeshesByTags('track'+this.getTurtle());
+      let tracks =this.scene.getMeshesByTags('track'+this.getTurtle());
       for (var index = 0; index < tracks.length; index++) {
 	 tracks[index].dispose();
       }
@@ -296,70 +289,165 @@ class Turtle3d {
 
    draw(oldPos, newPos) {
       let t = this.TurtleState.Turtle;
-      let ttag = this.TurtleState.TrackTag;
-      let s = this.TurtleState.Shape;
+      let ttag = this.TurtleState.trackTag;
+      let ts = this.TurtleState.turtleShape;
       let type = this.TurtleState.Track;
-      let tag = `track${ttag}${t}`
+      let tag = `track${t} ${ttag}`;
       if (this.isPenDown()) {
-	 let segment;
-	 if (type == 'line') {
-	    segment = BABYLON.MeshBuilder.CreateLines('tpath',
-                                                      {points: [oldPos, newPos],
-                                                       tessellation: 32}, scene);
-	    segment.color = this.toColorVector();
-	    BABYLON.Tags.AddTagsTo(segment, tag , scene);
-	    segment.isVisible = true;
+         if (this.TurtleState.drawMode == 'd') {
+	    let segment;
+	    if (type == 'line') {
+	       segment = BABYLON.MeshBuilder.CreateLines('tpath',
+                                                         {points: [oldPos, newPos],
+                                                          tessellation: 32}, scene);
+	       segment.color = this.toColorVector();
+	       BABYLON.Tags.AddTagsTo(segment, tag , scene);
+	       segment.isVisible = true;
 
 
-         } else if (type == 'tube') {
-            
-            segment = BABYLON.MeshBuilder.CreateTube(t, 
-                                                     {path: [oldPos, newPos], 
-                                                      radius: this.TurtleState.Size,
-                                                      tessellation: 16,
-                                                      updatable: true,
-                                                      cap: BABYLON.Mesh.CAP_ALL},
-                                                     scene);
-            this.meshCount[0]++;
-	    segment.isVisible = true;
-            if (this.TurtleState.TrackMaterial != null) {
-               segment.material = this.TurtleState.TrackMaterial;
-            }
-            if (this.TurtleState.TrackMesh == null) {
-               this.TurtleState.TrackMesh = segment;
-               this.meshCount[1]++;
-            } else {
-               this.TurtleState.TrackMesh = BABYLON.Mesh.MergeMeshes([this.TurtleState.TrackMesh, segment],true, true);
-            }
-            this.TurtleState.TrackMesh.id = t;
-            this.TurtleState.TrackMesh.name = `track${t}`;
-            BABYLON.Tags.AddTagsTo(this.TurtleState.TrackMesh, tag, scene);
-	 }
+            } else if (type == 'tube') {
+               
+               segment = BABYLON.MeshBuilder.CreateTube(t, 
+                                                        {path: [oldPos, newPos], 
+                                                         radius: this.TurtleState.size,
+                                                         tessellation: 16,
+                                                         updatable: true,
+                                                         cap: BABYLON.Mesh.CAP_ALL},
+                                                        scene);
+               this.meshCount[0]++;
+	       segment.isVisible = true;
+               segment.material = this.materialList[this.TurtleState.trackMaterial];
+               if  (true) {
+                  BABYLON.Tags.AddTagsTo(segment, tag, scene);
+               } else {
+                  if (this.TurtleState.trackMesh == null) {
+                     this.TurtleState.trackMesh = segment;
+                     this.meshCount[1]++;
+                  } else {
+                     this.TurtleState.trackMesh = BABYLON.Mesh.MergeMeshes([this.TurtleState.trackMesh, segment],true, true);
+                  }
+                  this.TurtleState.trackMesh.id = t;
+                  this.TurtleState.trackMesh.name = `track${t}`;
+                  BABYLON.Tags.AddTagsTo(this.TurtleState.trackMesh, tag, scene);
+               }
+	    }
+         } else {               // in path mode
+            // assuming 'extrusion'
+            let tp = this.TurtleState.trackPath;
+            tp.points.push(newPos);
+            tp.srm.push({s: this.TurtleState.size,
+                         r: tp.accumRoll,
+                         m: this.TurtleState.trackMaterial
+                        }); 
+            tp.accumRoll = 0;
+         }
       }
-      if (s) {s.position = newPos;}
+      if (ts) {ts.position = newPos;}
+   }
+
+   drawTrack() {
+      let t = this.TurtleState.Turtle;
+      let tp = this.TurtleState.trackPath;
+      if (tp === null || tp.points.length < 2) {
+         return;
+      }
+      var pathpts = tp.points;
+      //puts(`trackPath.length: ${pathpts.length}`);
+      puts(pathpts);
+      var srm = tp.srm;
+      puts(srm);
+      function getscale(i,distance) {
+         return srm[i].s;
+      }
+      function getrotation(i,distance) {
+         return srm[i].r;
+      }
+
+      const extrusion = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
+                                                               {shape: tp.shape, 
+                                                                path: pathpts, 
+                                                                updatable: false, 
+                                                                scaleFunction: getscale, 
+                                                                rotationFunction: getrotation,
+                                                                closePath: true,
+                                                                sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+      //
+      let matUsed = [];
+      let matLocations = [];        // array of [path index, mat index] telling where material used
+      let lastMat = null; //srm[1].m;
+      for (let i = 1; i< srm.length; i++) {
+         let e = srm[i];
+         if (! matUsed.includes(e.m)) {
+            matUsed.push(e.m);
+         }
+         if (lastMat != e.m) {
+            lastMat = e.m;
+            matLocations.push([i,matUsed.indexOf(e.m)]); // associate path index w/ multimaterial index
+         }
+      };
+      puts(matLocations);
+      if (matUsed.length == 1) {
+         extrusion.material = this.materialList[matUsed[0]];
+      } else {                  // need multiMaterial
+         let multimat = new BABYLON.MultiMaterial("mm", this.scene);
+         matUsed.forEach((e) => {
+            multimat.subMaterials.push(this.materialList[e]);
+         });
+         const totalVertexCnt = extrusion.getTotalVertices();
+         const subVerticesPerPoint = Math.floor(totalVertexCnt/(pathpts.length-1)); // a bad, but convenient estimate
+         let subVrtxRemainder = totalVertexCnt - (subVerticesPerPoint * (pathpts.length-1));
+         // create submeshes w/approximate materials
+         let pi;            // path index
+         let ppi = 1;           // previous path index
+         let matIdx = matLocations[0][1]; // first mat index
+         let vertexDiff;        // # vertices between pi and ppi
+         let runningVertexCnt = 0;
+         puts(`totalVertexCnt: ${totalVertexCnt}, subVerticesPerPoint: ${subVerticesPerPoint}, remainder:  ${subVrtxRemainder}`);
+         let sm;                // submesh index to create;
+         for (sm = 1; sm < matLocations.length; sm++) {
+            pi = matLocations[sm][0]; // current path index
+            vertexDiff = (pi -ppi) * subVerticesPerPoint + subVrtxRemainder;
+            matIdx = matLocations[sm-1][1];
+            puts(`sm: ${sm}, pi: ${pi}, vertexDiff: ${vertexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningVertexCnt}`);
+            puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningVertexCnt}, ${vertexDiff}, extrusion)`);
+            new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningVertexCnt, vertexDiff, extrusion);
+            runningVertexCnt += vertexDiff
+            subVrtxRemainder = 0; // add all leftover vertices at front.
+            ppi = pi;
+         }
+         pi = pathpts.length-1;
+         vertexDiff = totalVertexCnt - runningVertexCnt;
+         matIdx = matLocations[sm-1][1];
+         puts(`sm: ${sm}, pi: ${pi}, vertexDiff: ${vertexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningVertexCnt}`);
+         puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningVertexCnt}, ${vertexDiff}, extrusion)`);
+         new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningVertexCnt, vertexDiff, extrusion);
+         
+         extrusion.material = multimat;
+      }
+      // const vertexCount = extrusion.getTotalVertices();
+      extrusion.id= t + this.trackPaths.length;
+      BABYLON.Tags.AddTagsTo(extrusion, `track${t} path`, this.scene);
+      this.trackPaths.push(extrusion); // 
    }
 
    newMesh() {
-      if (this.TurtleState.TrackMesh != null) {
-         //this.meshList.push(this.TurtleState.TrackMesh);
-         this.TurtleState.TrackMesh = null;
+      if (this.TurtleState.trackMesh != null) {
+         //this.meshList.push(this.TurtleState.trackMesh);
+         this.TurtleState.trackMesh = null;
       }
    }
 
    home () {
-      let shape = this.TurtleState.Shape;
+      let tshape = this.TurtleState.turtleShape;
       let oldstate = this.TurtleState;
       let newPos = newV(0, 0, 0);
-      if (shape != "") {        
-    	 shape.position = newPos;
-      }
 
       this.setPos(newPos);
       this.setH(newV(1, 0, 0));
       this.setU(newV(0, 1, 0));
       this.setL(newV(0, 0, 1));
-      if (shape != "") {        
-    	 shape.position = newPos;
+      if (tshape != "") {        
+    	 tshape.position = newPos;
 	 this.orientTurtle();
       }
    }
@@ -425,6 +513,9 @@ class Turtle3d {
       this.TurtleState.L = rotateTG(L, smult(-1,U), angle);
       this.TurtleState.U = rotateTG(U, L, angle);
       this.orientTurtle();
+      if (this.TurtleState.drawMode = 'p') {
+         this.TurtleState.trackPath.accumRoll += angle;
+      }
    }
    pitch (angle) {
       let H = this.TurtleState.H;
@@ -450,7 +541,26 @@ class Turtle3d {
       //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
       this.draw(oldP, pos);
    }
+   newTrack(udata=null,) {
+      this.branchStack.push({tstate: this.getState(), userData: udata});
+      let tp = new TrackPath();
+      tp.points.push(this.TurtleState.P.clone());
+      tp.srm.push({s: this.TurtleState.size, r: tp.accumRoll, m: 0})
+      if (this.TurtleState.TrackShape == null) {
+         this.TurtleState.TrackShape = generateCircle(1);
+         this.TurtleState.Track = 'ext';
+      }
+      this.TurtleState.trackPath = tp;
+      this.TurtleState.drawMode = 'p';
+   }
 
+   endTrack() {
+      const last = this.branchStack.pop();
+      this.drawTrack();
+      this.setState(last.tstate);
+      return last.userData;
+   }
+ 
    newPolygon() {
       // save state
    }
@@ -466,8 +576,35 @@ Turtle3d.prototype.t3dScene=null;	// ea default scene, once set
 Turtle3d.prototype.fd = Turtle3d.prototype.forward;
 Turtle3d.prototype.Turtles = null;
 
-    // some helper functions
-function puts(o) {console.log(o);}
+function TrackPath(r=0, s=null) {
+   if (s == null ) {
+      this.shape = generateCircle();
+   } else {
+      this.shape = s;
+   }
+   this.points=[];
+   this.srm = [];               // scale, rotation, material
+   this.accumRoll = r;
+}
+TrackPath.prototype.clone = function () {
+   let tpc = new TrackPath(this.accumRoll, this.shape);
+   tpc.points = this.points.clone();
+   tpc.srm = this.src.clone();
+   return tpc;
+}
+
+function generateCircle(r=1, q=12) {
+   var p = [];
+   let a = 2*Math.PI/q;         // arc of each section
+   for (let i = 0; i < q; i++) {
+      let v = newV(r*Math.cos(i*a), r*Math.sin(i*a), 0)
+      p.push(clamp(v));
+   }
+   p.push(p[0]);
+   return p;
+}
+// some helper functions
+var puts =console.log;
 function betterTypeOf (o) {
     return Object.prototype.toString.call(o).slice(8,-1).toLowerCase(); 
 }
@@ -485,7 +622,7 @@ function smult (s, v) {return v.scale(s);} // v is a BABYLON.Vector3
       
 // create a new BABYLON.Vector3;
 function newV(x=0,y=0,z=0) {return new BABYLON.Vector3(x,y,z);}
-// add two or threeo BABYLON.Vector3;
+// add two or three BABYLON.Vector3;
 function vadd (u, v, w=null ) {
     let r = u.add(v);
     if (w != null) { r.addInPlace(w);}
@@ -511,6 +648,12 @@ function crossproductB (v, w, lhand=true) {
     } else {
 	return smult(-1, BABYLON.Vector3.Cross(v,w));
     }
+}
+// create array from object 
+function otoa (o) {
+   let a = new Array();
+   a.push(o.x); a.push(o.y); a.push(o.z);
+   return a;
 }
 //rotate per Turtle Geometry
 function rotateTG (vec, perpvec, angle) {
@@ -545,3 +688,50 @@ function crossproduct (v, w) {
     return new BABYLON.Vector3.FromArray(res);
 }
 
+function normalizeColor(v) {
+   let c;
+   switch (betterTypeOf(v)) {
+   case 'string': {
+      switch  (v.toLowerCase()) {
+      case 'blue': {c = BABYLON.Color3.Blue().asArray().join(); break;}
+      case 'gray': {c = BABYLON.Color3.Gray().asArray().join(); break;}
+      case 'green': {c = BABYLON.Color3.Green().asArray().join(); break;}
+      case 'magenta': {c = BABYLON.Color3.Magenta().asArray().join(); break;}
+      case 'purple': {c = BABYLON.Color3.Purple().asArray().join(); break;}
+      case 'red': {c = BABYLON.Color3.Red().asArray().join(); break;}
+      case 'teal': {c = BABYLON.Color3.Teal().asArray().join(); break;}
+      case 'white': {c = BABYLON.Color3.White().asArray().join(); break;}
+      case 'yellow': {c = BABYLON.Color3.Yellow().asArray().join(); break;}
+      case 'black':{c = BABYLON.Color3.Black().asArray().join(); break;}
+      default: {
+         c = v.split(',').map(s => Number(s));
+         if (c.length == 3 && c.every(n => n != NaN)) {
+            let m = vmax(c);
+            if (m >= 0 && m < 256)  { // assume we were handed std rgb triplet
+               c = c.map(x => x/255); // so scale it
+            }
+            c = c.join();
+         } else {
+            puts(`unrecognized color: ${v}, defaulting to black`);
+            c = '0,0,0';
+         }
+         break;
+      }
+      }
+      break;
+   }
+   case 'array': {
+      if (v.length == 3) {
+	 c = v.join();
+      } else {
+         c = '0,0,0';
+      }
+      break;
+   }
+   case 'object': { 	// assume it's a color3 object
+      c = v.asArray().join();
+      break;
+   }
+   }
+   return c;
+}

@@ -137,51 +137,51 @@ function markSky(t,axis='x', r=skysize/2) {
 }
       
 
-function makeAxes (t, size=10) {
-   var axes_displayed = true;
-   var savedState = t.getState();
-   var axis = [0, 0,size];;
-   t.setTrack('line');
-   t.setTag('axes');
+// function makeAxes (t, size=10) {
+//    var axes_displayed = true;
+//    var savedState = t.getState();
+//    var axis = [0, 0,size];;
+//    t.setTrack('line');
+//    t.setTag('axes');
 
-   function makeAxis (color) {
-      t.setColor(color);
-      axis = roll(axis);
-      t.penUp();
-      t.home();
-      t.setHeading(axis);
-      t.goto(smult(-1,BABYLON.Vector3.FromArray(axis)));
-      t.penDown();
-      t.fd(2*size);
-      t.pitch(150);
-      t.fd(1); t.fd(-1);
-      t.pitch(60);
-      t.fd(1);
-   }
-   makeAxis('red');
-   makeAxis([0,0.7,0]);
-   makeAxis('blue');
+//    function makeAxis (color) {
+//       t.setColor(color);
+//       axis = roll(axis);
+//       t.penUp();
+//       t.home();
+//       t.setHeading(axis);
+//       t.goto(smult(-1,BABYLON.Vector3.FromArray(axis)));
+//       t.penDown();
+//       t.fd(2*size);
+//       t.pitch(150);
+//       t.fd(1); t.fd(-1);
+//       t.pitch(60);
+//       t.fd(1);
+//    }
+//    makeAxis('red');
+//    makeAxis([0,0.7,0]);
+//    makeAxis('blue');
 
-   t.setState(savedState);
-}
-
-// {
-//    var xaxis = BABYLON.Mesh.CreateLines('xaxis',[
-//       new BABYLON.Vector3(-20,0,0), new BABYLON.Vector3(20,0,0)
-//    ], scene);
-//    xaxis.color = BABYLON.Color3.Red();
-//    BABYLON.Tags.AddTagsTo(xaxis, `axes`); 
-//    var yaxis = BABYLON.Mesh.CreateLines('yaxis', [ 
-//       new BABYLON.Vector3(0, -20 ,0), new BABYLON.Vector3(0,20,0)
-//    ] , scene);
-//    yaxis.color = BABYLON.Color3.Green();
-//    BABYLON.Tags.AddTagsTo(yaxis, `axes`); 
-//    var zaxis = BABYLON.Mesh.CreateLines('zaxis',[
-//       new BABYLON.Vector3(0,0,-20),new BABYLON.Vector3(0, 0, 20)
-//    ], scene);
-//    zaxis.color = BABYLON.Color3.Blue();
-//    BABYLON.Tags.AddTagsTo(zaxis, `axes`); 
+//    t.setState(savedState);
 // }
+
+function makeAxes (t, size=10) {
+   var xaxis = BABYLON.Mesh.CreateLines('xaxis',[
+      new BABYLON.Vector3(-20,0,0), new BABYLON.Vector3(20,0,0)
+   ], scene);
+   xaxis.color = BABYLON.Color3.Red();
+   BABYLON.Tags.AddTagsTo(xaxis, `axes`); 
+   var yaxis = BABYLON.Mesh.CreateLines('yaxis', [ 
+      new BABYLON.Vector3(0, -20 ,0), new BABYLON.Vector3(0,20,0)
+   ] , scene);
+   yaxis.color = BABYLON.Color3.Green();
+   BABYLON.Tags.AddTagsTo(yaxis, `axes`); 
+   var zaxis = BABYLON.Mesh.CreateLines('zaxis',[
+      new BABYLON.Vector3(0,0,-20),new BABYLON.Vector3(0, 0, 20)
+   ], scene);
+   zaxis.color = BABYLON.Color3.Blue();
+   BABYLON.Tags.AddTagsTo(zaxis, `axes`); 
+}
 
 var t = new Turtle3d(scene);
 updateTurtleInfo(t,0);
