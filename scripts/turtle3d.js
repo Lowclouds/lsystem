@@ -133,7 +133,8 @@ class Turtle3d {
 
    addMaterial(m=null, color=null) {
       if (m == null) {
-            m = new BABYLON.StandardMaterial("trackMat", scene);
+         //m = new BABYLON.StandardMaterial("trackMat", scene);
+         m = this.materialList[this.TurtleState.trackMaterial].clone();
       } 
       if (color != null) {
          color = normalizeColor(color);
@@ -356,6 +357,7 @@ class Turtle3d {
       puts(pathpts);
       var srm = tp.srm;
       puts(srm);
+
       function getscale(i,distance) {
          return srm[i].s;
       }
@@ -370,7 +372,7 @@ class Turtle3d {
                                                                 scaleFunction: getscale, 
                                                                 rotationFunction: getrotation,
                                                                 closePath: true,
-                                                                sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+                                                               }); // sideOrientation: BABYLON.Mesh.DOUBLESIDE});
       //
       let matUsed = [];
       let matLocations = [];        // array of [path index, mat index] telling where material used
@@ -394,37 +396,37 @@ class Turtle3d {
             multimat.subMaterials.push(this.materialList[e]);
          });
          const totalVertexCnt = extrusion.getTotalVertices();
-         const subVerticesPerPoint = Math.floor(totalVertexCnt/(pathpts.length-1)); // a bad, but convenient estimate
-         let subVrtxRemainder = totalVertexCnt - (subVerticesPerPoint * (pathpts.length-1));
+         const totalIndices = extrusion.geometry.getTotalIndices();
+         const subIndicesPerPoint = Math.floor(totalIndices/(pathpts.length-1)); // a bad, but convenient estimate
+         let subVrtxRemainder = totalIndices - (subIndicesPerPoint * (pathpts.length-1));
          // create submeshes w/approximate materials
          let pi;            // path index
          let ppi = 1;           // previous path index
          let matIdx = matLocations[0][1]; // first mat index
-         let vertexDiff;        // # vertices between pi and ppi
-         let runningVertexCnt = 0;
-         puts(`totalVertexCnt: ${totalVertexCnt}, subVerticesPerPoint: ${subVerticesPerPoint}, remainder:  ${subVrtxRemainder}`);
+         let indexDiff;        // # indices between pi and ppi
+         let runningIndexCnt = 0;
+         puts(`totalVertexCnt: ${totalVertexCnt}, total Indices: ${totalIndices}, subIndicesPerPoint: ${subIndicesPerPoint}, remainder:  ${subVrtxRemainder}`);
          let sm;                // submesh index to create;
          for (sm = 1; sm < matLocations.length; sm++) {
             pi = matLocations[sm][0]; // current path index
-            vertexDiff = (pi -ppi) * subVerticesPerPoint + subVrtxRemainder;
+            indexDiff = (pi -ppi) * subIndicesPerPoint + subVrtxRemainder;
             matIdx = matLocations[sm-1][1];
-            puts(`sm: ${sm}, pi: ${pi}, vertexDiff: ${vertexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningVertexCnt}`);
-            puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningVertexCnt}, ${vertexDiff}, extrusion)`);
-            new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningVertexCnt, vertexDiff, extrusion);
-            runningVertexCnt += vertexDiff
+            puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
+            puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
+            new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, extrusion);
+            runningIndexCnt += indexDiff
             subVrtxRemainder = 0; // add all leftover vertices at front.
             ppi = pi;
          }
          pi = pathpts.length-1;
-         vertexDiff = totalVertexCnt - runningVertexCnt;
+         indexDiff = totalIndices - runningIndexCnt;
          matIdx = matLocations[sm-1][1];
-         puts(`sm: ${sm}, pi: ${pi}, vertexDiff: ${vertexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningVertexCnt}`);
-         puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningVertexCnt}, ${vertexDiff}, extrusion)`);
-         new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningVertexCnt, vertexDiff, extrusion);
+         puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
+         puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
+         new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, extrusion);
          
          extrusion.material = multimat;
       }
-      // const vertexCount = extrusion.getTotalVertices();
       extrusion.id= t + this.trackPaths.length;
       BABYLON.Tags.AddTagsTo(extrusion, `track${t} path`, this.scene);
       this.trackPaths.push(extrusion); // 
