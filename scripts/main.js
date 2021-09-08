@@ -378,8 +378,8 @@ function interpdataShow() {
    return `step: ${interpdata.step}, stemsize: ${interpdata.stemsize}, delta: ${interpdata.delta}`;
 }
 
-function turtleInterp (t, ls, ...args) {
-   interpdata = {
+function turtleInterp (ti, ls, opts=null) {
+   idata = {
       step:  1,
       stemsize: 1,
       delta: 90,
@@ -390,50 +390,77 @@ function turtleInterp (t, ls, ...args) {
       notInPolygon: true,
       mi: 0,                       // module index
       cpoly: null
+      }
+   idata.show =  function () {
+      return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}`;
    }
 
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
       if (ls.hasOwnProperty(p)) {
          switch (p) {
-         case 'step': {interpdata.step = ls.step; break;}
-         case 'stemsize': {interpdata.stemsize = ls.stemsize; break;}
-         case 'delta': {interpdata.delta = ls.delta; break;}
-         case 'ctable': {interpdata.ctable = ls.ctable; break;}
+         case 'step': {idata.step = ls.step; break;}
+         case 'stemsize': {idata.stemsize = ls.stemsize; break;}
+         case 'delta': {idata.delta = ls.delta; break;}
+         case 'ctable': {idata.ctable = ls.ctable; puts("set ctable data"); break;}
          }
+         puts(`set ${idata[p]} to ${ls.ctable}`);
       }
    }
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
       puts(`checking for var ${p}`);
       if (ls.vars.has(p)) {
          switch (p) {
-         case 'step': {interpdata.step = ls.vars.get(p); break;}
-         case 'stemsize': {interpdata.stemsize = ls.vars.get(p); break;}
-         case 'delta': {interpdata.delta = ls.vars.get(p); puts("set stemsize"); break;}
-         case 'ctable': {interpdata.ctable = ls.vars.get(p); break;}
+         case 'step': {idata.step = ls.vars.get(p); break;}
+         case 'stemsize': {idata.stemsize = ls.vars.get(p); break;}
+         case 'delta': {idata.delta = ls.vars.get(p); puts("set stemsize"); break;}
+         case 'ctable': {idata.ctable = ls.vars.get(p); puts("set ctable data"); break;}
+         }
+         puts(`set ${idata[p]} to ${ls.vars.get(p)}`);
+      }
+   }
+
+   if (opts != null) {
+      for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
+         puts(`checking for opts[${p}]`);
+         if (opts.hasOwnProperty(p)) {
+            switch (p) {
+            case 'step': {idata.step = opts[p]; break;}
+            case 'stemsize': {idata.stemsize = opts[p]; break;}
+            case 'delta': {idata.delta = opts[p]; puts("set stemsize"); break;}
+            case 'ctable': {idata.ctable = opts[p]; puts("set ctable data:" + opts[p]); break;}
+            }
+            puts(`set ${idata[p]} to ${opts[p]}`);
          }
       }
    }
-   
-   interpdata.ndelta= -1*interpdata.delta,
-   t.setSize(interpdata.stemsize);
-   t.setColor(interpdata.ctable[0]);
-   t.hide();
-   t.penDown();
-
+   idata.ndelta= -1*idata.delta,
+   ti.setSize(idata.stemsize);
+   if (idata.ctable != null || idata.ctable != []) {
+      ti.deleteMaterials();
+      let numMat = ti.materialList.length;
+      idata.ctable.forEach((e) => {
+         ti.addMaterial(null, e);
+         puts(`add material w/color: ${e}`);
+      }); 
+      ti.setMaterial(numMat);
+      puts(`set ${ti.getTurtle()} material to idx ${numMat}, color ${ti.getColor()}`);
+   }
+   ti.hide();
+   ti.penDown();
    branchstack = [];
    polygonstack = [];
    let tree = ls.current;
    puts(`lsystem has ${tree.length} modules`);
-   puts(`using settings: ` + interpdataShow());
+   puts(`using settings: ` + idata.show());
 
    function doModule () {
       let i; 
       let isPM = false;
       
-      for (i=interpdata.mi; i < Math.min(tree.length, interpdata.mi+50); i++) {
+      for (i=idata.mi; i < Math.min(tree.length, idata.mi+2000); i++) {
          let pM = tree[i];
          //puts(pM.toString());
-         //puts(t.getPos());
+         //puts(ti.getPos());
          let m;
          let pmArg, p0;         // most functions have only one parameter
          if (typeof pM == 'string') {
@@ -447,131 +474,132 @@ function turtleInterp (t, ls, ...args) {
          }
          switch (m) {
          case 'F': {
-            let d = isPm ? p0 : interpdata.step;
-            t.penDown();
-            t.forward(d);
-            if (! interpdata.notInPolygon) {
-               t.updatePolygon();
+            let d = isPm ? p0 : idata.step;
+            ti.penDown();
+            ti.forward(d);
+            if (! idata.notInPolygon) {
+               ti.updatePolygon();
             }
             //puts('fd: ' + d);
             break;
          }
          case 'f': {
-            let d = isPm ? p0 : interpdata.step;
-            let pState = t.isPenDown();
+            let d = isPm ? p0 : idata.step;
+            let pState = ti.isPenDown();
             if (pState) {
-               t.penUp();
+               ti.penUp();
             }
-	    t.forward(d); 
-            if (! interpdata.notInPolygon) {
-               t.updatePolygon();
+	    ti.forward(d); 
+            if (! idata.notInPolygon) {
+               ti.updatePolygon();
             }
             if (pState) {
-               t.penDown();
+               ti.penDown();
             }
             break;
          }
          case 'G': {
-            let d = isPm ? p0 : interpdata.step;
-            t.penDown();
-            t.forward(d);
+            let d = isPm ? p0 : idata.step;
+            ti.penDown();
+            ti.forward(d);
             puts('Gfd: ' + d);
             break;
          }
          case 'g': {
-            let d = isPm ? p0 : interpdata.step;
-            t.penUp();
-	    t.forward(d); 
-            t.penDown();
+            let d = isPm ? p0 : idata.step;
+            ti.penUp();
+	    ti.forward(d); 
+            ti.penDown();
             puts('gfd: ' + d);
             break;
          }
          case '+': {            // yaw left
-            let a = isPm ? p0 : interpdata.delta;
-            t.yaw(a);
+            let a = isPm ? p0 : idata.delta;
+            ti.yaw(a);
             // puts('yaw: ' + a);
             break; }
          case '-': {            // yaw right
-            let a = -1*(isPm ? p0 : interpdata.delta);
-            t.yaw(a);
+            let a = -1*(isPm ? p0 : idata.delta);
+            ti.yaw(a);
             // puts('yaw: ' + a);
             break; }
          case '&': {            // pitch down
-            let a = -1*(isPm ? p0 : interpdata.delta);
-            t.pitch(a); 
+            let a = -1*(isPm ? p0 : idata.delta);
+            ti.pitch(a);
             //puts('pitch: ' + a);
             break; }
          case '^': {            // pitch up
-            let a = isPm ? p0 : interpdata.delta;
-            t.pitch(a);
+            let a = isPm ? p0 : idata.delta;
+            ti.pitch(a);
             //puts('pitch: ' + a);
             break; }
          case '\\': {           // roll left
-            let a = isPm ? p0 : interpdata.delta;
-            t.roll(a);
+            let a = isPm ? p0 : idata.delta;
+            ti.roll(a);
             //puts('roll: ' + a);
             break; }
          case '/': {            // roll right
-            let a = -1*(isPm ? p0 : interpdata.delta);
-            t.roll(a); 
+            let a = -1*(isPm ? p0 : idata.delta);
+            ti.roll(a); 
             //puts('roll: ' + a);
             break; }
-         case '|': {t.yaw(180); break; }
+         case '|': {ti.yaw(180); break; }
          case '!': {
             if (isPm ) {
-               interpdata.stemsize = p0;
+               idata.stemsize = p0;
             } else {
-               interpdata.stemsize -= interpdata.stemsize > 1 ? 1 : 0;
+               idata.stemsize -= idata.stemsize > 1 ? 1 : 0;
             }
-            puts(`set stemsize to: ${interpdata.stemsize}`);
-            t.setSize(interpdata.stemsize);
+            puts(`set stemsize to: ${idata.stemsize}`);
+            ti.setSize(idata.stemsize);
             break;
          }
          case '#': {
             if (isPm ) {
-               interpdata.stemsize = p0;
+               idata.stemsize = p0;
             } else {
-               interpdata.stemsize += 1;
+               idata.stemsize += 1;
             }
-            puts(`set stemsize to: ${interpdata.stemsize}`);
-            t.setSize(interpdata.stemsize);
+            puts(`set stemsize to: ${idata.stemsize}`);
+            ti.setSize(idata.stemsize);
             break;
          }
          case "'": {
-            interpdata.ci++;
-            if (interpdata.ci == interpdata.ctable.length) { interpdata.ci = 0;}
-            t.setColor(interpdata.ctable[interpdata.ci]);
+            idata.ci++;
+            if (idata.ci == idata.ctable.length) { idata.ci = 0;}
+            ti.setColor(idata.ctable[idata.ci]);
             break;
          }
          case '\[': { 
-            t.newMesh();
-            let s = t.getState();
-            branchstack.push([s, interpdata.ci, interpdata.stemsize]); break;}
+            ti.newTrack({ci: idata.ci, st: idata.st});
+            // ti.newMesh();
+            // let s = ti.getState();
+            // branchstack.push([s, idata.ci, idata.stemsize]); break;}
+            break;
+         }
          case '\]': {
-            let s = branchstack.pop();
-            if (s) {
-	       interpdata.ci = s[1];
-	       interpdata.stemsize = s[2];
-	       t.setState(s[0]);
-            }
+            //  let s = branchstack.pop();
+            let s = ti.endTrack();
+            idata.ci = ti.trackMaterial;
+	    idata.stemsize = ti.getSize();
             break;
          }
          case '.': {
-            interpdata.cpoly.push(otoa(t.getPos()));
-            puts(`capturing point: ${t.getPos()}`)
+            idata.cpoly.push(otoa(ti.getPos()));
+            puts(`capturing point: ${ti.getPos()}`)
             break;
          }
          case 'A':
          case 'S':
          case 'L': break;
          case '{': {
-            interpdata.notInPolygon = false;
-            t.newPolygon();
-            interpdata.cpoly = [];
+            idata.notInPolygon = false;
+            ti.newPolygon();
+            idata.cpoly = [];
             break;}
          case '}': {
-            interpdata.notInPolygon = true; t.endPolygon();
-            puts(`polygon: ${interpdata.cpoly}`);        
+            idata.notInPolygon = true; ti.endPolygon();
+            puts(`polygon: ${idata.cpoly}`);        
             break;
          }
          default: {}//puts(`no Action for module ${i}: ${m}`);}
@@ -580,7 +608,7 @@ function turtleInterp (t, ls, ...args) {
       //updateTurtleInfo(t,0);
       lblNumDrawn.textContent=i;
       if (i < tree.length) {
-         interpdata.mi = i;
+         idata.mi = i;
          rAF = requestAnimationFrame(doModule); 
 
          // if (i % 2500 != 0) {
@@ -589,16 +617,29 @@ function turtleInterp (t, ls, ...args) {
          //    setTimeout(doModule,100);
          // }
       } else {
-         updateTurtleInfo(t,0);
+         if (ti.branchStack.length > 0) {
+            let ts = ti.getState()
+            puts(' done with tree');
+            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
+            //   puts(`tp.shape is: ${ti.getState().trackPath.shape}`);
+            ti.endTrack();
+         }
+
+         updateTurtleInfo(ti,0);
          lblNumDrawn.backgroundColor = "green";
       }
    }
+
+   ti.newTrack();
+   let ts = ti.getState()
+   puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
+
    doModule();
-   
+
   // for (const m of ls.current) {
-  //   if (interpdata.mi % 500 == 0) {puts(`${interpdata.mi} of ${ls.current.length}`);}
-  //   interpdata = await doModule(t,m,interpdata);
-  //   interpdata.mi++;
+  //   if (idata.mi % 500 == 0) {puts(`${idata.mi} of ${ls.current.length}`);}
+  //   idata = await doModule(t,m,idata);
+  //   idata.mi++;
   // }
 }
 

@@ -11,12 +11,14 @@ class Turtle3d {
 	 color: '0,0,0',
 	 size: 0.01,
 	 turtleShape: null,
-	 Track: 'tube',
+	 track: 'tube',
          trackPath: null,
+         trackShape: null,
 	 trackMesh: null,
          trackTag: '',          // additional tag
          trackMaterial: 0,      // index into material list
          drawMode: 'd',             // 'd': draw, 'p': extrude
+         accumRoll: 0,
       }
 
       this.scene = null;
@@ -109,8 +111,8 @@ class Turtle3d {
    getColor() { return this.TurtleState.color;}
    getSize() { return this.TurtleState.size;}
    getTurtleShape() { return this.TurtleState.turtleShape;} // a mesh
-   getTrackShape() {return this.TurtleState.TrackShape;} // array of Vector3
-   getTrack() { return this.TurtleState.Track;}
+   getTrackShape() {return this.TurtleState.trackShape;} // array of Vector3
+   getTrack() { return this.TurtleState.track;}
    getTurtle() {return this.TurtleState.Turtle;}
    getScene() {return this.scene;}
    getOrientation() {
@@ -133,8 +135,13 @@ class Turtle3d {
 
    addMaterial(m=null, color=null) {
       if (m == null) {
-         //m = new BABYLON.StandardMaterial("trackMat", scene);
-         m = this.materialList[this.TurtleState.trackMaterial].clone();
+         if (this.materialList[this.TurtleState.trackMaterial] == null) {
+            m = new BABYLON.StandardMaterial("trackMat", scene);
+            this.TurtleState.trackMaterial = 0;
+            this.TurtleState.color = normalizeColor('green');
+         } else {
+            m = this.materialList[this.TurtleState.trackMaterial].clone();
+         }
       } 
       if (color != null) {
          color = normalizeColor(color);
@@ -155,6 +162,11 @@ class Turtle3d {
       this.TurtleState.trackMaterial = i % this.materialList.length;
       this.TurtleState.color = normalizeColor(this.materialList[i].diffuseColor);
    }
+   deleteMaterials() {
+      this.materialList = [];
+      this.TurtleState.trackMaterial = null;
+      this.TurtleState.color = null;
+   }
 
    toColorVector(cv = this.TurtleState.color) {
       let c = new BABYLON.Color3();
@@ -165,18 +177,24 @@ class Turtle3d {
       switch (v) {
       case 'line':
       case 'tube': {
-         this.TurtleState.Track = v; return true;
+         this.TurtleState.track = v; return true;
+         break;
       }
       case 'cyl':
       case 'cylinder':
       case 'extrusion':
       case 'ext': {
-         this.TurtleState.Track = 'ext';
-         this.TurtleState.TrackShape = points;
+         this.TurtleState.track = 'ext';
+         if (points == null) {
+            this.TurtleState.trackShape = generateMint();
+         } else {
+            this.TurtleState.trackShape = points;
+         }
+         break;
       }
       default: {
-	 console.log(`Track type of ${v} not supported`);
-	 this.TurtleState.Track = 'line';
+	 console.log(`track type of ${v} not supported`);
+	 this.TurtleState.track = 'line';
 	 return false;
       }
       } 
@@ -254,7 +272,7 @@ class Turtle3d {
    }
 
    setTurtleShape(val) {this.TurtleState.turtleShape = val;} // a mesh
-   setTrackShape(val)  {this.TurtleState.TrackShape = val;} // array of Vector3
+   setTrackShape(val)  {this.TurtleState.trackShape = val;} // array of Vector3
    setTag(val) {this.TurtleState.trackTag = val;}
 
    penUp() {this.TurtleState.penIsDown = false;}
@@ -292,7 +310,7 @@ class Turtle3d {
       let t = this.TurtleState.Turtle;
       let ttag = this.TurtleState.trackTag;
       let ts = this.TurtleState.turtleShape;
-      let type = this.TurtleState.Track;
+      let type = this.TurtleState.track;
       let tag = `track${t} ${ttag}`;
       if (this.isPenDown()) {
          if (this.TurtleState.drawMode == 'd') {
@@ -331,16 +349,39 @@ class Turtle3d {
                   this.TurtleState.trackMesh.name = `track${t}`;
                   BABYLON.Tags.AddTagsTo(this.TurtleState.trackMesh, tag, scene);
                }
-	    }
+	    } else if (type == 'ext') {
+               let pathpts = [oldPos, newPos];
+               let s = t.getSize();
+               function getscale(i,distance) {
+                  return s;
+               }
+               function getrotation(i,distance) {
+                  return this.TurtleState.accumRoll;
+               }
+
+               const segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
+                                                                      {shape: tp.shape, 
+                                                                       path: pathpts, 
+                                                                       updatable: false, 
+                                                                       scaleFunction: getscale, 
+                                                                       rotationFunction: getrotation,
+                                                                       closePath: true,
+                                                                      }); // sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+               segment.isVisible=true;
+               segment.material = this.materialList[this.TurtleState.trackMaterial];
+               BABYLON.Tags.AddTagsTo(segment, tag, scene);
+               
+               this.TurtleState.accumRoll = 0;
+            }
          } else {               // in path mode
             // assuming 'extrusion'
             let tp = this.TurtleState.trackPath;
             tp.points.push(newPos);
             tp.srm.push({s: this.TurtleState.size,
-                         r: tp.accumRoll,
+                         r: this.TurtleState.accumRoll,
                          m: this.TurtleState.trackMaterial
                         }); 
-            tp.accumRoll = 0;
+            this.TurtleState.accumRoll = 0;
          }
       }
       if (ts) {ts.position = newPos;}
@@ -354,9 +395,9 @@ class Turtle3d {
       }
       var pathpts = tp.points;
       //puts(`trackPath.length: ${pathpts.length}`);
-      puts(pathpts);
+      // puts(pathpts);
       var srm = tp.srm;
-      puts(srm);
+      // puts(srm);
 
       function getscale(i,distance) {
          return srm[i].s;
@@ -387,7 +428,7 @@ class Turtle3d {
             matLocations.push([i,matUsed.indexOf(e.m)]); // associate path index w/ multimaterial index
          }
       };
-      puts(matLocations);
+      //puts(matLocations);
       if (matUsed.length == 1) {
          extrusion.material = this.materialList[matUsed[0]];
       } else {                  // need multiMaterial
@@ -405,14 +446,14 @@ class Turtle3d {
          let matIdx = matLocations[0][1]; // first mat index
          let indexDiff;        // # indices between pi and ppi
          let runningIndexCnt = 0;
-         puts(`totalVertexCnt: ${totalVertexCnt}, total Indices: ${totalIndices}, subIndicesPerPoint: ${subIndicesPerPoint}, remainder:  ${subVrtxRemainder}`);
+        // puts(`totalVertexCnt: ${totalVertexCnt}, total Indices: ${totalIndices}, subIndicesPerPoint: ${subIndicesPerPoint}, remainder:  ${subVrtxRemainder}`);
          let sm;                // submesh index to create;
          for (sm = 1; sm < matLocations.length; sm++) {
             pi = matLocations[sm][0]; // current path index
             indexDiff = (pi -ppi) * subIndicesPerPoint + subVrtxRemainder;
             matIdx = matLocations[sm-1][1];
-            puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
-            puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
+            // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
+            // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
             new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, extrusion);
             runningIndexCnt += indexDiff
             subVrtxRemainder = 0; // add all leftover vertices at front.
@@ -421,8 +462,8 @@ class Turtle3d {
          pi = pathpts.length-1;
          indexDiff = totalIndices - runningIndexCnt;
          matIdx = matLocations[sm-1][1];
-         puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
-         puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
+         // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
+         // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
          new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, extrusion);
          
          extrusion.material = multimat;
@@ -515,9 +556,7 @@ class Turtle3d {
       this.TurtleState.L = rotateTG(L, smult(-1,U), angle);
       this.TurtleState.U = rotateTG(U, L, angle);
       this.orientTurtle();
-      if (this.TurtleState.drawMode = 'p') {
-         this.TurtleState.trackPath.accumRoll += angle;
-      }
+      this.TurtleState.accumRoll += angle;
    }
    pitch (angle) {
       let H = this.TurtleState.H;
@@ -547,18 +586,25 @@ class Turtle3d {
       this.branchStack.push({tstate: this.getState(), userData: udata});
       let tp = new TrackPath();
       tp.points.push(this.TurtleState.P.clone());
-      tp.srm.push({s: this.TurtleState.size, r: tp.accumRoll, m: 0})
-      if (this.TurtleState.TrackShape == null) {
-         this.TurtleState.TrackShape = generateCircle(1);
-         this.TurtleState.Track = 'ext';
+      tp.srm.push({s: this.TurtleState.size, r: this.TurtleState.accumRoll, m: 0})
+      
+      if (tp.shape != null) {
+         this.TurtleState.trackShape = tp.shape;
+      } else if (this.TurtleState.trackShape == null) {
+         this.TurtleState.trackShape = generateCircle(1);
+         tp.shape = this.TurtleState.trackShape;
       }
-      this.TurtleState.trackPath = tp;
+
+      this.TurtleState.track = 'ext';
       this.TurtleState.drawMode = 'p';
+      this.TurtleState.trackPath = tp;
+      //puts(`trackshape is: ${this.TurtleState.trackShape}`);
+      //puts(`tp.shape is: ${tp.shape}`);
    }
 
    endTrack() {
-      const last = this.branchStack.pop();
       this.drawTrack();
+      const last = this.branchStack.pop();
       this.setState(last.tstate);
       return last.userData;
    }
@@ -580,20 +626,20 @@ Turtle3d.prototype.Turtles = null;
 
 function TrackPath(r=0, s=null) {
    if (s == null ) {
-      this.shape = generateCircle();
+      this.shape = generateMint();
    } else {
       this.shape = s;
    }
    this.points=[];
    this.srm = [];               // scale, rotation, material
    this.accumRoll = r;
-}
-TrackPath.prototype.clone = function () {
-   let tpc = new TrackPath(this.accumRoll, this.shape);
-   tpc.points = this.points.clone();
-   tpc.srm = this.src.clone();
-   return tpc;
-}
+   this.clone = function () {
+      let tpc = new TrackPath(this.accumRoll, this.shape);
+      tpc.points = Array.from(this.points);
+      tpc.srm = Array.from(this.srm);
+      return tpc;
+   };
+};
 
 function generateCircle(r=1, q=12) {
    var p = [];
@@ -602,6 +648,31 @@ function generateCircle(r=1, q=12) {
       let v = newV(r*Math.cos(i*a), r*Math.sin(i*a), 0)
       p.push(clamp(v));
    }
+   p.push(p[0]);
+   return p;
+}
+
+function generateMint(r=1, d=0.2, q=8) {
+   const cs45 = cosd(45);
+   if (d > r*(1 - cs45)) {
+      puts(`d must be <= ${r*(1-cs45)}`);
+      return null;
+   }
+   let p = [];
+   const a = (r+d)*cs45;
+   const alpha = acosd(a/r);
+   const dOne = a - r*sind(alpha);
+   const midPt = d*cs45;
+
+   p.push(newV(dOne, 0, 0));
+   p.push(newV(midPt, midPt, 0));
+   p.push(newV(0, dOne, 0));
+   p.push(newV(-1 * midPt, midPt, 0));
+   p.push(newV(-1 * dOne, 0, 0));
+   p.push(newV(-1*midPt, -1*midPt, 0));
+   p.push(newV(0, -1*dOne, 0));
+   p.push(newV(midPt, -1*midPt, 0));
+
    p.push(p[0]);
    return p;
 }

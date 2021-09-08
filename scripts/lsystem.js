@@ -78,7 +78,7 @@ class Lsystem {
       this.stemsize = 1;
       this.step = 1;    // default forward step size
       this.delta = 90;	// default angle
-      this.ctable = [new BABYLON.Color3(0,1,0)]; // default color table
+      //this.ctable = [new BABYLON.Color3(0,1,0)]; // default color table
       this.ignore=[];
    }
 
