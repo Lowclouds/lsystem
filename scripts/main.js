@@ -390,7 +390,7 @@ function turtleInterp (ti, ls, opts=null) {
       notInPolygon: true,
       mi: 0,                       // module index
       cpoly: null
-      }
+   }
    idata.show =  function () {
       return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}`;
    }
@@ -550,7 +550,7 @@ function turtleInterp (ti, ls, opts=null) {
             } else {
                idata.stemsize -= idata.stemsize > 1 ? 1 : 0;
             }
-            puts(`set stemsize to: ${idata.stemsize}`);
+            //puts(`set stemsize to: ${idata.stemsize}`);
             ti.setSize(idata.stemsize);
             break;
          }
@@ -560,7 +560,7 @@ function turtleInterp (ti, ls, opts=null) {
             } else {
                idata.stemsize += 1;
             }
-            puts(`set stemsize to: ${idata.stemsize}`);
+            //puts(`set stemsize to: ${idata.stemsize}`);
             ti.setSize(idata.stemsize);
             break;
          }
