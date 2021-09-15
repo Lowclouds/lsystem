@@ -33,7 +33,7 @@ var defineRe = new RegExp(`${startdReStr}${varnameReStr}${enddReStr}`);
 var startiReStr = '^(?:#ignore|ignore:) +\(';
 var endiReStr = '\+\)';
 var ignoreRe =new RegExp(`${startiReStr}${symbolReStr}${endiReStr}`);
-var dlengthRe = new RegExp(`^(?:[Dd]erivation length|[Dd]length): *\(\\d+)`);
+var dlengthRe = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
 
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`;
 var axiomRe = new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
@@ -230,10 +230,12 @@ class Lsystem {
 	    }
          } else {
 	    // should be just rules/productions
-	    // break into pieces: [prodname] : predecessor : [condition] -> successor
+	    // break into pieces: [prodname :] predecessor [: condition] -> successor
 	    // prodname and condition are optional. condition is only for parameterized
 	    // lsystems. TABOP is fairly consistent for parameterized systems, but
-	    // kinda all over the map in terms of syntax
+	    // kinda all over the map in terms of syntax. This tries to follow the grammar
+            // and meaning described in documentation of the software here:
+            // http://algorithmicbotany.org/virtual_laboratory/versions/L-studio-4.4.1-2976.zip
 	    let predecessor, condition, successor;
 	    let ix, cx, m, pre, strict, post, dummy ;
             let scope = {}, needScope=false;
@@ -265,12 +267,17 @@ class Lsystem {
             condition = m[7];   // undefined or not
             if (condition) {
                needScope=true;
+               condition = substitute(this.defs, condition);
             } else {
                condition = true; // default of no condition
             }
-            // turn successor into a list of modules
+            // first substitute defines into successor, while it's a string
+            successor = substitute(this.defs, m[8])
+            puts(`successor after substitution: ${successor}`);
+            // then turn successor into a list of modules
             // since we need to deal with nested parens, strtolist doesn't work
-	    successor = this.parseSuccessor(m[8]);
+	    successor = this.parseSuccessor(successor);
+            puts(`successor after parsing: ${successor}`);
             if (successor.find(e=>'object' == typeof e)) {
                needScope = true;
             }
@@ -294,7 +301,7 @@ class Lsystem {
             //puts("scope after funcs: " + Object.entries(scope));
 
             var rule = [predecessor, condition, successor, scope];
-	    // puts(`rule: ${rule}`);
+	    puts(`rule: ${rule}`);
 	    
 	    if (! have_homomorphism) {
 	       this.rules.push(rule);
@@ -309,6 +316,7 @@ class Lsystem {
 	    this.Dlength = this.vars.get('n');
 	 } else {
 	    this.Dlength = 1;
+            puts('Derivation length not specified; defaulting to 1');
 	 }
       }
       this.verbose=0;
@@ -403,8 +411,8 @@ class Lsystem {
       }
       return l;
    }
-   // nodeA must be a predecessor node in the rule with formal parameters
-   // nodeB is a node in the expansion with an actual numeric value which
+   // nodeA must be a strict predecessor in the rule with formal parameters
+   // nodeB is a module in the expansion with an actual numeric value which
    // gets bound to the formal parameter from nodeA
    formalMatch(nodeA, nodeB, scope) {
       if (typeof nodeA == typeof nodeB) {
@@ -651,7 +659,7 @@ function listtostr(l) {
 
 var ParameterizedModule = function(name, parms) {
    this.m = name;
-   //this.p = parms.split(','); doesn't work for expressions line (x,atan(y,x))
+   //this.p = parms.split(','); doesn't work for expressions like (x,atan(y,x))
    // need to recognize nested commas
    function parseParens(s) {
       let p=[];
@@ -684,13 +692,38 @@ var ParameterizedModule = function(name, parms) {
 }
 
 var LSScope = function(map) {
-   if (map) {
-      map.forEach((v,k) => this[k] = v)
+   let s = {}
+   if ( map) {
+      map.forEach((v,k) => s[k] = v)
    }
+   return s;
 }
-function initScope(o, map) {
-   map.forEach((v,k) => o[k] = v);
+
+function initScope(o,vmap) {
+   vmap.forEach((v,k) => o[k] = v);
 }
+
+function substitute(defs, expr ) {
+   let didSub, nexpr;
+   let res = [];
+   defs.forEach((v,k) => {
+      res.push( {re: new RegExp(`\\b${k}\\b`, 'g'), sub: v});
+   });
+   res.forEach((def) => {puts(`${def.re}, ${def.sub}`);});
+
+   do {
+      didSub = false;
+      res.forEach((def) => {
+         nexpr = expr.replaceAll(def.re, def.sub);
+         if (nexpr != expr) {
+            didSub = true;
+            expr = nexpr;
+         }
+      });
+   } while (didSub);
+   return expr;
+}
+
 
 function lappend (larray, ...items) {
    larray.splice(larray.length,0, ...items);

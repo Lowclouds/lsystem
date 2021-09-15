@@ -371,17 +371,16 @@ class Turtle3d {
                segment.material = this.materialList[this.TurtleState.trackMaterial];
                BABYLON.Tags.AddTagsTo(segment, tag, scene);
                
-               this.TurtleState.accumRoll = 0;
             }
          } else {               // in path mode
             // assuming 'extrusion'
             let tp = this.TurtleState.trackPath;
             tp.points.push(newPos);
             tp.srm.push({s: this.TurtleState.size,
-                         r: this.TurtleState.accumRoll,
+                         r: this.TurtleState.accumRoll * degtorad,
                          m: this.TurtleState.trackMaterial
                         }); 
-            this.TurtleState.accumRoll = 0;
+            //this.TurtleState.accumRoll = 0;
          }
       }
       if (ts) {ts.position = newPos;}
@@ -518,7 +517,7 @@ class Turtle3d {
       //let angle = acosd( dot(H,v));
       let p1 = v.cross(H) // y-axis
       if (p1.length() < 1.0e-10) {
-         return;		// p1 is nearly parallel to H
+         return;		// v is nearly parallel to H
       }
       p1.normalize();
       let p2 = v.cross(p1).normalize(); // z-axis
@@ -557,6 +556,8 @@ class Turtle3d {
       this.TurtleState.U = rotateTG(U, L, angle);
       this.orientTurtle();
       this.TurtleState.accumRoll += angle;
+      this.TurtleState.accumRoll %= 360;
+
    }
    pitch (angle) {
       let H = this.TurtleState.H;

@@ -435,7 +435,7 @@ function turtleInterp (ti, ls, opts=null) {
    }
    idata.ndelta= -1*idata.delta,
    ti.setSize(idata.stemsize);
-   if (idata.ctable != null || idata.ctable != []) {
+   if (idata.ctable != null && idata.ctable != []) {
       ti.deleteMaterials();
       let numMat = ti.materialList.length;
       idata.ctable.forEach((e) => {
