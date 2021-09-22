@@ -307,84 +307,125 @@ class Turtle3d {
    }
 
    draw(oldPos, newPos) {
-      let t = this.TurtleState.Turtle;
-      let ttag = this.TurtleState.trackTag;
-      let ts = this.TurtleState.turtleShape;
-      let type = this.TurtleState.track;
-      let tag = `track${t} ${ttag}`;
+      let ts = this.TurtleState;
       if (this.isPenDown()) {
-         if (this.TurtleState.drawMode == 'd') {
-	    let segment;
-	    if (type == 'line') {
-	       segment = BABYLON.MeshBuilder.CreateLines('tpath',
-                                                         {points: [oldPos, newPos],
-                                                          tessellation: 32}, scene);
-	       segment.color = this.toColorVector();
-	       BABYLON.Tags.AddTagsTo(segment, tag , scene);
-	       segment.isVisible = true;
-
-
-            } else if (type == 'tube') {
-               
-               segment = BABYLON.MeshBuilder.CreateTube(t, 
-                                                        {path: [oldPos, newPos], 
-                                                         radius: this.TurtleState.size,
-                                                         tessellation: 16,
-                                                         updatable: true,
-                                                         cap: BABYLON.Mesh.CAP_ALL},
-                                                        scene);
-               this.meshCount[0]++;
-	       segment.isVisible = true;
-               segment.material = this.materialList[this.TurtleState.trackMaterial];
-               if  (true) {
-                  BABYLON.Tags.AddTagsTo(segment, tag, scene);
-               } else {
-                  if (this.TurtleState.trackMesh == null) {
-                     this.TurtleState.trackMesh = segment;
-                     this.meshCount[1]++;
-                  } else {
-                     this.TurtleState.trackMesh = BABYLON.Mesh.MergeMeshes([this.TurtleState.trackMesh, segment],true, true);
-                  }
-                  this.TurtleState.trackMesh.id = t;
-                  this.TurtleState.trackMesh.name = `track${t}`;
-                  BABYLON.Tags.AddTagsTo(this.TurtleState.trackMesh, tag, scene);
-               }
-	    } else if (type == 'ext') {
-               let pathpts = [oldPos, newPos];
-               let s = t.getSize();
-               function getscale(i,distance) {
-                  return s;
-               }
-               function getrotation(i,distance) {
-                  return this.TurtleState.accumRoll;
-               }
-
-               const segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
-                                                                      {shape: tp.shape, 
-                                                                       path: pathpts, 
-                                                                       updatable: false, 
-                                                                       scaleFunction: getscale, 
-                                                                       rotationFunction: getrotation,
-                                                                       closePath: true,
-                                                                      }); // sideOrientation: BABYLON.Mesh.DOUBLESIDE});
-               segment.isVisible=true;
-               segment.material = this.materialList[this.TurtleState.trackMaterial];
-               BABYLON.Tags.AddTagsTo(segment, tag, scene);
-               
-            }
+         if (ts.drawMode == 'd') {
+            this.drawImmediate(ts, oldPos, newPos);
+            // update visual turtle position
+            let tmesh = ts.turtleShape;
+            if (tmesh) {tmesh.position = newPos;}
          } else {               // in path mode
             // assuming 'extrusion'
-            let tp = this.TurtleState.trackPath;
-            tp.points.push(newPos);
-            tp.srm.push({s: this.TurtleState.size,
-                         r: this.TurtleState.accumRoll * degtorad,
-                         m: this.TurtleState.trackMaterial
-                        }); 
-            //this.TurtleState.accumRoll = 0;
+            this.addPathPt(ts, oldPos, newPos);
          }
       }
-      if (ts) {ts.position = newPos;}
    }
+
+   drawImmediate(ts, oldPos, newPos) {
+      let t = ts.Turtle;
+      let ttag = ts.trackTag;
+      let type = ts.track;
+      let tag = `track${t} ${ttag}`;
+      let segment;
+      if (type == 'line') {
+	 segment = BABYLON.MeshBuilder.CreateLines('tpath',
+                                                   {points: [oldPos, newPos],
+                                                    tessellation: 32}, scene);
+	 segment.color = this.toColorVector();
+	 BABYLON.Tags.AddTagsTo(segment, tag , scene);
+	 segment.isVisible = true;
+
+
+      } else if (type == 'tube') {
+         
+         segment = BABYLON.MeshBuilder.CreateTube(t, 
+                                                  {path: [oldPos, newPos], 
+                                                   radius: ts.size,
+                                                   tessellation: 16,
+                                                   updatable: true,
+                                                   cap: BABYLON.Mesh.CAP_ALL},
+                                                  scene);
+         this.meshCount[0]++;
+	 segment.isVisible = true;
+         segment.material = this.materialList[ts.trackMaterial];
+         if  (true) {
+            BABYLON.Tags.AddTagsTo(segment, tag, scene);
+         } else {
+            if (ts.trackMesh == null) {
+               ts.trackMesh = segment;
+               this.meshCount[1]++;
+            } else {
+               ts.trackMesh = BABYLON.Mesh.MergeMeshes([ts.trackMesh, segment],true, true);
+            }
+            ts.trackMesh.id = t;
+            ts.trackMesh.name = `track${t}`;
+            BABYLON.Tags.AddTagsTo(ts.trackMesh, tag, scene);
+         }
+      } else if (type == 'ext') {
+         let pathpts = [oldPos, newPos];
+         let s = t.getSize();
+         function getscale(i,distance) {
+            return s;
+         }
+         function getrotation(i,distance) {
+            return ts.accumRoll;
+         }
+
+         const segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
+                                                                {shape: tp.shape, 
+                                                                 path: pathpts, 
+                                                                 updatable: false, 
+                                                                 scaleFunction: getscale, 
+                                                                 rotationFunction: getrotation,
+                                                                 closePath: true,
+                                                                }); // sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+         segment.isVisible=true;
+         segment.material = this.materialList[ts.trackMaterial];
+         BABYLON.Tags.AddTagsTo(segment, tag, scene);
+         
+      }
+   }
+   //               // in path mode
+   addPathPt(ts, oldPos, newPos) {
+      // assuming 'extrusion'
+      let tp = ts.trackPath;
+      let roll = ts.accumRoll;
+      //let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
+      //let rolldiff = roll - lastroll; // total additional roll
+      //puts(tp.srm);
+      let npts = Math.abs(Math.trunc(roll / tp.maxRoll)); // number of pts
+      let rollinc = roll / (npts+1); // divide by # sections
+      //puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, ${roll} =? ${roll}}, npts: ${npts}`);
+      if (npts > 0) {
+         // add intermediate points
+         let vecdiff = newPos.subtract(oldPos).scaleInPlace(1/(npts+1));
+         // insert intermediate points
+         let r = rollinc;
+         let lpt = oldPos;
+         puts(`adding ${npts} points, with incremental roll of ${rollinc}`);
+
+         for (let pti = 0; pti < npts+1; pti++) {
+            lpt.addInPlace(vecdiff);
+            tp.points.push(lpt);
+            tp.srm.push({s: ts.size,
+                         //r: (lastroll + r) * degtorad,
+                         r: r * degtorad,
+                         m: ts.trackMaterial
+                        });
+
+            // r += rolldiff;
+
+         }
+      } else {
+         // add new position
+         tp.points.push(newPos);
+         tp.srm.push({s: ts.size,
+                      r: rollinc * degtorad,
+                      m: ts.trackMaterial
+                     }); 
+      }
+      ts.accumRoll = 0;
+   }      
 
    drawTrack() {
       let t = this.TurtleState.Turtle;
@@ -470,6 +511,9 @@ class Turtle3d {
       extrusion.id= t + this.trackPaths.length;
       BABYLON.Tags.AddTagsTo(extrusion, `track${t} path`, this.scene);
       this.trackPaths.push(extrusion); // 
+
+      let tmesh = this.TurtleState.turtleShape;
+      if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
 
    newMesh() {
@@ -547,32 +591,51 @@ class Turtle3d {
       this.setU(p2); //rigidrotation(z, v, angle));
       this.orientTurtle();
    }    
+   // similar to setUp
+   // this sets L so it is parallel to xz plane, i.e. level
+   // H is unchanged, U follows H and L and
+   // the plane of H and U is vertical, i.e. perp. to xz
+   levelL() {
+      this.setUp(new BABYLON.Vector3(0,1,0));
+   }
 
-   // roll, pitch, and yaw
+   // similar to levelL, this sets H parallel to xz plane
+   // levelH() {
+   //    let H = this.TurtleState.H;
+   //    let v = BABYLON.Vector3(0,1,0); // opposite gravity
+   //    let el = v.cross(H);
+   //    el.scaleInPlace(1/el.length());
+   //    this.TurtleState.L = el;
+   //    this.TurtleState.U = H.cross(el);
+   //    this.orientTurtle();
+   // }
+
+   //  yaw, pitch, roll
+   yaw (angle) {
+      angle = -1*angle;
+      let H = this.TurtleState.H.clone();
+      let L = this.TurtleState.L.clone();
+      this.TurtleState.H = rotateTG(H, smult(-1, L), angle);
+      this.TurtleState.L = rotateTG(L, H, angle);
+      this.orientTurtle();
+   }
+   pitch (angle) {
+      let H = this.TurtleState.H.clone();
+      let U = this.TurtleState.U.clone();
+      this.TurtleState.H = rotateTG(H, U, angle);
+      this.TurtleState.U = rotateTG(U, smult(-1, H), angle);
+      this.orientTurtle();
+   }
+   
    roll (angle) {
-      let L = this.TurtleState.L;
-      let U = this.TurtleState.U;
+      let L = this.TurtleState.L.clone();
+      let U = this.TurtleState.U.clone();
       this.TurtleState.L = rotateTG(L, smult(-1,U), angle);
       this.TurtleState.U = rotateTG(U, L, angle);
       this.orientTurtle();
       this.TurtleState.accumRoll += angle;
       this.TurtleState.accumRoll %= 360;
 
-   }
-   pitch (angle) {
-      let H = this.TurtleState.H;
-      let U = this.TurtleState.U;
-      this.TurtleState.H = rotateTG(H, U, angle);
-      this.TurtleState.U = rotateTG(U, smult(-1, H), angle);
-      this.orientTurtle();
-   }
-   yaw (angle) {
-      angle = -1*angle;
-      let H = this.TurtleState.H;
-      let L = this.TurtleState.L;
-      this.TurtleState.H = rotateTG(H, smult(-1, L), angle);
-      this.TurtleState.L = rotateTG(L, H, angle);
-      this.orientTurtle();
    }
    goto (pos) {
       if (betterTypeOf(pos) == 'array') {
@@ -587,8 +650,8 @@ class Turtle3d {
       this.branchStack.push({tstate: this.getState(), userData: udata});
       let tp = new TrackPath();
       tp.points.push(this.TurtleState.P.clone());
-      tp.srm.push({s: this.TurtleState.size, r: this.TurtleState.accumRoll, m: 0})
-      
+      tp.srm.push({s: this.TurtleState.size, r: 0, m: 0})
+
       if (tp.shape != null) {
          this.TurtleState.trackShape = tp.shape;
       } else if (this.TurtleState.trackShape == null) {
@@ -599,6 +662,8 @@ class Turtle3d {
       this.TurtleState.track = 'ext';
       this.TurtleState.drawMode = 'p';
       this.TurtleState.trackPath = tp;
+      this.TurtleState.accumRoll = 0;
+
       //puts(`trackshape is: ${this.TurtleState.trackShape}`);
       //puts(`tp.shape is: ${tp.shape}`);
    }
@@ -609,7 +674,8 @@ class Turtle3d {
       this.setState(last.tstate);
       return last.userData;
    }
- 
+
+   
    newPolygon() {
       // save state
    }
@@ -625,19 +691,30 @@ Turtle3d.prototype.t3dScene=null;	// ea default scene, once set
 Turtle3d.prototype.fd = Turtle3d.prototype.forward;
 Turtle3d.prototype.Turtles = null;
 
-function TrackPath(r=0, s=null) {
-   if (s == null ) {
-      this.shape = generateMint();
+// opts
+//   s: shape array, default is dodecagon
+//   maxRoll: maxRoll in degrees before inserting intermediate pts, default 5.625
+function TrackPath(r=0, opts={}) {
+   
+   if (! opts.s ) {
+      this.shape = generateCircle();
    } else {
-      this.shape = s;
+      this.shape = opts.s;
+   }
+   if (! opts.maxRoll) {
+      this.maxRoll = 5.625;
+   } else {
+      this.maxRoll = opts.maxRoll;
    }
    this.points=[];
    this.srm = [];               // scale, rotation, material
-   this.accumRoll = r;
+   //this.accumRoll = r;
+   puts(`maxRoll: ${this.maxRoll}`);
    this.clone = function () {
-      let tpc = new TrackPath(this.accumRoll, this.shape);
+      let tpc = new TrackPath(this.accumRoll, {s: Array.from(this.shape)});
       tpc.points = Array.from(this.points);
       tpc.srm = Array.from(this.srm);
+      tpc.maxRoll = this.maxRoll;
       return tpc;
    };
 };

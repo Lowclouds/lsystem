@@ -378,6 +378,8 @@ function interpdataShow() {
    return `step: ${interpdata.step}, stemsize: ${interpdata.stemsize}, delta: ${interpdata.delta}`;
 }
 
+// This links the lsystem generator with turtle graphics
+
 function turtleInterp (ti, ls, opts=null) {
    idata = {
       step:  1,
@@ -543,8 +545,15 @@ function turtleInterp (ti, ls, opts=null) {
             ti.roll(a); 
             //puts('roll: ' + a);
             break; }
-         case '|': {ti.yaw(180); break; }
-         case '!': {
+         case '|': {
+            ti.yaw(180); 
+            break;
+         }
+         case '$': {            // set L horizontal
+            ti.levelL();
+            break;
+         }   
+         case '!': {   // decrease or set stem/branch size
             if (isPm ) {
                idata.stemsize = p0;
             } else {
@@ -554,7 +563,7 @@ function turtleInterp (ti, ls, opts=null) {
             ti.setSize(idata.stemsize);
             break;
          }
-         case '#': {
+         case '#': {    // increase or set stem/branch size
             if (isPm ) {
                idata.stemsize = p0;
             } else {
@@ -564,27 +573,27 @@ function turtleInterp (ti, ls, opts=null) {
             ti.setSize(idata.stemsize);
             break;
          }
-         case "'": {
+         case "'": {            // increment color table index
             idata.ci++;
             if (idata.ci == idata.ctable.length) { idata.ci = 0;}
             ti.setColor(idata.ctable[idata.ci]);
             break;
          }
-         case '\[': { 
+         case '\[': {           // start a branch
             ti.newTrack({ci: idata.ci, st: idata.st});
             // ti.newMesh();
             // let s = ti.getState();
             // branchstack.push([s, idata.ci, idata.stemsize]); break;}
             break;
          }
-         case '\]': {
+         case '\]': {           // end a branch
             //  let s = branchstack.pop();
             let s = ti.endTrack();
             idata.ci = ti.trackMaterial;
 	    idata.stemsize = ti.getSize();
             break;
          }
-         case '.': {
+         case '.': {            // record a polygon point
             idata.cpoly.push(otoa(ti.getPos()));
             puts(`capturing point: ${ti.getPos()}`)
             break;
