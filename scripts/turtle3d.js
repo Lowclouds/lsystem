@@ -306,6 +306,133 @@ class Turtle3d {
       }
    }
 
+
+   newMesh() {
+      if (this.TurtleState.trackMesh != null) {
+         //this.meshList.push(this.TurtleState.trackMesh);
+         this.TurtleState.trackMesh = null;
+      }
+   }
+
+   home () {
+      let tshape = this.TurtleState.turtleShape;
+      let oldstate = this.TurtleState;
+      let newPos = newV(0, 0, 0);
+
+      this.setPos(newPos);
+      this.setH(newV(1, 0, 0));
+      this.setU(newV(0, 1, 0));
+      this.setL(newV(0, 0, 1));
+      if (tshape != "") {        
+    	 tshape.position = newPos;
+	 this.orientTurtle();
+      }
+   }
+
+   forward ( dist) {
+      let pos  = this.TurtleState.P;
+      let oldP = pos.clone(); 
+      let newP = pos.clone();
+      let tH = this.TurtleState.H;
+
+      tH.scaleAndAddToRef(dist, newP);
+
+      this.TurtleState.P.copyFrom(newP);
+      this.draw(oldP, newP);
+   }
+
+   back (dist) {return this.forward(-1*dist);}
+
+   setHeading (v) {
+      if (betterTypeOf(v) == 'array') {
+	 v = BABYLON.Vector3.FromArray(v);
+      }
+      v.normalize();
+      let H = this.getH();
+      //let angle = acosd( dot(H,v));
+      let p1 = v.cross(H) // y-axis
+      if (p1.length() < 1.0e-10) {
+         return;		// v is nearly parallel to H
+      }
+      p1.normalize();
+      let p2 = v.cross(p1).normalize(); // z-axis
+      // puts(`v: ${v}; perp1: ${p1}; perp2: ${p2}`);
+      this.setH(v);
+      this.setL(p2);
+      this.setU(p1);
+
+      this.orientTurtle();
+   }
+
+   // this sets U so it is in the H-up plane
+   // H is unchanged, L follows H and U and
+   // the plane of H and U is vertical, i.e. perp. to xz
+   setUp (up) {
+      if (betterTypeOf(up) == 'array') {
+	 up = BABYLON.Vector3.FromArray(up);
+      }
+      up.normalize();
+      let H = this.getH();
+      //let angle = -1*acosd(dot(z, h));
+      let p1 = H.cross(up);
+      if (p1.length() < 1.0e-10) {
+         return	;	// parallel
+      }
+      p1.normalize();	
+      let p2 = p1.cross(H);	// the new up
+      // H doesn't change
+      this.setL(p1); //rigidrotation(this.getL(), v, angle));
+      this.setU(p2); //rigidrotation(z, v, angle));
+      this.orientTurtle();
+   }    
+   // similar to setUp
+   // this sets L so it is parallel to xz plane, i.e. level
+   // H is unchanged, U follows H and L and
+   // the plane of H and U is vertical, i.e. perp. to xz
+   levelL() {
+      this.setUp(new BABYLON.Vector3(0,1,0));
+   }
+
+   //  yaw, pitch, roll
+   yaw (angle) {
+      angle = -1*angle;
+      let H = this.TurtleState.H.clone();
+      let L = this.TurtleState.L.clone();
+      this.TurtleState.H = rotateTG(H, smult(-1, L), angle);
+      this.TurtleState.L = rotateTG(L, H, angle);
+      this.orientTurtle();
+   }
+   pitch (angle) {
+      let H = this.TurtleState.H.clone();
+      let U = this.TurtleState.U.clone();
+      this.TurtleState.H = rotateTG(H, U, angle);
+      this.TurtleState.U = rotateTG(U, smult(-1, H), angle);
+      this.orientTurtle();
+   }
+   
+   roll (angle) {
+      let L = this.TurtleState.L.clone();
+      let U = this.TurtleState.U.clone();
+      this.TurtleState.L = rotateTG(L, smult(-1,U), angle);
+      this.TurtleState.U = rotateTG(U, L, angle);
+      this.orientTurtle();
+      this.TurtleState.accumRoll += angle;
+      this.TurtleState.accumRoll %= 360;
+
+   }
+   goto (a1,a2,a3) {
+      let pos;
+      if (a1 && a2 && a3) {
+         pos = new BABYLON.Vector3(a1,a2,a3);
+      } else if (betterTypeOf(a1) == 'array') {
+	 pos = BABYLON.Vector3.FromArray(a1);
+      }
+      let oldP = this.TurtleState.P.clone();
+      this.setPos(pos);
+      //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
+      this.draw(oldP, pos);
+   }
+
    draw(oldPos, newPos) {
       let ts = this.TurtleState;
       if (this.isPenDown()) {
@@ -402,7 +529,7 @@ class Turtle3d {
          // insert intermediate points
          let r = rollinc;
          let lpt = oldPos;
-         puts(`adding ${npts} points, with incremental roll of ${rollinc}`);
+         //puts(`adding ${npts} points, with incremental roll of ${rollinc}`);
 
          for (let pti = 0; pti < npts+1; pti++) {
             lpt.addInPlace(vecdiff);
@@ -516,136 +643,6 @@ class Turtle3d {
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
 
-   newMesh() {
-      if (this.TurtleState.trackMesh != null) {
-         //this.meshList.push(this.TurtleState.trackMesh);
-         this.TurtleState.trackMesh = null;
-      }
-   }
-
-   home () {
-      let tshape = this.TurtleState.turtleShape;
-      let oldstate = this.TurtleState;
-      let newPos = newV(0, 0, 0);
-
-      this.setPos(newPos);
-      this.setH(newV(1, 0, 0));
-      this.setU(newV(0, 1, 0));
-      this.setL(newV(0, 0, 1));
-      if (tshape != "") {        
-    	 tshape.position = newPos;
-	 this.orientTurtle();
-      }
-   }
-
-   forward ( dist) {
-      let pos  = this.TurtleState.P;
-      let oldP = pos.clone(); 
-      let newP = pos.clone();
-      let tH = this.TurtleState.H;
-
-      tH.scaleAndAddToRef(dist, newP);
-
-      this.TurtleState.P.copyFrom(newP);
-      this.draw(oldP, newP);
-   }
-
-   back (dist) {return this.forward(-1*dist);}
-
-   setHeading (v) {
-      if (betterTypeOf(v) == 'array') {
-	 v = BABYLON.Vector3.FromArray(v);
-      }
-      v.normalize();
-      let H = this.getH();
-      //let angle = acosd( dot(H,v));
-      let p1 = v.cross(H) // y-axis
-      if (p1.length() < 1.0e-10) {
-         return;		// v is nearly parallel to H
-      }
-      p1.normalize();
-      let p2 = v.cross(p1).normalize(); // z-axis
-      // puts(`v: ${v}; perp1: ${p1}; perp2: ${p2}`);
-      this.setH(v);
-      this.setL(p2);
-      this.setU(p1);
-
-      this.orientTurtle();
-   }
-
-   setUp (up) {
-      if (betterTypeOf(up) == 'array') {
-	 up = BABYLON.Vector3.FromArray(up);
-      }
-      up.normalize();
-      let H = this.getH();
-      //let angle = -1*acosd(dot(z, h));
-      let p1 = H.cross(up);
-      if (p1.length() < 1.0e-10) {
-         return	;	// parallel
-      }
-      p1.normalize();	
-      let p2 = p1.cross(H);	// the new up
-      // H doesn't change
-      this.setL(p1); //rigidrotation(this.getL(), v, angle));
-      this.setU(p2); //rigidrotation(z, v, angle));
-      this.orientTurtle();
-   }    
-   // similar to setUp
-   // this sets L so it is parallel to xz plane, i.e. level
-   // H is unchanged, U follows H and L and
-   // the plane of H and U is vertical, i.e. perp. to xz
-   levelL() {
-      this.setUp(new BABYLON.Vector3(0,1,0));
-   }
-
-   // similar to levelL, this sets H parallel to xz plane
-   // levelH() {
-   //    let H = this.TurtleState.H;
-   //    let v = BABYLON.Vector3(0,1,0); // opposite gravity
-   //    let el = v.cross(H);
-   //    el.scaleInPlace(1/el.length());
-   //    this.TurtleState.L = el;
-   //    this.TurtleState.U = H.cross(el);
-   //    this.orientTurtle();
-   // }
-
-   //  yaw, pitch, roll
-   yaw (angle) {
-      angle = -1*angle;
-      let H = this.TurtleState.H.clone();
-      let L = this.TurtleState.L.clone();
-      this.TurtleState.H = rotateTG(H, smult(-1, L), angle);
-      this.TurtleState.L = rotateTG(L, H, angle);
-      this.orientTurtle();
-   }
-   pitch (angle) {
-      let H = this.TurtleState.H.clone();
-      let U = this.TurtleState.U.clone();
-      this.TurtleState.H = rotateTG(H, U, angle);
-      this.TurtleState.U = rotateTG(U, smult(-1, H), angle);
-      this.orientTurtle();
-   }
-   
-   roll (angle) {
-      let L = this.TurtleState.L.clone();
-      let U = this.TurtleState.U.clone();
-      this.TurtleState.L = rotateTG(L, smult(-1,U), angle);
-      this.TurtleState.U = rotateTG(U, L, angle);
-      this.orientTurtle();
-      this.TurtleState.accumRoll += angle;
-      this.TurtleState.accumRoll %= 360;
-
-   }
-   goto (pos) {
-      if (betterTypeOf(pos) == 'array') {
-	 pos = BABYLON.Vector3.FromArray(pos);
-      }
-      let oldP = this.TurtleState.P.clone();
-      this.setPos(pos);
-      //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
-      this.draw(oldP, pos);
-   }
    newTrack(udata=null,) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
       let tp = new TrackPath();
@@ -675,7 +672,38 @@ class Turtle3d {
       return last.userData;
    }
 
-   
+   drawDisc(d = 1, arc = 1, qual = 64, scaling = null) {
+      let disc,p, opts = {};
+      opts.radius = d/2;
+      opts.tessellation = qual;
+      opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+      opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
+      opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
+
+      disc = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
+      disc.material = this.materialList[this.TurtleState.trackMaterial];
+
+      if (scaling) {
+         disc.scaling.x = scaling.x;
+         disc.scaling.y = scaling.y;
+         disc.scaling.z = scaling.z;
+      }
+
+      disc.rotation = BABYLON.Vector3.RotationFromAxis(this.getH(), this.getL().scale(-1), this.getU());
+      
+      p = this.getPos();
+      disc.position.x = p.x;
+      disc.position.y = p.y;
+      disc.position.z = p.z;
+
+      let ts = this.TurtleState;
+      let t = ts.Turtle;
+      let ttag = ts.trackTag;
+      let tag = `track${t} ${ttag}`;
+
+      BABYLON.Tags.AddTagsTo(disc, tag, scene);
+   }
+
    newPolygon() {
       // save state
    }
@@ -709,7 +737,7 @@ function TrackPath(r=0, opts={}) {
    this.points=[];
    this.srm = [];               // scale, rotation, material
    //this.accumRoll = r;
-   puts(`maxRoll: ${this.maxRoll}`);
+   //puts(`maxRoll: ${this.maxRoll}`);
    this.clone = function () {
       let tpc = new TrackPath(this.accumRoll, {s: Array.from(this.shape)});
       tpc.points = Array.from(this.points);
