@@ -1,4 +1,4 @@
-// dependencies
+/// dependencies
 // math.js for math.evaluate
 // babylon.js for color, and probably more, like meshes
 // turtle3d.js for actually drawing a tree.
@@ -25,14 +25,15 @@ A(t) : t<10 -> A(t+1)FFF
 A(t)>F : t==10 -> -FFFA(0)
 `
 var numReStr = '\\d+(?:\\.\\d+)?';
-var symbolReStr = "[\\w\\d\\+-\\]['{}\&^\\\\/!\\.~\\|]";
+//var symbolReStr = "[\\w\\d\\+\\-\\]['{}\&^\\\\/!\\.~\\|]";
+var symbolReStr = "[\\w\\d\\+\\-\\]['{}\&^\\\\/#!\\.\\|\\$%]|@[#!ocOsvGMRTD]|~\\w\\d*";
 var varnameReStr = '\\w[\\w\\d]*';
 var startdReStr='^(?:#define|define:)[ \n]+\(';
 var enddReStr = '\) ([^ ].*)';
 var defineRe = new RegExp(`${startdReStr}${varnameReStr}${enddReStr}`);
 var startiReStr = '^(?:#ignore|ignore:) +\(';
 var endiReStr = '\+\)';
-var ignoreRe =new RegExp(`${startiReStr}${symbolReStr}${endiReStr}`);
+var ignoreRe =new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
 var dlengthRe = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
 
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`;
@@ -223,7 +224,8 @@ class Lsystem {
 	    } else if (m = line.match(/^axiom:(.*)/)) {
                //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
                have_axiom = true;
-               this.axiom = this.strtolist(m[1]);
+               let tmp = substitute(this.defs, m[1])
+               this.axiom = this.parseSuccessor(tmp);
 	       this.show('axiom');
 	    } else {
                puts(`unrecognized statement: ${line}`);

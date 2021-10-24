@@ -75,6 +75,9 @@ const createScene = function () {
    
    gMaterial.diffuseColor = new BABYLON.Color3(.58, .58, .58);
    ground.material = gMaterial;
+
+   // var  pack = new BABYLON.TexturePacker('TestPack', [], {}, scene);
+   // loadTpack(pack,gMaterial);
    
    var skyOpts = {
       diameter: skysize, slice: 0.5, sideOrientation: BABYLON.Mesh.DOUBLESIDE };
@@ -225,11 +228,11 @@ clearbtn.addEventListener("click", () => {
 homebtn.addEventListener("click", () => {
     try {
        t.home();
-       camera.setTarget(t.getPos());
+       //camera.setTarget(t.getPos());
     } catch (error) {}
     try {
        t1.home();
-       camera.setTarget(t1.getPos());
+       //camera.setTarget(t1.getPos());
     } catch (e) {}
 });
 
@@ -302,6 +305,7 @@ lsResult.placeholder = 'Empty';
 btnParse = document.getElementById('btnParse');
 btnRewrite = document.getElementById('btnRewrite');
 btnDraw = document.getElementById('btnDraw');
+btnRPRD = document.getElementById('btnRPRD');
 
 lblNumNodes = document.getElementById('numNodes');
 lblNumDrawn = document.getElementById('numDrawn');
@@ -359,6 +363,29 @@ btnDraw.addEventListener("click", () => {
     } catch (error) {puts(error);}
 });
 
+btnRPRD.addEventListener("click", () => {
+    try {
+       // reparse
+       ls.Parse(lsSrc.value);
+       lsResult.value = ls.serialize();
+       lsState = 'Parsed';
+       // rewrite
+       if (lsResult.textContent != 'Empty') {
+          lsResult.value = ls.Rewrite(); //.toString();
+          lsState = 'Rewritten';
+          // reset
+          t.home();
+          t.clear();
+          //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
+          camera.setTarget(t.getPos());
+          // draw
+          t.setHeading([0,1,0]);
+          turtleInterp(t, ls);
+       }
+
+    } catch (error) {puts(error);}
+});
+
 ls = new Lsystem();
 
 var interpdata = {
@@ -385,11 +412,11 @@ function turtleInterp (ti, ls, opts=null) {
       step:  1,
       stemsize: 1,
       delta: 90,
-      ctable:  [[0.64, 0.17, 0.17], [0,.8, .8]],       // brownish, greenish
+      ctable:  [[0.64, 0.27, 0.27], [0,.8, .8]],       // brownish, greenish
       ndelta: -90,
       stack: [],
       ci: 0,                       // color index
-      notInPolygon: true,
+      inPolygon: 0,                // not
       mi: 0,                       // module index
       cpoly: null
    }
@@ -479,7 +506,7 @@ function turtleInterp (ti, ls, opts=null) {
             let d = isPm ? p0 : idata.step;
             ti.penDown();
             ti.forward(d);
-            if (! idata.notInPolygon) {
+            if (idata.inPolygon>0) {
                ti.updatePolygon();
             }
             //puts('fd: ' + d);
@@ -492,7 +519,7 @@ function turtleInterp (ti, ls, opts=null) {
                ti.penUp();
             }
 	    ti.forward(d); 
-            if (! idata.notInPolygon) {
+            if (idata.inPolygon>0) {
                ti.updatePolygon();
             }
             if (pState) {
@@ -549,7 +576,7 @@ function turtleInterp (ti, ls, opts=null) {
             ti.yaw(180); 
             break;
          }
-         case '$': {            // set L horizontal
+         case '@v': {            // set L horizontal
             ti.levelL();
             break;
          }   
@@ -593,24 +620,31 @@ function turtleInterp (ti, ls, opts=null) {
 	    idata.stemsize = ti.getSize();
             break;
          }
+         case '{': {
+            idata.inPolygon++;
+            ti.newPolygon();
+            idata.cpoly = [];
+            break;}
+         case '}': {
+            if ( idata.inPolygon > 0) {
+               ti.endPolygon();
+               idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon-- : 0;
+            } else {
+               puts('end polygon attempted when no polygon started');
+            }
+            break;
+         }
          case '.': {            // record a polygon point
-            idata.cpoly.push(otoa(ti.getPos()));
-            puts(`capturing point: ${ti.getPos()}`)
+           // idata.cpoly.push(otoa(ti.getPos()));
+            if (idata.inPolygon>0) {
+               ti.updatePolygon();
+            }
+            //puts(`save state in polygon mode: ${ti.getPos()}`)
             break;
          }
          case 'A':
          case 'S':
          case 'L': break;
-         case '{': {
-            idata.notInPolygon = false;
-            ti.newPolygon();
-            idata.cpoly = [];
-            break;}
-         case '}': {
-            idata.notInPolygon = true; ti.endPolygon();
-            puts(`polygon: ${idata.cpoly}`);        
-            break;
-         }
          default: {}//puts(`no Action for module ${i}: ${m}`);}
          }
       }
@@ -764,4 +798,22 @@ function createMesh(poly) {
    amesh.material = amat;
 
    return {vdata: vertexData, mat: amat, mesh: amesh};
+}
+
+
+function loadTpack(pack, mat) {
+   
+    let getJson = new XMLHttpRequest();
+    getJson.onreadystatechange = () => {
+        if (getJson.readyState == 4) {
+            if (getJson.status == 200) {
+               pack.updateFromJSON( getJson.responseText )
+               let packMat = new BABYLON.StandardMaterial('packMat', scene )
+               mat.material = packMat;        
+               pack.setMeshToFrame(mat, 2, true) 
+            }
+        }
+    }
+    getJson.open("GET", './images/TestPack_texurePackage.json');
+    getJson.send();
 }

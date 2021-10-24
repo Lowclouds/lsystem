@@ -25,6 +25,8 @@ class Turtle3d {
       this.materialList = [];
       this.trackPaths = [];
       this.branchStack = [];
+      this.polygonStack = [];   // misnomer based on TABOP usage
+      this.polygonVerts = []; // misnomer: this is an array of facet vertices, in order
       this.initDone = initAll.call(this, scene,noturtle,shape);
 
       // instrumentation
@@ -124,13 +126,18 @@ class Turtle3d {
 
    // setters
    // 
-   setColor(v) {
-      this.TurtleState.color = normalizeColor(v);
+   setColor(diffuse, specular=null, emissive=null, ambient=null, alpha=1) {
+      this.TurtleState.color = normalizeColor(diffuse);
 
       const cidx = this.TurtleState.trackMaterial;
       this.materialList[cidx].diffuseColor = this.toColorVector();
 
       //puts(`set color to ${this.TurtleState.color}`);
+   }
+
+   // where dt, et al. are images
+   setTexture(dt, st=null, et=null, at=null, hasAlpha=false) {
+      
    }
 
    addMaterial(m=null, color=null) {
@@ -329,7 +336,7 @@ class Turtle3d {
       }
    }
 
-   forward ( dist) {
+   forward (dist) {
       let pos  = this.TurtleState.P;
       let oldP = pos.clone(); 
       let newP = pos.clone();
@@ -337,15 +344,38 @@ class Turtle3d {
 
       tH.scaleAndAddToRef(dist, newP);
 
+      //this.updatePolygon(newP); // or not
+
       this.TurtleState.P.copyFrom(newP);
       this.draw(oldP, newP);
    }
 
    back (dist) {return this.forward(-1*dist);}
+   
+   goto (a1,a2,a3) {
+      let pos;
+      if (a1 != undefined && a2 != undefined && a3 != undefined) {
+         pos = new BABYLON.Vector3(a1,a2,a3);
+      } else if (betterTypeOf(a1) == 'array') {
+	 pos = BABYLON.Vector3.FromArray(a1);
+      }
 
-   setHeading (v) {
-      if (betterTypeOf(v) == 'array') {
-	 v = BABYLON.Vector3.FromArray(v);
+      //this.updatePolygon(pos); // or not
+
+      let oldP = this.TurtleState.P.clone();
+      this.setPos(pos);
+      //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
+      this.draw(oldP, pos);
+   }
+
+   setHeading (a1,a2,a3) {
+      let v;
+      if (a1 != undefined && a2 != undefined && a3 != undefined) {
+         v = new BABYLON.Vector3(a1,a2,a3);
+      } else if (betterTypeOf(a1) == 'array') {
+	 v = BABYLON.Vector3.FromArray(a1);
+      } else { //assume a1 is a vector
+         v=a1;
       }
       v.normalize();
       let H = this.getH();
@@ -392,6 +422,13 @@ class Turtle3d {
    levelL() {
       this.setUp(new BABYLON.Vector3(0,1,0));
    }
+   // adjust heading according to tropism vector and length of segment
+   // TABOP pgs 58-61
+   // this is a scaled torque on the heading vector: eHxT, where e is a constant
+   // H is the length of the next forward move, and T is a unit tropism vector
+   // length of segment defaults to 1
+   // applyTropism() {
+   // }
 
    //  yaw, pitch, roll
    yaw (angle) {
@@ -420,32 +457,20 @@ class Turtle3d {
       this.TurtleState.accumRoll %= 360;
 
    }
-   goto (a1,a2,a3) {
-      let pos;
-      if (a1 && a2 && a3) {
-         pos = new BABYLON.Vector3(a1,a2,a3);
-      } else if (betterTypeOf(a1) == 'array') {
-	 pos = BABYLON.Vector3.FromArray(a1);
-      }
-      let oldP = this.TurtleState.P.clone();
-      this.setPos(pos);
-      //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
-      this.draw(oldP, pos);
-   }
 
    draw(oldPos, newPos) {
       let ts = this.TurtleState;
       if (this.isPenDown()) {
          if (ts.drawMode == 'd') {
             this.drawImmediate(ts, oldPos, newPos);
-            // update visual turtle position
-            let tmesh = ts.turtleShape;
-            if (tmesh) {tmesh.position = newPos;}
          } else {               // in path mode
             // assuming 'extrusion'
             this.addPathPt(ts, oldPos, newPos);
          }
       }
+      // update visual turtle position
+      let tmesh = ts.turtleShape;
+      if (tmesh) {tmesh.position = newPos;}
    }
 
    drawImmediate(ts, oldPos, newPos) {
@@ -516,6 +541,10 @@ class Turtle3d {
    addPathPt(ts, oldPos, newPos) {
       // assuming 'extrusion'
       let tp = ts.trackPath;
+      if (tp.points.length == 0) { // push first point
+         tp.points.push(oldPos);
+         tp.srm.push({s: this.TurtleState.size, r: 0, m: 0})
+      }
       let roll = ts.accumRoll;
       //let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
       //let rolldiff = roll - lastroll; // total additional roll
@@ -646,9 +675,6 @@ class Turtle3d {
    newTrack(udata=null,) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
       let tp = new TrackPath();
-      tp.points.push(this.TurtleState.P.clone());
-      tp.srm.push({s: this.TurtleState.size, r: 0, m: 0})
-
       if (tp.shape != null) {
          this.TurtleState.trackShape = tp.shape;
       } else if (this.TurtleState.trackShape == null) {
@@ -673,44 +699,150 @@ class Turtle3d {
    }
 
    drawDisc(d = 1, arc = 1, qual = 64, scaling = null) {
-      let disc,p, opts = {};
+      let mesh,p, opts = {};
       opts.radius = d/2;
       opts.tessellation = qual;
+      opts.arc = arc;
       opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
       opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
       opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
 
-      disc = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
-      disc.material = this.materialList[this.TurtleState.trackMaterial];
+      mesh = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
 
-      if (scaling) {
-         disc.scaling.x = scaling.x;
-         disc.scaling.y = scaling.y;
-         disc.scaling.z = scaling.z;
-      }
+      this.meshCommonSetup(mesh, scaling);
+   }
 
-      disc.rotation = BABYLON.Vector3.RotationFromAxis(this.getH(), this.getL().scale(-1), this.getU());
+   drawSphere(d=1, arc=1, qual=32, slice=1, scaling=null) {
+      let mesh, p, opts = {};
+      opts.diameter = d;
+      opts.segments = qual;
+      opts.arc = arc;
+      opts.slice = slice;
+      opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+      opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
+      opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
+
+      mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
       
-      p = this.getPos();
-      disc.position.x = p.x;
-      disc.position.y = p.y;
-      disc.position.z = p.z;
+      this.meshCommonSetup(mesh, scaling);
+   }
 
+   // drawCapsule(d=1, arc=1, qual=32, slice=1, scaling=null) {
+   //    let mesh, p, opts = {};
+   //    opts.diameter = d;
+   //    opts.segments = qual;
+   //    opts.arc = arc;
+   //    opts.slice = slice;
+   //    opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+   //    opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
+   //    opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
+
+   //    mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
+      
+   //    this.meshCommonSetup(mesh, scaling);
+   // }
+
+   meshCommonSetup (mesh, scaling, rotate=true, pos = null) {
       let ts = this.TurtleState;
       let t = ts.Turtle;
       let ttag = ts.trackTag;
       let tag = `track${t} ${ttag}`;
 
-      BABYLON.Tags.AddTagsTo(disc, tag, scene);
+      mesh.material = this.materialList[ts.trackMaterial];
+      
+
+      if (scaling) {
+         mesh.scaling.x = scaling.x;
+         mesh.scaling.y = scaling.y;
+         mesh.scaling.z = scaling.z;
+      }
+
+      //mesh.rotation = BABYLON.Vector3.RotationFromAxis(ts.H, ts.L.scale(1), ts.U.scale(-1));
+      let p;
+      if (pos) {
+         p = pos;
+      } else {
+         p = ts.P;
+      }
+      mesh.position.x = p.x;
+      mesh.position.y = p.y;
+      mesh.position.z = p.z;
+      puts(`placed mesh at: ${p}`)
+      BABYLON.Tags.AddTagsTo(mesh, tag, scene);
    }
 
+   // implements the '{' polygon module
+   // this creates a mesh, which could be 3D, but we do a simple polygon
+   // triangulation, which assumes the polygon is convex except possibly 
+   // at the starting point - so we do a fan triangulation. This also 
+   // assumes the vertices are relatively flat.
+   // You could simulate a mesh with bunches of 3-gons, but that would be 
+   // pretty inefficient.
    newPolygon() {
       // save state
+      this.polygonVerts = new Array();
+      this.polygonStack.push({s: this.getState(), a: this.polygonVerts});
    }
-   updatePolygon() {
+
+   // implements the '.' module
+   updatePolygon(pos=null) {
+      if (this.polygonStack.length > 0) { // i.e. capturing a polygon
+         if (pos === null) {
+            pos = this.getPos();
+         }
+         puts(`adding ${pos} to polygonVerts`);
+         this.polygonVerts.push(otoa(pos));
+      }
    }
+
+   // implements the '}' module
    endPolygon () {
+      let pmesh;
+      let pstate = this.polygonStack.pop();
+      // polygonVerts is same as popped array
+      if (this.polygonVerts.length > 2) {
+         let vertexData = new BABYLON.VertexData();
+         // this works in the xy plane only
+         // let everts = earcut.flatten([this.polygonArray]);
+         // puts(`${this.polygonArray}`);
+         // puts(`${everts.vertices}`);
+         // let verts = earcut(everts.vertices, everts.holes, 3);
+         // puts(`${verts}`);
+         // vertexData.positions = everts.vertices;
+         // vertexData.indices = verts;
+
+         vertexData.positions = this.polygonVerts.flat();
+         vertexData.indices = fanTriangulate(this.polygonVerts);
+         // for (let i = 0; i < this.polygonVerts.length; i++) {
+         //    vertexData.indices[i] = i; // we assume they're in order;
+         // }
+         puts(`positions: ${vertexData.positions}`);
+         puts(`indices: ${vertexData.indices}`);
+
+         vertexData.normals = [];
+         BABYLON.VertexData.ComputeNormals(vertexData.positions, vertexData.indices, vertexData.normals);
+  
+         pmesh = new BABYLON.Mesh("poly", scene);
+         vertexData.applyToMesh(pmesh,true);
+
+         // set position to first captured polygon point - well, no
+         // leave it in place. 
+         this.meshCommonSetup(pmesh, false, false, newV(0,0,0));
+                              //BABYLON.Vector3.FromArray(this.polygonVerts[0]));
+
+         // make sure the material has backFaceCulling set to false
+         this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
+         puts('created a new polygon');
+      } else {
+         puts('polygon creation failed: polygonVerts.length = ' + this.polygonVerts.length );
+      }
       // restore state
+      this.setState(pstate.s);
+      if (this.polygonStack.length > 0) {
+         this.polygonVerts=this.polygonStack[this.polygonStack.length-1].a;
+      } else {
+         this.polygonVerts = [];
+      }
    }
 }
 
@@ -848,7 +980,7 @@ function rigidrotation (x, v, theta) {
      		       smult( ctheta, x), smult(stheta, vcx)));
 }
 
-function crossproduct (v, w) {
+function crossrh (v, w) {
     if (betterTypeOf(v) == 'array') {
 	v = BABYLON.Vector3.FromArray(v);
     }
@@ -860,11 +992,21 @@ function crossproduct (v, w) {
     res[0] = v.y*w.z - v.z*w.y;
     res[1] = v.z*w.x - v.x*w.z;
     res[2] = v.x*w.y - v.y*w.x;
-    // lh 
-    // res[0] = v.y*w.z - v.z*w.y;
-    // res[1] = v.z*w.x - v.x*w.z;
-    // res[2] =  v.y*w.x - v.x*w.y 
     return new BABYLON.Vector3.FromArray(res);
+}
+
+function crosslh (v, w) {
+   if (betterTypeOf(v) == 'array') {
+      v = BABYLON.Vector3.FromArray(v);
+   }
+   if (betterTypeOf(w) == 'array') {
+      w = BABYLON.Vector3.FromArray(w);
+   }
+   let res = [];
+   res[0] = v.y*w.z - v.z*w.y;
+   res[1] = v.x*w.z - v.z*w.x;
+   res[2] = v.y*w.x - v.x*w.y 
+   return new BABYLON.Vector3.FromArray(res);
 }
 
 function normalizeColor(v) {
@@ -913,4 +1055,18 @@ function normalizeColor(v) {
    }
    }
    return c;
+}
+
+// fan  triangulate from the first vertex
+// assume the points are in some sensible order
+function fanTriangulate(verts) {
+   let indices=[0,1,2]; //
+   let v=3;
+   while (v < verts.length) {
+      indices.push(0);
+      indices.push(v-1);
+      indices.push(v);
+      v++;
+   }
+   return indices;
 }
