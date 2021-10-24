@@ -55,6 +55,8 @@
         <!-- <script src="dist/mathjs-expression-parser.js"></script> -->
         <script src="./node_modules/mathjs/lib/browser/math.js"></script>
         <script src="./node_modules/earcut/dist/earcut.dev.js"></script>
+        <script src="./node_modules/libtess/libtess.debug.js"></script>
+        <script src="./scripts/triangulate.js"></script>
         <!-- <script src="./node_modules/delaunator/delaunator.js"></script> -->
         <script src="./node_modules/handjs/hand.js"></script>
         <script src="./node_modules/file-saver/src/FileSaver.js"></script>
@@ -88,8 +90,8 @@
 	   <tr><td>L(left)</td><td id="t1L"></td><td id="t2L"></td></tr>
 	   <tr><td>U(p)</td><td id="t1U"></td><td id="t2U"></td></tr>
 	 </table>
-	 <textarea class="tio" id="text1" rows="1" cols="40"></textarea>
-	 </p>
+	 <!-- <textarea class="tio" id="text1" rows="1" cols="40"></textarea> -->
+
 	 <div class="lsystem">
 	   <p>L-System Controls</p>
 	   <p>
@@ -101,9 +103,10 @@
 	   <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
 	   <p>
 	     <span class="btnrow" id="btns2"> 
-	       <button class="abutton"  id="btnParse">Parse L-system</button>
-	       <button class="abutton"  id="btnRewrite">Rewrite L-system</button>
-	       <button class="abutton"  id="btnDraw">Draw L-system</button>
+	       <button class="abutton"  id="btnParse">Parse</button>
+	       <button class="abutton"  id="btnRewrite">Rewrite</button>
+	       <button class="abutton"  id="btnDraw">Draw</button>
+	       <button class="abutton"  id="btnRPRD">Reset-Parse-Rewrite-Draw</button>
                <button class="lsprogress" id="numNodes">0</button>
                <button class="lsprogress" id="numDrawn">0</button>
 	   </p>
