@@ -38,7 +38,7 @@ class Turtle3d {
 	 this.scene = getScene.call(this, scene);
          this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
          this.materialList[0].diffuseColor = this.toColorVector();
-	 if (Turtle3d.Turtles == null) {Turtle3d.Turtles  = new Map();}
+         if (Turtle3d.Turtles == null) {Turtle3d.Turtles  = new Map();}
 	 Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
 	 return true;
       }
@@ -163,7 +163,7 @@ class Turtle3d {
       return this.TurtleState.trackMaterial; // return the current material index
    }
    getMaterial(i) {
-      return this.materialList[i % this.materialList.length]; // return the index
+      return this.materialList[i % this.materialList.length]; // return the material
    }
    setMaterial(i) {
       this.TurtleState.trackMaterial = i % this.materialList.length;
@@ -845,11 +845,11 @@ class Turtle3d {
       }
    }
 }
-
 Turtle3d.prototype.t3dIDTag=0;    //  a counter for constructing unique tags
 Turtle3d.prototype.t3dScene=null;	// ea default scene, once set
 Turtle3d.prototype.fd = Turtle3d.prototype.forward;
-Turtle3d.prototype.Turtles = null;
+Turtle3d.prototype.Turtles = null; // set of turtles
+
 
 // opts
 //   s: shape array, default is dodecagon

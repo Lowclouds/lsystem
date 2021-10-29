@@ -311,7 +311,7 @@ lblNumNodes = document.getElementById('numNodes');
 lblNumDrawn = document.getElementById('numDrawn');
 
 var lsState = 'Start';
-var ls;
+var ls = new Lsystem();
 
 btnParse.onclick = function() {
     ls.Parse(lsSrc.value);
@@ -386,13 +386,20 @@ btnRPRD.addEventListener("click", () => {
     } catch (error) {puts(error);}
 });
 
-ls = new Lsystem();
+var colorTableDefault = initCTable();
+t.deleteMaterials();
+let numMat = t.materialList.length;
+colorTableDefault.forEach((e) => {
+   t.addMaterial(null, e);
+   //puts(`add material w/color: ${e}`);
+}); 
+t.setMaterial(1);
 
 var interpdata = {
    step:  1,
    stemsize: 1,
    delta: 90,
-   ctable:  [[0.64, 0.17, 0.17], [0,.8, .8]],       // brownish, greenish
+   ctable:  colorTableDefault,
    ndelta: -90,
    stack: [],
    ci: 0,                       // color index
@@ -412,7 +419,8 @@ function turtleInterp (ti, ls, opts=null) {
       step:  1,
       stemsize: 1,
       delta: 90,
-      ctable:  [[0.64, 0.27, 0.27], [0,.8, .8]],       // brownish, greenish
+      //ctable:  [[0.64, 0.27, 0.27], [0,.8, .8]],       // brownish, greenish
+      ctable: colorTableDefault,
       ndelta: -90,
       stack: [],
       ci: 0,                       // color index
@@ -471,7 +479,7 @@ function turtleInterp (ti, ls, opts=null) {
          ti.addMaterial(null, e);
          puts(`add material w/color: ${e}`);
       }); 
-      ti.setMaterial(numMat);
+      ti.setMaterial(1);
       puts(`set ${ti.getTurtle()} material to idx ${numMat}, color ${ti.getColor()}`);
    }
    ti.hide();
@@ -483,7 +491,7 @@ function turtleInterp (ti, ls, opts=null) {
    puts(`using settings: ` + idata.show());
 
    function doModule () {
-      let i; 
+      let i; k
       let isPM = false;
       
       for (i=idata.mi; i < Math.min(tree.length, idata.mi+2000); i++) {
@@ -601,9 +609,11 @@ function turtleInterp (ti, ls, opts=null) {
             break;
          }
          case "'": {            // increment color table index
-            idata.ci++;
-            if (idata.ci == idata.ctable.length) { idata.ci = 0;}
-            ti.setColor(idata.ctable[idata.ci]);
+            let mi = ti.getMaterialIdx()
+            mi++;
+            ti.setMaterial(mi); // 
+            // idata.ci %= idata.ctable.length;
+            // ti.setColor(idata.ctable[idata.ci]);
             break;
          }
          case '\[': {           // start a branch
@@ -640,6 +650,10 @@ function turtleInterp (ti, ls, opts=null) {
                ti.updatePolygon();
             }
             //puts(`save state in polygon mode: ${ti.getPos()}`)
+            break;
+         }
+         case '$': {
+            
             break;
          }
          case 'A':
