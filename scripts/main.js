@@ -397,14 +397,14 @@ t.setMaterial(1);
 
 var interpdata = {
    step:  1,
-   stemsize: 1,
+   stemsize: 0.05,
    delta: 90,
-   ctable:  colorTableDefault,
    ndelta: -90,
    stack: [],
    ci: 0,                       // color index
    notInPolygon: true,
    mi: 0,                       // module index
+   ctable:  colorTableDefault,
    cpoly: null
 }
 
@@ -419,13 +419,13 @@ function turtleInterp (ti, ls, opts=null) {
       step:  1,
       stemsize: 1,
       delta: 90,
-      //ctable:  [[0.64, 0.27, 0.27], [0,.8, .8]],       // brownish, greenish
-      ctable: colorTableDefault,
       ndelta: -90,
       stack: [],
       ci: 0,                       // color index
       inPolygon: 0,                // not
       mi: 0,                       // module index
+      //ctable:  [[0.64, 0.27, 0.27], [0,.8, .8]],       // brownish, greenish
+      ctable: colorTableDefault,
       cpoly: null
    }
    idata.show =  function () {
@@ -491,7 +491,7 @@ function turtleInterp (ti, ls, opts=null) {
    puts(`using settings: ` + idata.show());
 
    function doModule () {
-      let i; k
+      let i;
       let isPM = false;
       
       for (i=idata.mi; i < Math.min(tree.length, idata.mi+2000); i++) {
@@ -610,10 +610,21 @@ function turtleInterp (ti, ls, opts=null) {
          }
          case "'": {            // increment color table index
             let mi = ti.getMaterialIdx()
-            mi++;
+            mi--;
             ti.setMaterial(mi); // 
             // idata.ci %= idata.ctable.length;
             // ti.setColor(idata.ctable[idata.ci]);
+            break;
+         }
+         case ';': {
+            let mi;
+            if (isPm) {
+               mi = p0;
+            } else { 
+               mi = t.getMaterialIdx();
+               mi++;
+            }
+            ti.setMaterial(mi);
             break;
          }
          case '\[': {           // start a branch
