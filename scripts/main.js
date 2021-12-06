@@ -311,32 +311,46 @@ lblNumNodes = document.getElementById('numNodes');
 lblNumDrawn = document.getElementById('numDrawn');
 
 var lsState = 'Start';
-var ls = new Lsystem();
+var lsys; // = new Lsystem();
 
 btnParse.onclick = function() {
-    ls.Parse(lsSrc.value);
-    lsResult.value = ls.serialize();
-    lsState = 'Parsed';
+   let spec = lsSrc.value;
+   lsys = Lsystem.Parse(spec);
+   lsResult.value = lsys.serialize();
+   lsState = 'Parsed';          // unused
 }
 
+// btnCpp.onclick = function() {
+//    if (lsState != 'Start') {
+//       if (btnCpp.textContent == 'Show CPP') {
+//          lsResult.value = lsys.spec;
+//          btnCpp.textContent = 'Show Parse';
+//       } else {
+//          lsResult.value = lsys.serialize();
+//          btnCpp.textContent = 'Show CPP';
+//       }
+//    }
+// }
+
 btnRewrite.onclick = function() {
-    if (lsResult.textContent != 'Empty') {
-        lsResult.value = ls.Rewrite(); //.toString();
-        lsState = 'Rewritten';
+    if (lsys && lsResult.textContent != 'Empty') {
+	lsResult.value = lsys.Rewrite(); //.toString();
+	lsState = 'Rewritten';
     }
 }
 
 function loadLSfile(event) {
     let file = lsFile.files.item(0);
     if (file != null) {
-        let reader = new FileReader();
-        
-        reader.onload = function() {
-            lsSrc.value = reader.result;
-            //lsResult.value = '';
-            lsState='Loaded';
-        }
-        reader.readAsText(file);
+	let reader = new FileReader();
+	
+	reader.onload = function() {
+	   lsSrc.value = reader.result;
+	   //lsResult.value = '';
+	   lsState='Start';
+           // btnCpp.textContent = 'Show CPP';
+	}
+	reader.readAsText(file);
     }
 }
 
@@ -359,19 +373,19 @@ var rwresult=null;
 btnDraw.addEventListener("click", () => {
     try {
         t.setHeading([0,1,0]);
-        turtleInterp(t, ls);
+        turtleInterp(t, lsys);
     } catch (error) {puts(error);}
 });
 
 btnRPRD.addEventListener("click", () => {
     try {
        // reparse
-       ls.Parse(lsSrc.value);
-       lsResult.value = ls.serialize();
+       lsys = Lsystem.Parse(spec);
+       lsResult.value = lsys.serialize();
        lsState = 'Parsed';
        // rewrite
        if (lsResult.textContent != 'Empty') {
-          lsResult.value = ls.Rewrite(); //.toString();
+          lsResult.value = lsys.Rewrite(); //.toString();
           lsState = 'Rewritten';
           // reset
           t.home();
@@ -380,7 +394,7 @@ btnRPRD.addEventListener("click", () => {
           camera.setTarget(t.getPos());
           // draw
           t.setHeading([0,1,0]);
-          turtleInterp(t, ls);
+          turtleInterp(t, lsys);
        }
 
     } catch (error) {puts(error);}

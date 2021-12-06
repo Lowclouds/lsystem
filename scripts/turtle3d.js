@@ -44,13 +44,17 @@ class Turtle3d {
       }
 
       function turtleShape(noturtle, shape) {
+         let tag = this.TurtleState.Turtle;
+         let turtle=''
 	 if (noturtle) {
-	    return '';
+	    return turtle;
 	 } else if (shape != null) {
-	    return shape;
+	    turtle = shape;
 	 } else {
-	    return maketurtle.call(this, this.TurtleState.Turtle);
+	    turtle = maketurtle.call(this, tag);
 	 }
+	 BABYLON.Tags.AddTagsTo(turtle, `${tag} turtle`); 
+         return turtle;
       }
 
       function getScene(scene) {
@@ -71,7 +75,6 @@ class Turtle3d {
       function maketurtle (tag) {
 	 let scene = this.scene;
 	 var tMesh = BABYLON.MeshBuilder.CreateBox("turtle",{size: 0.25},scene);
-	 BABYLON.Tags.AddTagsTo(tMesh, `${tag} turtle`); 
 	 let pts = [ newV(0,0,0), newV(1, 0, 0) ];
 	 let axis;
 	 let xaxis = BABYLON.MeshBuilder.CreateLines('xaxis', {points: pts}, scene);
