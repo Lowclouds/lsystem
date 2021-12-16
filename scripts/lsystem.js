@@ -38,7 +38,7 @@ A(t)>F : t==10 -> -FFFA(0)
 const RE = {};
 var numReStr = '\\d+(?:\\.\\d+)?';
 //var symbolReStr = "[\\w\\d\\+\\-\\]['{}\&^\\\\/!\\.~\\|]";
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\|\\$%]|@D[io]|@b[od]|@[#!bcoOsvGMRTD]|\\?[PHLU]?|~\\w\\d*";
+var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
 var varnameReStr = '\\w[\\w\\d]*';
 var startdReStr='^(?:#define)[ \\t]+\(';
 var enddReStr = '\)[ \\t]+([^ \\t].*)';
@@ -50,9 +50,10 @@ RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`); // do I ne
 RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
 RE.dlength = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
 RE.axiom = /^[aA]xiom:\s*(\S.*)/;       // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
-RE.lsystem = /^[lL][sS]ystem: ([^ \\t]+)/;
+RE.lsystem = /^[lL][sS]ystem: *([^ \\t]+)/;
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 RE.modules = new RegExp(`${moduleReStr} *`,'g');
+RE.successorModule = new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
 RE.ws = /\s+/g;
 
 var param1ReStr=`${numReStr}|${varnameReStr}`;
@@ -131,17 +132,18 @@ class Lsystem {
       this.decomprules = [];      // unimplemented
       this.homorules = [];      // unimplemented
       this.Dlength = 0;	// number of iterations
-      this.defs = new Map(); // from define statements
-      this.vars = new Map(); // from variable assignment statements
+      this.globals = new Map(); // from define statements
+      this.locals = new Map(); // from variable assignment statements
       this.current = [];
       this.next = [];
       this.verbose = 0;
-      this.stemsize = 1;
+      this.stemsize = 0.1;
       this.step = 1;    // default forward step size
       this.delta = 90;	// default angle
       this.ignore=[];
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
+      this.needsEnvironment = false;
       this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
    }
 
@@ -249,9 +251,9 @@ class Lsystem {
       this.rules = [];
       this.homorules = [];
       this.Dlength = 0;
-      this.defs.clear();
-      this.vars.clear();
-      this.stemsize = 1;
+      this.globals.clear();
+      this.locals.clear();
+      //this.stemsize = 0.1;
       this.delta = 90;
       this.current=[];
       this.next=[];
@@ -282,8 +284,8 @@ class Lsystem {
       parseHelper(ls0);    // this is the toplevel lsystem
 
       if (! ls0.Dlength) {
-	 if (ls0.vars.has('n')) {
-	    ls0.Dlength = ls0.vars.get('n');
+	 if (ls0.locals.has('n')) {
+	    ls0.Dlength = ls0.locals.get('n');
 	 } else {
 	    ls0.Dlength = 1;
             puts('Derivation length not specified; defaulting to 1');
@@ -313,7 +315,7 @@ class Lsystem {
 
          ls.initParse(isSubLs);
 
-         let parseState  = inItems;
+         let parseState  = inItems; // initial parse state
          let parseResult;       // {status, nextState}
          let have_axiom=false;
          let have_homomorphism=false;
@@ -348,15 +350,8 @@ class Lsystem {
                   loop = false;
                   break;
                case P_UNHANDLED:
-                  let m;
-                  // this is a #define which can occur almost anywhere
-                  // these defines, though, will be local to each lsystem
-                  // can't decide if that's good or bad, but it's different 
-                  // from the C++ preprocessor behavior of L-Studio
-                  if (null != (m = line.match(RE.define))) {
-                     ls.defs.set(m[1], m[2]);
-                     ls.show('defs')
-                  };
+                  // not clear why we leave unhandled unhandled
+                  puts(`Unhandled parse result, on line: ${line}`);
                   loop = false;
                   break;
                default:
@@ -365,7 +360,7 @@ class Lsystem {
                }
             } while(loop);
             puts(`${pos} ${eol}`);
-         }
+         } // not at end of spec
          return ls;
       }
       
@@ -378,7 +373,7 @@ class Lsystem {
          if (RE.var.test(line)) {
             let assign = line.matchAll(RE.assign);
             for (let parts of assign) {
-               ls.vars.set(parts[1], parts[2])
+               ls.locals.set(parts[1], parts[2])
             }
             ls.show('vars');
          } else if (null != ( m = line.match(RE.lsystem))) {
@@ -411,7 +406,6 @@ class Lsystem {
             ls.show('consider');
          } else if (m = line.match(RE.axiom)) {
             //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
-            //let tmp = substitute(ls.defs, m[1])
             let tmp = m[1].replaceAll(RE.ws, ''); // remove embedded ws in axiom
             ls.axiom = parseSuccessor(tmp);
             ls.show('axiom');
@@ -560,10 +554,6 @@ class Lsystem {
             return null;
          }
          puts(m);
-         // -- unnecessary using cpp
-         // first substitute defines into successor, while it's a string
-         //successor = substitute(ls.defs, m[8])
-         //puts(`successor after substitution: ${successor}`);
 
          // turn successor into a list of modules
          // since we need to deal with nested parens, strtolist and simple REs don't work
@@ -584,14 +574,13 @@ class Lsystem {
          condition = leftside[4];   // undefined or not
          if (condition) {
             needScope=true;
-            // condition = substitute(ls.defs, condition);
          } else {
             condition = true; // default of no condition
          }
 
          if (needScope) {
             scope = new Map();
-            initScope(scope, ls.vars);
+            initScope(scope, ls.globals, ls.locals);
             puts("scope before funcs: " + Object.entries(scope));
 
             scope._bind_ = function (v, exp) {math.evaluate(v+'='+exp, scope);}
@@ -642,7 +631,7 @@ class Lsystem {
          let l = new Array();
          let i = 0;
          let m;
-         let re =  new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
+         let re = RE.successorModule;
          while (m = re.exec(s)){
             // puts(`matched: ${m} : lastIndex = ${re.lastIndex}`);
             if (m[2] === undefined) {
@@ -727,6 +716,9 @@ class Lsystem {
       return r;
    }
 
+ 
+   // rewrite string derivation length times
+   // generate step per cpfg docs
    Rewrite (ls = this, axiom = null) {
       if (axiom === null) {
          ls.current = ls.axiom.slice();
@@ -808,18 +800,18 @@ class Lsystem {
                   if (! subls) {
                      throw new Error(`lsystem: no lsystem found on stack!`); 
                   } else {
-                     ls = subls.ls;
+                     ls = subls;
                      lsLabel = ls.label;
                      rules = ls.rules;
                      restrict = ls.restrict;
-                     puts(`Returning to lsystem: ${lslabel}`);
+                     puts(`Returning to lsystem: ${lsLabel}`);
                      //   continue;
                   }
                }
             }
          }
          mstring = flatten(lsnext);
-         puts(`iteration ${i + 1}\n${mstring}`);
+         //puts(`iteration ${i + 1}\n${mstring}`);
       }
       ls.current = mstring;
       // this.next = null;
@@ -861,8 +853,8 @@ class Lsystem {
             return nodeA == nodeB;
          } else if ((nodeA.m == nodeB.m) && (nodeA.p.length >= nodeB.p.length)) {
             // might want to yell if A.m == B.m, but number of arguments differ
-            // go ahead and bind formal parameters
-            // puts('binding formal parameters');
+            // go ahead and bind actual values to formal parameters
+            // puts('binding formal parameters(fp)');
             if (scope !== null && scope.hasOwnProperty('_bind_')) {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
                   //puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]}`);
@@ -907,7 +899,7 @@ class Lsystem {
       while (n >= 0 && n < nmax) {
          m = mlist[n];
          c = ctxt[ci];
-         if ((ignore && ! ignore.includes(m)) || (consider && consider.includes(m))) {
+         if ((ignore && ignore.includes(m)) || (consider && !consider.includes(m))) {
             puts(`skipping module ${m}`);
          } else {
             if (dir < 0) {         //# left context:upwards:acropetal
@@ -1081,9 +1073,13 @@ var LSScope = function(map) {
    return s;
 }
 
-function initScope(o,vmap) {
+function initScope(o, ...maps) {
    // vmap.forEach((v,k) => o[k] = v); // map as object
-   vmap.forEach((v,k) => o.set(k,v)); // map as map
+   
+   maps.forEach((vmap) => {
+      vmap.forEach((v,k) => o.set(k,v)); // map as map
+   });
+
 }
 
 function substitute(defs, expr ) {

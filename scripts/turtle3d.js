@@ -1,3 +1,6 @@
+// 
+// provide a 3d turtle with extensions to support lsystem interpretation
+// 
 class Turtle3d {
    constructor (scene=null,noturtle=false,shape=null) {
       this.TurtleState = {
@@ -9,7 +12,7 @@ class Turtle3d {
 	 penIsDown: true,
 	 isShown: true,
 	 color: '0,0,0',
-	 size: 0.01,
+	 size: 0.1,
 	 turtleShape: null,
 	 track: 'tube',
          trackPath: null,
@@ -17,17 +20,21 @@ class Turtle3d {
 	 trackMesh: null,
          trackTag: '',          // additional tag
          trackMaterial: 0,      // index into material list
-         drawMode: 'd',             // 'd': draw, 'p': extrude
+         drawMode: 'd',         // 'd': draw, 'p': extrude (p1-p4 for splines?)
+         shapeMode: '',         // 'p': polygon, 'c': shape/contour
          accumRoll: 0,
       }
 
       this.scene = null;
       this.materialList = [];
       this.trackPaths = [];
-      this.branchStack = [];
+      this.trackContours = new Map(); // for trackShapes, default to circle, radius size
+      this.meshes = new Map();        // no defaults
+      this.branchStack = [];    // stack of turtle state created when lsystem branches
       this.polygonStack = [];   // misnomer based on TABOP usage
       this.polygonVerts = []; // misnomer: this is an array of facet vertices, in order
-      this.initDone = initAll.call(this, scene,noturtle,shape);
+      this.tempContour = null;
+      this.initDone = initAll.call(this, scene,noturtle, shape);
 
       // instrumentation
       this.meshCount = [0,0];
@@ -38,6 +45,7 @@ class Turtle3d {
 	 this.scene = getScene.call(this, scene);
          this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
          this.materialList[0].diffuseColor = this.toColorVector();
+         this.trackContours.set('default', generateCircle(this.size));
          if (Turtle3d.Turtles == null) {Turtle3d.Turtles  = new Map();}
 	 Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
 	 return true;
@@ -128,7 +136,8 @@ class Turtle3d {
    isShown() {return this.TurtleState.isShown;}
 
    // setters
-   // 
+
+   // setColor has no concept of a color/material table, it just sets the current color
    setColor(diffuse, specular=null, emissive=null, ambient=null, alpha=1) {
       this.TurtleState.color = normalizeColor(diffuse);
 
@@ -138,9 +147,13 @@ class Turtle3d {
       //puts(`set color to ${this.TurtleState.color}`);
    }
 
-   // where dt, et al. are images
-   setTexture(dt, st=null, et=null, at=null, hasAlpha=false) {
-      
+   // setMaterial sets the current color/material index into the table
+   // the index is modulo the table length, so there is never a failure or 
+   // notice that it is out of bounds
+   setMaterial(i) {
+      i = i < 0 ? this.materialList.length-1 : i % this.materialList.length;
+      this.TurtleState.trackMaterial = i;
+      this.TurtleState.color = normalizeColor(this.materialList[i].diffuseColor);
    }
 
    addMaterial(m=null, color=null) {
@@ -168,14 +181,14 @@ class Turtle3d {
    getMaterial(i) {
       return this.materialList[i % this.materialList.length]; // return the material
    }
-   setMaterial(i) {
-      this.TurtleState.trackMaterial = i % this.materialList.length;
-      this.TurtleState.color = normalizeColor(this.materialList[i].diffuseColor);
-   }
    deleteMaterials() {
       this.materialList = [];
       this.TurtleState.trackMaterial = null;
       this.TurtleState.color = null;
+   }
+   // where dt, et al. are images
+   setTexture(dt, st=null, et=null, at=null, hasAlpha=false) {
+      
    }
 
    toColorVector(cv = this.TurtleState.color) {
@@ -289,7 +302,23 @@ class Turtle3d {
    }
 
    setTurtleShape(val) {this.TurtleState.turtleShape = val;} // a mesh
-   setTrackShape(val)  {this.TurtleState.trackShape = val;} // array of Vector3
+
+   setTrackShape(id)  {
+      this.TurtleState.trackShape = this.trackContours.get(id);
+   }
+   /**
+    * addTrackShape add a shape to the contours map
+    * @param id  - name/identifier of contour in contour map
+    * @param val - array of vector3 pts where z value is zero
+    */
+   addTrackShape(id, val) {
+      if (val.length >= 2) {
+         this.trackContours.set(id, val);
+      } else {
+         puts(`contour: ${id} not added, not enough points.`);
+      }
+   }
+
    setTag(val) {this.TurtleState.trackTag = val;}
 
    penUp() {this.TurtleState.penIsDown = false;}
@@ -482,11 +511,16 @@ class Turtle3d {
    draw(oldPos, newPos) {
       let ts = this.TurtleState;
       if (this.isPenDown()) {
-         if (ts.drawMode == 'd') {
+         switch (ts.drawMode) {
+         case 'd': // 'normal', one mesh/draw call
             this.drawImmediate(ts, oldPos, newPos);
-         } else {               // in path mode
-            // assuming 'extrusion'
+            break;
+         case 'p':  // assuming 'extrusion'
             this.addPathPt(ts, oldPos, newPos);
+            break;
+         case 'c':              // contour mode
+            puts('Warning: drawing not expected in contour mode')
+            break;
          }
       }
       // update visual turtle position
@@ -644,6 +678,7 @@ class Turtle3d {
       BABYLON.Tags.AddTagsTo(extrusion, `track${t} path`, this.scene);
       this.trackPaths.push(extrusion); // 
 
+      // position the turtle at end of path
       let tmesh = this.TurtleState.turtleShape;
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
@@ -654,7 +689,7 @@ class Turtle3d {
       if (tp.shape != null) {
          this.TurtleState.trackShape = tp.shape;
       } else if (this.TurtleState.trackShape == null) {
-         this.TurtleState.trackShape = generateCircle(1);
+         this.TurtleState.trackShape = this.trackContours.get('default');
          tp.shape = this.TurtleState.trackShape;
       }
 
@@ -676,7 +711,10 @@ class Turtle3d {
       return last.userData;
    }
 
-   //               // in path mode
+
+   /** 
+    * addPathPt at a point when in path mode
+    **/
    addPathPt(ts, oldPos, newPos) {
       // puts(`addPathPt from ${oldPos} to ${newPos}`);
       // assuming 'extrusion'
@@ -690,7 +728,7 @@ class Turtle3d {
       let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
       let rolldiff = roll - lastroll; // total additional roll
       // puts(tp.srm);
-      let npts = Math.abs(Math.trunc(roll / tp.maxRoll)); // number of pts
+      let npts = Math.abs(Math.trunc(roll / tp.maxTwist)); // number of pts
       let rollinc = roll / (npts+1); // divide by # sections
       // puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, rollinc: ${rollinc}, npts: ${npts}`);
       if (npts > 0) {
@@ -807,6 +845,7 @@ class Turtle3d {
       // save state
       this.polygonStack.push({s: this.getState(), a: Array.from(this.polygonVerts)});
       this.polygonVerts = new Array();
+      //this.TurtleState.shapeMode = 'p';
    }
 
    // implements the '.' module
@@ -869,7 +908,77 @@ class Turtle3d {
          this.polygonVerts = [];
       }
    }
+
+   /**
+    *  Create and save a contour path used for generalized cylinder/trackPath extrusions
+    *  newContour initializes the path.
+    * ***  All collected points are projected onto the XY plane. ***
+    *  @param id   - the id of the path, can be number or string, typically single letter
+    *  @param type - type of path. 0-4, default 0 is simple path, i.e. points added form
+    *                the path; user must close path explicitly, by adding initial point at
+    *                the end before ending path.
+    *                type 1: an open Hermite spline, points in area are Hermite spline
+    *                control points.
+    *                type 2: a close Hermite spline
+    *                types 3 & 4 are open/close B-splines
+    * 
+    * Notes: you shouldn't call this inside of a track or inside a contour, since it
+    * redefines the draw mode and resets the contour array
+    * thus stealing points from the path. Conversely, you shouldn't start a track/generalized 
+    * cylinder while defining a contour. Branching within a contour is also not advised
+    **/
+   beginContour(id, type, udata=null) {
+      this.branchStack.push({tstate: this.getState(), userData: udata});
+      this.tempContour = new Contour();
+      //this.TurtleState.shapeMode = 'c';
+   }
+   updateContour(pos=null) {
+      if (this.tempContour != null ) {
+         if (pos == null) {
+            pos = this.getPos();
+         }
+         this.tempContour.pts.push(otoa(pos));
+      }
+   }
+   /**
+     end a contour. leave the id parameter in the off chance we ever allow nested
+     contour calls.
+    */
+   endContour(id=null) { 
+      if (this.tempContour != null) {
+         if (id === null || id === this.tempContour.id) {
+            switch (this.tempContour.type) {
+            case 0:
+               this.addTrackShape(this.tempContour.id, this.tempContour.pts)
+               break;
+            default:
+               puts(`contour type: ${this.tempContour.type} not implemented`);
+            }
+            this.tempContour = null;
+         } else {
+            throw new Error(`Ended contour with id: ${id}, expected ${this.tempContour.id}`);
+         }
+      }
+   }
+
+   Contour(id, type=0) {
+      this.id = id;
+      this.type = type;
+      this.pts = new Array ();  // vector 3 array with z=0;
+      this.controlPts = new Array(); // same as above
+   }
+   
+   storePoint(pos=null) 
+   {
+      if (this.polygonStack.length > 0) {
+         this.updatePolygon(pos);
+      }
+      if (this.tempContour != null) {
+         this.updateContour(pos);
+      }
+   }
 }
+
 Turtle3d.prototype.Turtles = null; // set of turtles
 Turtle3d.prototype.t3dIDTag=0;    //  a counter for constructing unique tags
 Turtle3d.prototype.t3dScene=null;	// ea default scene, once set
@@ -879,7 +988,7 @@ Turtle3d.prototype.bk = Turtle3d.prototype.back;
 
 // opts
 //   s: shape array, default is dodecagon
-//   maxRoll: maxRoll in degrees before inserting intermediate pts, default 5.625
+//   maxTwist: maxTwist in degrees before inserting intermediate pts, default 5.625
 function TrackPath(r=0, opts={}) {
    
    if (! opts.s ) {
@@ -887,23 +996,24 @@ function TrackPath(r=0, opts={}) {
    } else {
       this.shape = opts.s;
    }
-   if (! opts.maxRoll) {
-      this.maxRoll = 5.625;
+   if (! opts.maxTwist) {
+      this.maxTwist = 5.625;
    } else {
-      this.maxRoll = opts.maxRoll;
+      this.maxTwist = opts.maxTwist;
    }
    this.points=[];
    this.srm = [];               // scale, rotation, material
    //this.accumRoll = r;
-   //puts(`maxRoll: ${this.maxRoll}`);
+   //puts(`maxTwist: ${this.maxTwist}`);
    this.clone = function () {
       let tpc = new TrackPath(this.accumRoll, {s: Array.from(this.shape)});
       tpc.points = Array.from(this.points);
       tpc.srm = Array.from(this.srm);
-      tpc.maxRoll = this.maxRoll;
+      tpc.maxTwist = this.maxTwist;
       return tpc;
    };
 };
+
 
 function generateCircle(r=1, q=12) {
    var p = [];
@@ -973,7 +1083,7 @@ function showColorTable(tu) {
    }
 }
 // some helper functions
-var puts =console.log;
+var puts =console.log;          // nod to TCL
 function betterTypeOf (o) {
     return Object.prototype.toString.call(o).slice(8,-1).toLowerCase(); 
 }
