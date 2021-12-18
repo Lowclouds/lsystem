@@ -319,10 +319,19 @@ function turtleInterp (ti, ls, opts=null) {
             break;
          }
          case '@Ds': {
-            idata.ptCaptureMode |= 2;
+            if (isPm) {
+               let p1 = pM.p.length > 1 ? pM.p[1] : 0;
+               ti.beginContour(p0, p1, null) ;
+               idata.ptCaptureMode |= 2;
+            } else {
+               throw new Error('@Ds module requires an id/name parameter');
+            }
             break;
          }
          case '@De': {
+            if (isPm) {
+               ti.endContour(p0);
+            }
             idata.ptCaptureMode ^= 2; 
             break;
          }

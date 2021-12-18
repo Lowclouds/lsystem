@@ -196,7 +196,7 @@ class Turtle3d {
       return c.fromArray(Array.from(cv.split(','), x=> Number(x)));
    }
    setSize(v) {this.TurtleState.size = v;}
-   setTrack(v, points=null) {
+   setTrack(v, id=null) {
       switch (v) {
       case 'line':
       case 'tube': {
@@ -208,10 +208,10 @@ class Turtle3d {
       case 'extrusion':
       case 'ext': {
          this.TurtleState.track = 'ext';
-         if (points == null) {
-            this.TurtleState.trackShape = generateMint();
+         if (id === null) {
+            this.TurtleState.trackShape = this.trackContours('default');
          } else {
-            this.TurtleState.trackShape = points;
+            this.TurtleState.trackShape = this.trackContours(id);
          }
          break;
       }
@@ -305,15 +305,21 @@ class Turtle3d {
 
    setTrackShape(id)  {
       this.TurtleState.trackShape = this.trackContours.get(id);
+      if (this.TurtleState.trackPath != null) {
+         this.TurtleState.trackPath.shape = this.TurtleState.trackShape;
+      }
    }
    /**
     * addTrackShape add a shape to the contours map
     * @param id  - name/identifier of contour in contour map
-    * @param val - array of vector3 pts where z value is zero
+    * @param val - array of pts where z value is zero, pt == 3d array
+    *              we convert pts to BABYLON Vector3s, insuring z=0
     */
    addTrackShape(id, val) {
       if (val.length >= 2) {
-         this.trackContours.set(id, val);
+         let pts = [];
+         val.forEach((e) => {pts.push(newV(e[0],e[1]));});
+         this.trackContours.set(id, pts);
       } else {
          puts(`contour: ${id} not added, not enough points.`);
       }
@@ -581,11 +587,12 @@ class Turtle3d {
          const segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
                                                                 {shape: tp.shape, 
                                                                  path: pathpts, 
-                                                                 updatable: false, 
+                                                                 updatable: true, 
                                                                  scaleFunction: getscale, 
                                                                  rotationFunction: getrotation,
                                                                  closePath: true,
-                                                                }); // sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+                                                                 sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                                                                });
          segment.isVisible=true;
          segment.material = this.materialList[ts.trackMaterial];
          BABYLON.Tags.AddTagsTo(segment, tag, scene);
@@ -618,8 +625,8 @@ class Turtle3d {
                                                                 updatable: false, 
                                                                 scaleFunction: getscale, 
                                                                 rotationFunction: getrotation,
-                                                                closePath: true,
-                                                               }); // sideOrientation: BABYLON.Mesh.DOUBLESIDE});
+                                                                closePath: false,
+                                                                sideOrientation: BABYLON.Mesh.DOUBLESIDE});
       //
       let matUsed = [];
       let matLocations = [];        // array of [path index, mat index] telling where material used
@@ -685,14 +692,12 @@ class Turtle3d {
 
    newTrack(udata=null,) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
-      let tp = new TrackPath();
-      if (tp.shape != null) {
-         this.TurtleState.trackShape = tp.shape;
-      } else if (this.TurtleState.trackShape == null) {
-         this.TurtleState.trackShape = this.trackContours.get('default');
-         tp.shape = this.TurtleState.trackShape;
-      }
 
+      if (this.TurtleState.trackShape == null) {
+         this.TurtleState.trackShape = this.trackContours.get('default');
+      }
+      let tp = new TrackPath({s: this.TurtleState.trackShape});
+      
       this.TurtleState.track = 'ext';
       this.TurtleState.drawMode = 'p';
       this.TurtleState.trackPath = tp;
@@ -784,6 +789,7 @@ class Turtle3d {
       opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
       opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
       opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
+      opts.updatable = true;
 
       mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
       
@@ -927,17 +933,17 @@ class Turtle3d {
     * thus stealing points from the path. Conversely, you shouldn't start a track/generalized 
     * cylinder while defining a contour. Branching within a contour is also not advised
     **/
-   beginContour(id, type, udata=null) {
+   beginContour(id, type=0, udata=null) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
-      this.tempContour = new Contour();
-      //this.TurtleState.shapeMode = 'c';
+      this.tempContour = new Contour(id, type);
    }
    updateContour(pos=null) {
       if (this.tempContour != null ) {
          if (pos == null) {
-            pos = this.getPos();
+            pos = this.getPos().clone();
          }
-         this.tempContour.pts.push(otoa(pos));
+         pos.z=0;               // enforce z==0
+         this.tempContour.pts.push(pos);
       }
    }
    /**
@@ -949,7 +955,7 @@ class Turtle3d {
          if (id === null || id === this.tempContour.id) {
             switch (this.tempContour.type) {
             case 0:
-               this.addTrackShape(this.tempContour.id, this.tempContour.pts)
+               this.trackContours.set(this.tempContour.id, this.tempContour.pts);
                break;
             default:
                puts(`contour type: ${this.tempContour.type} not implemented`);
@@ -961,13 +967,6 @@ class Turtle3d {
       }
    }
 
-   Contour(id, type=0) {
-      this.id = id;
-      this.type = type;
-      this.pts = new Array ();  // vector 3 array with z=0;
-      this.controlPts = new Array(); // same as above
-   }
-   
    storePoint(pos=null) 
    {
       if (this.polygonStack.length > 0) {
@@ -989,7 +988,7 @@ Turtle3d.prototype.bk = Turtle3d.prototype.back;
 // opts
 //   s: shape array, default is dodecagon
 //   maxTwist: maxTwist in degrees before inserting intermediate pts, default 5.625
-function TrackPath(r=0, opts={}) {
+function TrackPath(opts={}) {
    
    if (! opts.s ) {
       this.shape = generateCircle();
@@ -1014,6 +1013,12 @@ function TrackPath(r=0, opts={}) {
    };
 };
 
+function Contour(id, type=0) {
+   this.id = id;
+   this.type = type;
+   this.pts = new Array ();  // vector 3 array with z=0;
+   this.controlPts = new Array(); // same as above
+}
 
 function generateCircle(r=1, q=12) {
    var p = [];
@@ -1238,3 +1243,4 @@ function fanTriangulate(verts) {
    }
    return indices;
 }
+
