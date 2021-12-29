@@ -359,7 +359,7 @@ class Lsystem {
                   return;
                }
             } while(loop);
-            puts(`${pos} ${eol}`);
+            // puts(`${pos} ${eol}`);
          } // not at end of spec
          return ls;
       }
@@ -397,6 +397,7 @@ class Lsystem {
          } else if (null != ( m = line.match(RE.dlength))) {
             puts(`matched "derivation length: " got: ${m[1]}`);
             ls.Dlength = m[1];
+            ls.locals.set('DLength', m[1])
             ls.show('Dlength');
          } else if (null != (m = line.match(RE.ignore))) {
             ls.ignore = Lsystem.strtolist(m[1]) 
@@ -553,12 +554,12 @@ class Lsystem {
             puts(`Unrecognized production: ${line}`); 
             return null;
          }
-         puts(m);
+         //puts(m);
 
          // turn successor into a list of modules
          // since we need to deal with nested parens, strtolist and simple REs don't work
          successor = parseSuccessor(m[2].replaceAll(RE.ws, ''));
-         puts(`successor after parsing: ${successor}`);
+         // puts(`successor after parsing: ${successor}`);
          if (successor.find(e=>'object' == typeof e)) {
             needScope = true;
          }
@@ -581,10 +582,10 @@ class Lsystem {
          if (needScope) {
             scope = new Map();
             initScope(scope, ls.globals, ls.locals);
-            puts("scope before funcs: " + Object.entries(scope));
+            //puts("scope before funcs: " + Object.entries(scope));
 
             scope._bind_ = function (v, exp) {math.evaluate(v+'='+exp, scope);}
-            puts(`test func: _test_() = ${condition}`);
+            //puts(`test func: _test_() = ${condition}`);
             scope._test_ = function () {return math.evaluate(`${condition}`, scope);}
             scope._expand_ = function(module) {
                for (let a= 0; a< module.p.length; a++) {
@@ -606,11 +607,11 @@ class Lsystem {
       // bare variables or numbers
       function parseModules(s, isStrict = false) {
          let mods = [];
-         puts('parseModules looking at: ' + s);
+         // puts('parseModules looking at: ' + s);
          if (s) {
             let it = s.matchAll(RE.modules);
             for (m of it) {
-               puts('parseModules matching: ' + m);
+               //puts('parseModules matching: ' + m);
                if (m[2] === undefined) {
                   mods.push(m[1]);
                } else {
@@ -741,24 +742,32 @@ class Lsystem {
 	 lsnext = mstring.slice();     // default production is to copy
          for (let n=0; n < clength; n++) {
 	    let node = mstring[n];
-            puts(`looking at node[${n}] = ${node}`);
+            //puts(`looking at node[${n}] = ${node}`);
+            // special handling of cut module, %
+            if (node == '%') {
+               let on = n;
+               n = this.cut(lsnext, n);
+               //puts(`cut lsnext from ${on} to ${n}:\n${lsnext}`);
+               continue;
+            }
+            // 
             let doExpand = false;
 	    for (const rule of rules) {
-               puts(`matching against rule: ${rule}`);
+               //puts(`matching against rule: ${rule}`);
                let pred = rule[0]; // == [[lctxt] strictp [rctxt]]
                let scope = rule[3];
                let strictp = pred[1];
-               puts(`comparing  ${node} to strictp: ${strictp}`);
+               //puts(`comparing  ${node} to strictp: ${strictp}`);
                if (this.formalMatch(strictp, node, scope)) {
 		  let lctxt = pred[0];
 		  let rctxt = pred[2];
          	  if (! lctxt.length && ! rctxt.length && scope._test_()) {
                      lsnext[n] = this.expand(rule);
                      doExpand=true;
-                     puts(`unconditional expansion to: ${lsnext[n]}`);
+                     //puts(`unconditional expansion to: ${lsnext[n]}`);
                      break;
 		  } else {
-                     puts(`context sensitive rule: lctxt: ${lctxt} or rctxt: ${rctxt}`);
+                     //puts(`context sensitive rule: lctxt: ${lctxt} or rctxt: ${rctxt}`);
                      if (lctxt.length && 
                          ! ls.findcontext(mstring, lctxt, n, -1, scope, restrict)) {
                            continue;
@@ -772,7 +781,7 @@ class Lsystem {
                      if (doExpand) {
  // todo: evaluate post-condition expression 
                         lsnext[n] = this.expand(rule);
-                        puts(`this expanded ${mstring[n]} to ${lsnext[n]}`);
+                        //puts(`this expanded ${mstring[n]} to ${lsnext[n]}`);
                         break;  // stop looking through rules
                      }
 		  }
@@ -847,7 +856,7 @@ class Lsystem {
    // nodeB is a module in the expansion with an actual numeric value which
    // gets bound to the formal parameter from nodeA
    formalMatch(nodeA, nodeB, scope=null) {
-      puts(`formalMatch ${nodeA} against ${nodeB}`);
+      //puts(`formalMatch ${nodeA} against ${nodeB}`);
       if (typeof nodeA == typeof nodeB) {
          if (typeof nodeA == 'string') {
             return nodeA == nodeB;
@@ -859,14 +868,14 @@ class Lsystem {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
                   //puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]}`);
                   scope._bind_(nodeA.p[fp], nodeB.p[fp]);
-                  puts("scope bind:");
+                  //puts("scope bind:");
                   scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
                }
             }
             return true;
          }
       } else {
-         puts(`node types mismatch: A == ${typeof nodeA}, B=${typeof nodeB}`);
+         //puts(`node types mismatch: A == ${typeof nodeA}, B=${typeof nodeB}`);
          return false;
       }
    }
@@ -893,14 +902,14 @@ class Lsystem {
             consider = restrict.consider.slice();
          }
       }
-      puts(`ctxt: ${ctxt}, snode: ${snode}, dir: ${dir}`);
-      puts(`restrict: ${restrict}, ignore: ${ignore}, consider: ${consider}`);
+      //puts(`ctxt: ${ctxt}, snode: ${snode}, dir: ${dir}`);
+      //puts(`restrict: ${restrict}, ignore: ${ignore}, consider: ${consider}`);
 
       while (n >= 0 && n < nmax) {
          m = mlist[n];
          c = ctxt[ci];
          if ((ignore && ignore.includes(m)) || (consider && !consider.includes(m))) {
-            puts(`skipping module ${m}`);
+            //puts(`skipping module ${m}`);
          } else {
             if (dir < 0) {         //# left context:upwards:acropetal
                switch (m) {
@@ -929,7 +938,7 @@ class Lsystem {
                      if (n < nmax) {
                         m = mlist[n];
                      } else {
-                        puts('fell off right end of string looking for "]"');
+                        //puts('fell off right end of string looking for "]"');
                         return false;
                      }
                   }
@@ -1006,6 +1015,36 @@ class Lsystem {
       }
       return [c, n];
    }
+
+   // null out all modules from start to first end-branch, ], module or to end
+   // nxt is lsnext, which is initialized to be the current string
+   // this depends on sequential left-right processing of L-system string
+   cut (nxt, start) {
+      let i = start;
+      let atEnd=false;
+      let nested = 0;
+      do {
+         nxt[i] = null;
+         i++;
+         if ( i >= nxt.length ){
+            atEnd = true;
+         } else {
+            switch (nxt[i]) {
+            case '[':
+               nested++;
+               break;
+            case ']':
+               atEnd = nested == 0;
+               nested--;
+               break;
+            default:
+               break;
+            }
+         }
+      } while(! atEnd);
+      return i;
+   }
+ 
 }
 
 Lsystem.prototype.lsystems = new Map(); // Bag of all lsystems 'main' = initial one
@@ -1023,7 +1062,9 @@ function flatten( list) {
 	 v.forEach(m => {r.push(m)});
       } else {
 	 //puts('list[' + i + ']: ' + v + ' is NOT an array');
-	 r.push(v);
+	 if (v != null && v != '') {
+            r.push(v);
+         }
       }
    }
    return r;

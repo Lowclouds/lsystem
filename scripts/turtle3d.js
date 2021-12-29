@@ -304,9 +304,14 @@ class Turtle3d {
    setTurtleShape(val) {this.TurtleState.turtleShape = val;} // a mesh
 
    setTrackShape(id)  {
-      this.TurtleState.trackShape = this.trackContours.get(id);
-      if (this.TurtleState.trackPath != null) {
-         this.TurtleState.trackPath.shape = this.TurtleState.trackShape;
+      let c = this.trackContours.get(id);
+      if (c) {
+         this.TurtleState.trackShape =c;
+         if (this.TurtleState.trackPath != null) {
+            this.TurtleState.trackPath.shape = c
+         }
+      } else {
+         puts(`Contour ${id} not found`);;
       }
    }
    /**
@@ -388,8 +393,6 @@ class Turtle3d {
       let tH = this.TurtleState.H;
 
       tH.scaleAndAddToRef(dist, newP);
-
-      //this.updatePolygon(newP); // or not
 
       this.TurtleState.P.copyFrom(newP);
       this.draw(oldP, newP);
@@ -522,6 +525,8 @@ class Turtle3d {
             this.drawImmediate(ts, oldPos, newPos);
             break;
          case 'p':  // assuming 'extrusion'
+         case 'p0':
+         case 'p1':
             this.addPathPt(ts, oldPos, newPos);
             break;
          case 'c':              // contour mode
@@ -550,7 +555,6 @@ class Turtle3d {
 
 
       } else if (type == 'tube') {
-         
          segment = BABYLON.MeshBuilder.CreateTube(t, 
                                                   {path: [oldPos, newPos], 
                                                    radius: ts.size,
@@ -601,12 +605,34 @@ class Turtle3d {
    }
 
    drawTrack() {
-      let t = this.TurtleState.Turtle;
-      let tp = this.TurtleState.trackPath;
+      let ts = this.TurtleState;
+      let t = ts.Turtle;
+      let tp = ts.trackPath;
       if (tp === null || tp.points.length < 2) {
          return;
       }
       var pathpts = tp.points;
+      switch (ts.drawMode) {
+      case 'p':
+      case 'p0':
+         break;
+      case 'p1':                // catmullrom spline - probably unnecessary
+         if (pathpts.length >= 4) {
+            //let numpts = Math.max(4, Math.round(pathpts.length*4));
+            let numpts = 1;
+            let cmspline = BABYLON.Curve3.CreateCatmullRomSpline(pathpts,numpts, false);
+            pathpts = cmspline.getPoints();
+            puts(`catmullrom track with numpts: ${numpts}, pathpts: ${pathpts.length}`);
+         } else {
+            puts(`only ${pathpts.length} pts in track - using simple extrude`);
+         }
+         break;
+      default:
+         // pathpts = tp.points
+         break;
+
+      }
+
       //puts(`trackPath.length: ${pathpts.length}`);
       //puts(`pathpts: ${pathpts}`);
       var srm = tp.srm;
@@ -665,7 +691,7 @@ class Turtle3d {
             pi = matLocations[sm][0]; // current path index
             indexDiff = (pi -ppi) * subIndicesPerPoint + subVrtxRemainder;
             matIdx = matLocations[sm-1][1];
-            // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
+            // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: {$runningIndexCnt}`);
             // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, extrusion)`);
             new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, extrusion);
             runningIndexCnt += indexDiff
@@ -690,7 +716,7 @@ class Turtle3d {
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
 
-   newTrack(udata=null,) {
+   newTrack(type='p0', udata=null) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
 
       if (this.TurtleState.trackShape == null) {
@@ -699,7 +725,7 @@ class Turtle3d {
       let tp = new TrackPath({s: this.TurtleState.trackShape});
       
       this.TurtleState.track = 'ext';
-      this.TurtleState.drawMode = 'p';
+      this.TurtleState.drawMode = type;
       this.TurtleState.trackPath = tp;
       this.TurtleState.accumRoll = 0;
 
@@ -729,6 +755,7 @@ class Turtle3d {
          tp.points.push(oldPos);
          tp.srm.push({s: this.TurtleState.size, r: 0, m: 0})
       }
+      tp.distance+= BABYLON.Vector3.Distance(newPos, oldPos);
       let roll = ts.accumRoll;
       let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
       let rolldiff = roll - lastroll; // total additional roll
@@ -1002,6 +1029,7 @@ function TrackPath(opts={}) {
    }
    this.points=[];
    this.srm = [];               // scale, rotation, material
+   this.distance = 0;           // sum of straight-line lengths
    //this.accumRoll = r;
    //puts(`maxTwist: ${this.maxTwist}`);
    this.clone = function () {
@@ -1009,6 +1037,7 @@ function TrackPath(opts={}) {
       tpc.points = Array.from(this.points);
       tpc.srm = Array.from(this.srm);
       tpc.maxTwist = this.maxTwist;
+      tpc.distance = this.distance;
       return tpc;
    };
 };

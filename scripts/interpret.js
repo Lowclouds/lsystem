@@ -231,6 +231,20 @@ function turtleInterp (ti, ls, opts=null) {
             ti.yaw(180); 
             break;
          }
+         case '@R':             // set heading
+            if (isPm) {
+               if (pM.p.length >= 3 ) {
+                  ti.setHeading(pM.p[0], pM.p[1], pM.p[2]);
+                  if ( pM.p.length == 6) {
+                     ti.setUp(pM.p[3], pM.p[4], pM.p[5]);
+                  } else {
+                     throw new Error('@R / setheading requires 3 or 6 parameters');
+                  }
+               }
+            } else {
+               throw new Error('@R / setheading requires 3 or 6 parameters');
+            }
+            break;
          case '@v': {            // set L horizontal
             ti.levelL();
             break;
@@ -276,7 +290,8 @@ function turtleInterp (ti, ls, opts=null) {
             break;
          }
          case '\[': {           // start a branch
-            ti.newTrack({ci: idata.ci, st: idata.st});
+            ti.newTrack('p0', {ci: idata.ci, st: idata.st});
+            puts('newTrack: p0');
             // ti.newMesh();
             // let s = ti.getState();
             // branchstack.push([s, idata.ci, idata.stemsize]); break;}
@@ -331,11 +346,20 @@ function turtleInterp (ti, ls, opts=null) {
          case '@De': {
             if (isPm) {
                ti.endContour(p0);
+               puts(`endContour(${p0})`);
+               puts(`trackContours.get(${p0}) = ${ti.trackContours.get(p0)}`)
             }
             idata.ptCaptureMode ^= 2; 
             break;
          }
          case '@#': {
+            if (isPm) {
+               ti.setTrackShape(p0);
+               puts (`setTrackShape(${p0})`);
+               puts (`trackPath.shape = ${ti.TurtleState.trackPath.shape}`);
+            } else {
+               throw new Error('@#/setTrackShape module requires an id parameter');
+            }
             break;
          }
          case '$': {
