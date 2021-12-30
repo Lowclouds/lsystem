@@ -878,6 +878,7 @@ class Turtle3d {
       // save state
       this.polygonStack.push({s: this.getState(), a: Array.from(this.polygonVerts)});
       this.polygonVerts = new Array();
+      this.updatePolygon();
       //this.TurtleState.shapeMode = 'p';
    }
 
@@ -895,7 +896,6 @@ class Turtle3d {
    // implements the '}' module
    endPolygon () {
       let pmesh;
-      let pstate = this.polygonStack.pop();
       // polygonVerts is same as popped array
       if (this.polygonVerts.length > 2) {
          let vertexData = new BABYLON.VertexData();
@@ -913,11 +913,12 @@ class Turtle3d {
          // for (let i = 0; i < this.polygonVerts.length; i++) {
          //    vertexData.indices[i] = i; // we assume they're in order;
          // }
-         //puts(`positions: ${vertexData.positions}`);
-         //puts(`indices: ${vertexData.indices}`);
-
          vertexData.normals = [];
          BABYLON.VertexData.ComputeNormals(vertexData.positions, vertexData.indices, vertexData.normals);
+         puts(`positions: ${vertexData.positions}`);
+         puts(`indices: ${vertexData.indices}`);
+         puts(`normals: ${vertexData.normals}`);
+
   
          pmesh = new BABYLON.Mesh("poly", scene);
          vertexData.applyToMesh(pmesh,true);
@@ -929,11 +930,12 @@ class Turtle3d {
 
          // make sure the material has backFaceCulling set to false
          this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
-         //puts('created a new polygon');
+         puts(`created a new polygon(${this.polygonStack.length})`);
       } else {
          puts('polygon creation failed: polygonVerts.length = ' + this.polygonVerts.length );
       }
       // restore state
+      let pstate = this.polygonStack.pop();
       this.setState(pstate.s);
       if (this.polygonStack.length > 0) {
          this.polygonVerts=pstate.a;
@@ -996,11 +998,15 @@ class Turtle3d {
 
    storePoint(pos=null) 
    {
+      let pt = vclamp(pos==null? this.getPos() : pos);
+      
       if (this.polygonStack.length > 0) {
-         this.updatePolygon(pos);
+         this.updatePolygon(pt);
+         puts(`added pt ${pt} to polygon(${this.polygonStack.length})`);
       }
       if (this.tempContour != null) {
-         this.updateContour(pos);
+         this.updateContour(pt);
+         puts(`added contour pt ${pt}`);
       }
    }
 }
@@ -1054,7 +1060,7 @@ function generateCircle(r=1, q=12) {
    let a = 2*Math.PI/q;         // arc of each section
    for (let i = 0; i < q; i++) {
       let v = newV(r*Math.cos(i*a), r*Math.sin(i*a), 0)
-      p.push(clamp(v));
+      p.push(vclamp(v));
    }
    p.push(p[0]);
    return p;
@@ -1149,6 +1155,13 @@ function clamp (v, epsilon = eps) {
 	if (Math.abs(e) < epsilon) {va[ndx]=0;}})
     //{ if {abs($e) < $epsilon} {set e 0}; lappend vc $e}
     return v.fromArray(va);
+}
+function vclamp(v) {
+   const eps = 1e-9;
+   if (Math.abs(v.x) < eps) {v.x=0;}
+   if (Math.abs(v.y) < eps) {v.y=0;}
+   if (Math.abs(v.z) < eps) {v.z=0;}
+   return v;
 }
 
 function dot (v, w) { 

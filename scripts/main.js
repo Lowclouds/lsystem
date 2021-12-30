@@ -359,7 +359,12 @@ function loadLSfile(event) {
 lsFile.onchange = loadLSfile;
 
 function saveasLSfile(event) {
-   let file = lsFile.files.item(0).name;
+   let file;
+   if (lsFile.files.item(0) === null) {
+      file = 'tmp.ls';
+   } else {
+      file == lsFile.files.item(0).name;
+   }
    if (lsSrc.value != '') {
       puts(`Saving to file: ${file}`);
       var blob = new Blob( [lsSrc.value], {type: "text/plain;charset=utf-8"});
