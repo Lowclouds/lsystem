@@ -863,13 +863,15 @@ class Lsystem {
          } else if ((nodeA.m == nodeB.m) && (nodeA.p.length >= nodeB.p.length)) {
             // might want to yell if A.m == B.m, but number of arguments differ
             // go ahead and bind actual values to formal parameters
-            // puts('binding formal parameters(fp)');
+            if (nodeA.p.length != nodeB.p.length) {
+               puts(`Warning: rule expects ${nodeA.p.length} parameters, but module has ${nodeB.p.length}`);
+            }
             if (scope !== null && scope.hasOwnProperty('_bind_')) {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
                   //puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]}`);
                   scope._bind_(nodeA.p[fp], nodeB.p[fp]);
                   //puts("scope bind:");
-                  scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
+                  //scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
                }
             }
             return true;

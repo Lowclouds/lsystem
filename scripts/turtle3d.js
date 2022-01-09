@@ -13,6 +13,7 @@ class Turtle3d {
 	 isShown: true,
 	 color: '0,0,0',
 	 size: 0.1,
+         lastSize: 0.1,
 	 turtleShape: null,
 	 track: 'tube',
          trackPath: null,
@@ -195,7 +196,10 @@ class Turtle3d {
       let c = new BABYLON.Color3();
       return c.fromArray(Array.from(cv.split(','), x=> Number(x)));
    }
-   setSize(v) {this.TurtleState.size = v;}
+   setSize(v) {
+      this.TurtleState.lastSize = this.TurtleState.size;
+      this.TurtleState.size = v;
+   }
    setTrack(v, id=null) {
       switch (v) {
       case 'line':
@@ -306,7 +310,7 @@ class Turtle3d {
    setTrackShape(id)  {
       let c = this.trackContours.get(id);
       if (c) {
-         this.TurtleState.trackShape =c;
+         this.TurtleState.trackShape = c;
          if (this.TurtleState.trackPath != null) {
             this.TurtleState.trackPath.shape = c
          }
@@ -555,10 +559,13 @@ class Turtle3d {
 
 
       } else if (type == 'tube') {
+         let radiusFunc = (i,distance) => {
+            return (i == 0) ? ts.lastSize : ts.size;
+         }
          segment = BABYLON.MeshBuilder.CreateTube(t, 
                                                   {path: [oldPos, newPos], 
-                                                   radius: ts.size,
-                                                   tessellation: 16,
+                                                   radiusFunction: radiusFunc,
+                                                   // tessellation: 16,
                                                    updatable: true,
                                                    cap: BABYLON.Mesh.CAP_ALL},
                                                   scene);
@@ -753,7 +760,7 @@ class Turtle3d {
       if (tp.points.length == 0) { // push first point
          //puts(`added initial path pt: ${oldPos}`);
          tp.points.push(oldPos);
-         tp.srm.push({s: this.TurtleState.size, r: 0, m: 0})
+         tp.srm.push({s: ts.lastSize, r: 0, m: 0})
       }
       tp.distance+= BABYLON.Vector3.Distance(newPos, oldPos);
       let roll = ts.accumRoll;
@@ -878,7 +885,6 @@ class Turtle3d {
       // save state
       this.polygonStack.push({s: this.getState(), a: Array.from(this.polygonVerts)});
       this.polygonVerts = new Array();
-      this.updatePolygon();
       //this.TurtleState.shapeMode = 'p';
    }
 
@@ -936,7 +942,7 @@ class Turtle3d {
       }
       // restore state
       let pstate = this.polygonStack.pop();
-      this.setState(pstate.s);
+      //this.setState(pstate.s);
       if (this.polygonStack.length > 0) {
          this.polygonVerts=pstate.a;
       } else {

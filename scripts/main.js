@@ -363,7 +363,7 @@ function saveasLSfile(event) {
    if (lsFile.files.item(0) === null) {
       file = 'tmp.ls';
    } else {
-      file == lsFile.files.item(0).name;
+      file = lsFile.files.item(0).name;
    }
    if (lsSrc.value != '') {
       puts(`Saving to file: ${file}`);
@@ -521,6 +521,51 @@ function createMesh(poly) {
    return {vdata: vertexData, mat: amat, mesh: amesh};
 }
 
+/* --------------------------------------------------------------------------------
+   Save mesh to file
+   -------------------------------------------------------------------------------- */
+var objectUrl;
+
+function downloadMesh(filename, mesh) {
+   if (objectUrl) {
+      window.URL.revokeObjectURL(objectUrl);
+   }
+
+   let options = {
+      shouldExportNode: function (node) {
+         return node == mesh;
+      },
+   };
+
+    BABYLON.GLTF2Export.GLBAsync(scene, "test1", options).then((glb) => {
+                            glb.downloadFiles();
+                    });
+    return scene;
+   var serializedMesh = BABYLON.SceneSerializer.SerializeMesh(mesh);
+
+   var strMesh = JSON.stringify(serializedMesh);
+
+   if (filename.toLowerCase().lastIndexOf(".babylon") !== filename.length - 8 || filename.length < 9) {
+      filename += ".babylon";
+   }
+
+   var blob = new Blob([strMesh], { type: "octet/stream" });
+
+   // turn blob into an object URL; saved as a member, so can be cleaned out later
+   objectUrl = (window.webkitURL || window.URL).createObjectURL(blob);
+
+   var link = window.document.createElement("meshd");
+   link.href = objectUrl;
+   link.download = filename;
+   var click = document.createEvent("MouseEvents");
+   click.initEvent("click", true, false);
+   link.dispatchEvent(click);
+}
+
+
+/* --------------------------------------------------------------------------------
+   Read mesh from file
+   -------------------------------------------------------------------------------- */
 
 function loadTpack(pack, mat) {
    

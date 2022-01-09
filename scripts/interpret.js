@@ -81,6 +81,7 @@ function turtleInterp (ti, ls, opts=null) {
    }
    idata.ndelta= -1*idata.delta,
    ti.setSize(idata.stemsize);
+   ti.setSize(idata.stemsize); //this sets both size and lastsize to stemsize
    if (idata.ctable != null && idata.ctable != []) {
       ti.deleteMaterials();
       let numMat = ti.materialList.length;
@@ -124,7 +125,7 @@ function turtleInterp (ti, ls, opts=null) {
             ti.penDown();
             ti.forward(d);
             if (idata.ptCaptureMode) {
-               ti.storePoint();
+               ti.storePoint(ti.getPos());
             }
             //puts('fd: ' + d);
             break;
@@ -148,7 +149,7 @@ function turtleInterp (ti, ls, opts=null) {
             let d = isPm ? p0 : idata.step;
             ti.penDown();
             ti.forward(d);
-            puts('Gfd: ' + d);
+            //puts('Gfd: ' + d);
             break;
          }
          case 'g': {
@@ -161,7 +162,7 @@ function turtleInterp (ti, ls, opts=null) {
             if (p) {
                ti.penDown();
             }
-            puts('gfd: ' + d);
+            // puts('gfd: ' + d);
             break;
          }
          case '@M': {
@@ -237,8 +238,8 @@ function turtleInterp (ti, ls, opts=null) {
                   ti.setHeading(pM.p[0], pM.p[1], pM.p[2]);
                   if ( pM.p.length == 6) {
                      ti.setUp(pM.p[3], pM.p[4], pM.p[5]);
-                  } else {
-                     throw new Error('@R / setheading requires 3 or 6 parameters');
+                  } else if (pM.p.length !=3 ) {
+                     throw new Error(`@R / setheading requires 3 or 6 parameters: ${pM.p}`);
                   }
                }
             } else {
@@ -312,6 +313,7 @@ function turtleInterp (ti, ls, opts=null) {
             break;}
          case '}': {
             if ( idata.inPolygon > 0) {
+               puts('ending polygon');
                ti.endPolygon();
                idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
                if (idata.inPolygon < 1) {
@@ -326,7 +328,7 @@ function turtleInterp (ti, ls, opts=null) {
            // idata.cpoly.push(otoa(ti.getPos()));
             if (idata.ptCaptureMode) {
                ti.storePoint();
-               puts(`added pt ${ti.getPos()}, using "."`);
+               //puts(`added pt ${ti.getPos()}, using "."`);
             } else {
                throw new Error(`saw "." while not in ptCaptureMode`);
             }
