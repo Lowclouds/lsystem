@@ -81,7 +81,7 @@ function turtleInterp (ti, ls, opts=null) {
    }
    idata.ndelta= -1*idata.delta,
    ti.setSize(idata.stemsize);
-   ti.setSize(idata.stemsize); //this sets both size and lastsize to stemsize
+   ti.fd(0); //this sets both size and lastsize to stemsize
    if (idata.ctable != null && idata.ctable != []) {
       ti.deleteMaterials();
       let numMat = ti.materialList.length;
@@ -209,12 +209,12 @@ function turtleInterp (ti, ls, opts=null) {
             // puts('yaw: ' + a);
             break; }
          case '&': {            // pitch down
-            let a = -1*(isPm ? p0 : idata.delta);
+            let a = isPm ? p0 : idata.delta;
             ti.pitch(a);
             //puts('pitch: ' + a);
             break; }
          case '^': {            // pitch up
-            let a = isPm ? p0 : idata.delta;
+            let a = -1*(isPm ? p0 : idata.delta);
             ti.pitch(a);
             //puts('pitch: ' + a);
             break; }
