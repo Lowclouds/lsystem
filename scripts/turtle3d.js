@@ -33,7 +33,7 @@ class Turtle3d {
       this.meshes = new Map();        // no defaults
       this.branchStack = [];    // stack of turtle state created when lsystem branches
       this.polygonStack = [];   // misnomer based on TABOP usage
-      this.polygonVerts = []; // misnomer: this is an array of facet vertices, in order
+      this.polygonVerts = [];   // misnomer: this is an array of facet vertices, in order
       this.tempContour = null;
       this.initDone = initAll.call(this, scene,noturtle, shape);
 
@@ -197,7 +197,6 @@ class Turtle3d {
       return c.fromArray(Array.from(cv.split(','), x=> Number(x)));
    }
    setSize(v) {
-      this.TurtleState.lastSize = this.TurtleState.size;
       this.TurtleState.size = v;
    }
    setTrack(v, id=null) {
@@ -400,6 +399,9 @@ class Turtle3d {
 
       this.TurtleState.P.copyFrom(newP);
       this.draw(oldP, newP);
+
+      // to support tapered stems
+      this.TurtleState.lastSize = this.TurtleState.size;
    }
 
    back (dist) {return this.forward(-1*dist);}
@@ -587,9 +589,10 @@ class Turtle3d {
          }
       } else if (type == 'ext') {
          let pathpts = [oldPos, newPos];
-         let s = t.getSize();
+         let s = ts.size;
+         let ls = ts.lastSize;
          function getscale(i,distance) {
-            return s;
+            return (i == 0) ? ts.lastSize : ts.size;
          }
          function getrotation(i,distance) {
             return ts.accumRoll;
@@ -607,7 +610,6 @@ class Turtle3d {
          segment.isVisible=true;
          segment.material = this.materialList[ts.trackMaterial];
          BABYLON.Tags.AddTagsTo(segment, tag, scene);
-         
       }
    }
 
@@ -639,7 +641,6 @@ class Turtle3d {
          break;
 
       }
-
       //puts(`trackPath.length: ${pathpts.length}`);
       //puts(`pathpts: ${pathpts}`);
       var srm = tp.srm;
@@ -878,7 +879,9 @@ class Turtle3d {
    // this creates a mesh, which could be 3D, but we do a simple polygon
    // triangulation, which assumes the polygon is convex except possibly 
    // at the starting point - so we do a fan triangulation. This also 
-   // assumes the vertices are relatively flat.
+   // assumes the vertices are relatively flat, but does not require strict 
+   // flatness.
+   
    // You could simulate a mesh with bunches of 3-gons, but that would be 
    // pretty inefficient.
    newPolygon() {
