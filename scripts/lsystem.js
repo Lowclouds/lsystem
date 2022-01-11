@@ -742,7 +742,7 @@ class Lsystem {
 	 lsnext = mstring.slice();     // default production is to copy
          for (let n=0; n < clength; n++) {
 	    let node = mstring[n];
-            puts(`looking at node[${n}] = ${node}`);
+            //puts(`looking at node[${n}] = ${node}`);
             // special handling of cut module, %
             if (node == '%') {
                let on = n;
@@ -767,7 +767,7 @@ class Lsystem {
                      //puts(`unconditional expansion to: ${lsnext[n]}`);
                      break;
 		  } else {
-                     puts(`context sensitive rule: lctxt: ${lctxt} or rctxt: ${rctxt}`);
+                     //puts(`context sensitive rule: lctxt: ${lctxt} or rctxt: ${rctxt}`);
                      if (lctxt.length && 
                          ! ls.findcontext(mstring, lctxt, n, -1, scope, restrict)) {
                            continue;
@@ -781,7 +781,7 @@ class Lsystem {
                      if (doExpand) {
  // todo: evaluate post-condition expression 
                         lsnext[n] = this.expand(rule);
-                        puts(`this expanded ${mstring[n]} to ${lsnext[n]}`);
+                        //puts(`this expanded ${mstring[n]} to ${lsnext[n]}`);
                         break;  // stop looking through rules
                      }
 		  }
@@ -856,7 +856,7 @@ class Lsystem {
    // nodeB is a module in the expansion with an actual numeric value which
    // gets bound to the formal parameter from nodeA
    formalMatch(nodeA, nodeB, scope=null) {
-      puts(`formalMatch ${nodeA} against ${nodeB}`);
+      //puts(`formalMatch ${nodeA} against ${nodeB}`);
       if (typeof nodeA == typeof nodeB) {
          if (typeof nodeA == 'string') {
             return nodeA == nodeB;
@@ -904,15 +904,15 @@ class Lsystem {
             consider = restrict.consider.slice();
          }
       }
-      puts(`ctxt: ${ctxt}, snode: ${snode}, dir: ${dir}`);
-      puts(`restrict: ${restrict}, ignore: ${ignore}, consider: ${consider}`);
+      //puts(`ctxt: ${ctxt}, snode: ${snode}, dir: ${dir}`);
+      //puts(`restrict: ${restrict}, ignore: ${ignore}, consider: ${consider}`);
 
       while (n >= 0 && n < nmax) {
          m = mlist[n];
          c = ctxt[ci];
          if ((ignore && ignore.includes(m)) || (consider && !consider.includes(m))) {
             n += dir;           // next module, same context
-            puts(`skipping module ${m}`);
+            //puts(`skipping module ${m}`);
          } else {
             if (dir < 0) {         //# left context:upwards:acropetal
                switch (m) {
@@ -921,7 +921,7 @@ class Lsystem {
                   break;
                case '[': 
                   n--;             // skip over bracket
-                  puts('skipping over [ to left');
+                  //puts('skipping over [ to left');
                   break;
                default:
                   if (this.formalMatch(c, m, rscope)) {
