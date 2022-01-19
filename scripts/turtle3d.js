@@ -1,10 +1,35 @@
 // 
 // provide a 3d turtle with extensions to support lsystem interpretation
 // 
+
 class Turtle3d {
-   constructor (scene=null,noturtle=false,shape=null) {
+   'use strict';
+
+   about() {puts('hello');}
+
+   static Turtles   = new Map(); // set of turtles
+   static basename  = '_t3d';   // tid = basename+counter
+   static counter   = 0;       //  a counter for constructing unique tags
+   static t3dScene  = null;    //  default scene, once set
+   static getFirstTurtle(id=null) {
+      let t;
+      if (Turtle3d.Turtles.size == 0) {
+         t = new Turtle3d(Turtle3d.t3dScene);
+      } else if (id == null ) {
+         let mi = Turtle3d.Turtles.keys();
+         t = mi.next.value();
+      } else {
+         t = Turtle3d.Turtles.get(id);
+         if (t == null) {
+            throw `Can't find turtle with id: ${id} (possibly deleted)`;
+         }
+      }
+      return t;
+   };
+
+   constructor (scene=null, noturtle = false, shape = null ) {
       this.TurtleState = {
-	 Turtle: `_t3d${Turtle3d.prototype.t3dIDTag++}`,
+	 Turtle: `${Turtle3d.basename}${Turtle3d.counter++}`,
 	 P: new BABYLON.Vector3.Zero(),
 	 H: new BABYLON.Vector3(1,0,0),
 	 L: new BABYLON.Vector3(0,0,1), 
@@ -26,7 +51,6 @@ class Turtle3d {
          accumRoll: 0,
       }
 
-      this.scene = null;
       this.materialList = [];
       this.trackPaths = [];
       this.trackContours = new Map(); // for trackShapes, default to circle, radius size
@@ -35,19 +59,19 @@ class Turtle3d {
       this.polygonStack = [];   // misnomer based on TABOP usage
       this.polygonVerts = [];   // misnomer: this is an array of facet vertices, in order
       this.tempContour = null;
-      this.initDone = initAll.call(this, scene,noturtle, shape);
+      this.scene = null;
+      this.initDone = initAll.call(this, scene, noturtle, shape);
 
       // instrumentation
       this.meshCount = [0,0];
       this.meshList = [];
 
       function initAll(s, nt, shape) {
+         this.scene = getScene.call(this, s);
 	 this.TurtleState.turtleShape = turtleShape.call(this, nt, shape);
-	 this.scene = getScene.call(this, scene);
          this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
          this.materialList[0].diffuseColor = this.toColorVector();
          this.trackContours.set('default', generateCircle(this.size));
-         if (Turtle3d.Turtles == null) {Turtle3d.Turtles  = new Map();}
 	 Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
 	 return true;
       }
@@ -212,9 +236,9 @@ class Turtle3d {
       case 'ext': {
          this.TurtleState.track = 'ext';
          if (id === null) {
-            this.TurtleState.trackShape = this.trackContours('default');
+            this.TurtleState.trackShape = this.trackContours.get('default');
          } else {
-            this.TurtleState.trackShape = this.trackContours(id);
+            this.TurtleState.trackShape = this.trackContours.get(id);
          }
          break;
       }
@@ -599,7 +623,7 @@ class Turtle3d {
          }
 
          const segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
-                                                                {shape: tp.shape, 
+                                                                {shape: ts.trackShape, 
                                                                  path: pathpts, 
                                                                  updatable: true, 
                                                                  scaleFunction: getscale, 
@@ -626,15 +650,15 @@ class Turtle3d {
       case 'p0':
          break;
       case 'p1':                // catmullrom spline - probably unnecessary
-         if (pathpts.length >= 4) {
-            //let numpts = Math.max(4, Math.round(pathpts.length*4));
-            let numpts = 1;
-            let cmspline = BABYLON.Curve3.CreateCatmullRomSpline(pathpts,numpts, false);
-            pathpts = cmspline.getPoints();
-            puts(`catmullrom track with numpts: ${numpts}, pathpts: ${pathpts.length}`);
-         } else {
-            puts(`only ${pathpts.length} pts in track - using simple extrude`);
-         }
+         // if (pathpts.length >= 4) {
+         //    //let numpts = Math.max(4, Math.round(pathpts.length*4));
+         //    let numpts = 1;
+         //    let cmspline = BABYLON.Curve3.CreateCatmullRomSpline(pathpts,numpts, false);
+         //    pathpts = cmspline.getPoints();
+         //    puts(`catmullrom track with numpts: ${numpts}, pathpts: ${pathpts.length}`);
+         // } else {
+         //    puts(`only ${pathpts.length} pts in track - using simple extrude`);
+         // }
          break;
       default:
          // pathpts = tp.points
@@ -644,7 +668,7 @@ class Turtle3d {
       //puts(`trackPath.length: ${pathpts.length}`);
       //puts(`pathpts: ${pathpts}`);
       var srm = tp.srm;
-      //puts(`srm: ${srm}`);
+      puts(`srm: ${srm}`);
 
       function getscale(i,distance) {
          return srm[i].s;
@@ -1020,12 +1044,17 @@ class Turtle3d {
    }
 }
 
-Turtle3d.prototype.Turtles = null; // set of turtles
-Turtle3d.prototype.t3dIDTag=0;    //  a counter for constructing unique tags
-Turtle3d.prototype.t3dScene=null;	// ea default scene, once set
 Turtle3d.prototype.fd = Turtle3d.prototype.forward;
 Turtle3d.prototype.bk = Turtle3d.prototype.back;
-
+// Turtle3d.prototype.getTurtle = function(id=null) {
+//    let t;
+//    if (Turtle3d.Turtles === null) {
+//       t = new Turtle3d(Turtle3d.t3dScene).getTurtle();
+//    } else {
+//       t = 
+//    }
+//    return Turtle3d.Turtles.get();
+// }
 
 // opts
 //   s: shape array, default is dodecagon
