@@ -221,6 +221,8 @@ class Turtle3d {
       return c.fromArray(Array.from(cv.split(','), x=> Number(x)));
    }
    setSize(v) {
+      // to support tapered stems
+      this.TurtleState.lastSize = this.TurtleState.size;
       this.TurtleState.size = v;
    }
    setTrack(v, id=null) {
@@ -424,8 +426,6 @@ class Turtle3d {
       this.TurtleState.P.copyFrom(newP);
       this.draw(oldP, newP);
 
-      // to support tapered stems
-      this.TurtleState.lastSize = this.TurtleState.size;
    }
 
    back (dist) {return this.forward(-1*dist);}
@@ -668,7 +668,7 @@ class Turtle3d {
       //puts(`trackPath.length: ${pathpts.length}`);
       //puts(`pathpts: ${pathpts}`);
       var srm = tp.srm;
-      puts(`srm: ${srm}`);
+      //puts(`srm: ${srm}`);
 
       function getscale(i,distance) {
          return srm[i].s;
@@ -783,7 +783,7 @@ class Turtle3d {
       // assuming 'extrusion'
       let tp = ts.trackPath;
       if (tp.points.length == 0) { // push first point
-         //puts(`added initial path pt: ${oldPos}`);
+         //puts(`added initial path pt: ${oldPos}, size: ${ts.lastSize}`);
          tp.points.push(oldPos);
          tp.srm.push({s: ts.lastSize, r: 0, m: 0})
       }
