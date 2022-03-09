@@ -380,7 +380,7 @@ var rwresult=null;
 btnDraw.addEventListener("click", () => {
     try {
         t.setHeading([0,1,0]);
-        turtleInterp(t, lsys);
+       turtleInterp(t, lsys);
     } catch (error) {puts(error);}
 });
 
