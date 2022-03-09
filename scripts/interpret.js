@@ -35,7 +35,8 @@ function turtleInterp (ti, ls, opts=null) {
       mi: 0,                       // module index
       ctable:  null,
       //ctable: colorTableDefault,
-      cpoly: null
+      cpoly: null,
+      useTracksAlways: true
    }
    idata.show =  function () {
       return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}`;
@@ -54,7 +55,7 @@ function turtleInterp (ti, ls, opts=null) {
    }
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
       puts(`checking for var ${p}`);
-      if (ls.locals.has(p)) {
+      if (ls.locals.get(p)) {
          switch (p) {
          case 'step': {idata.step = ls.locals.get(p); break;}
          case 'stemsize': {idata.stemsize = ls.locals.get(p); break;}
@@ -66,22 +67,14 @@ function turtleInterp (ti, ls, opts=null) {
    }
 
    if (opts != null) {
-      for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
-         puts(`checking for opts[${p}]`);
-         if (opts.hasOwnProperty(p)) {
-            switch (p) {
-            case 'step': {idata.step = opts[p]; break;}
-            case 'stemsize': {idata.stemsize = opts[p]; break;}
-            case 'delta': {idata.delta = opts[p]; puts("set stemsize"); break;}
-            case 'ctable': {idata.ctable = opts[p]; puts("set ctable data:" + opts[p]); break;}
-            }
-            puts(`set idata[${p}] to ${opts[p]}`);
-         }
+      for (const p in opts) {
+         idata[p] = opts[p];
+         puts(`set idata[${p}] to ${opts[p]}`);
       }
    }
    idata.ndelta= -1*idata.delta,
-   ti.setSize(idata.stemsize);
-   ti.fd(0); //this sets both size and lastsize to stemsize
+   ti.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
+   //  ti.fd(0); // this was the first way; i waffle
    if (idata.ctable != null && idata.ctable != []) {
       ti.deleteMaterials();
       let numMat = ti.materialList.length;
@@ -286,21 +279,24 @@ function turtleInterp (ti, ls, opts=null) {
                mi = t.getMaterialIdx();
                mi++;
             }
-            puts(`setMaterial(${mi})`);
+            //puts(`setMaterial(${mi})`);
             ti.setMaterial(mi);
             break;
          }
          case '\[': {           // start a branch
-            ti.newTrack('p0', {ci: idata.ci, st: idata.st});
-            puts('newTrack: p0');
+            ti.newBranch({ci: idata.ci, st: idata.st});
+            if (idata.useTracksAlways) {
+               ti.newTrack('p0');
+               puts('newTrack: p0', NTRP_MOTION);
+            }
             // ti.newMesh();
-            // let s = ti.getState();
-            // branchstack.push([s, idata.ci, idata.stemsize]); break;}
             break;
          }
          case '\]': {           // end a branch
-            //  let s = branchstack.pop();
-            let s = ti.endTrack();
+            if (idata.useTracksAlways) {
+               ti.endTrack();
+            }
+            let s = ti.endBranch();
             idata.ci = ti.trackMaterial;
 	    idata.stemsize = ti.getSize();
             break;
@@ -386,20 +382,27 @@ function turtleInterp (ti, ls, opts=null) {
          //    setTimeout(doModule,100);
          // }
       } else {
+         let ts = ti.getState()
          if (ti.branchStack.length > 0) {
-            let ts = ti.getState()
             puts(' done with tree');
             puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
             //   puts(`tp.shape is: ${ti.getState().trackPath.shape}`);
-            ti.endTrack();
+            if (idata.useTrackAlways || ts.trackPath != null) {
+               ti.endTrack();
+            }           
+         } else {
+            if (idata.useTrackAlways || ts.trackPath != null) {
+               ti.endTrack();
+            }           
+            puts('done with tree and ti.branchStack.length == 0');
          }
-
          updateTurtleInfo(ti,0);
          lblNumDrawn.backgroundColor = "green";
       }
    }
 
-   //ti.newTrack();
+   if (idata.useTrackAlways) {      ti.newTrack();
+   }
    let ts = ti.getState()
    puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
 
