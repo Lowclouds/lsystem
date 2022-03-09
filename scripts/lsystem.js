@@ -1,4 +1,4 @@
-/// dependencies
+
 // cpp.js to remove comments and expand #defines.
 //    this version modified to ignore // comments, since they 
 //    can occur in production strings
@@ -21,6 +21,8 @@
 // p5: - -> +
 //`
 
+'use strict';
+
 var testls =`
 #define P sin(PI)
 delta = 2
@@ -34,27 +36,20 @@ A(t)>F : t==10 -> -FFFA(0)
    'AB F(n)fGg@M(1,2,3)+-&^\\(1)/(3)|$% @v@c(x,y,z)?P(x,y,z)~S~S12'.matchAll(RE.module)
 */
 
-
+// RE is the container for all regular expressions
 const RE = {};
-var numReStr = '\\d+(?:\\.\\d+)?';
-//var symbolReStr = "[\\w\\d\\+\\-\\]['{}\&^\\\\/!\\.~\\|]";
+// symbolReStr is the recognizer for ALL module names in an axiom or production 
 var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
+// moduleReStr recognizes a module, parameterized or not
+var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
+
+var numReStr = '\\d+(?:\\.\\d+)?';
 var varnameReStr = '\\w[\\w\\d]*';
-var startdReStr='^(?:#define)[ \\t]+\(';
+var startdReStr='^(?:define)[ \\t]+{';
 var enddReStr = '\)[ \\t]+([^ \\t].*)';
-RE.define = new RegExp(`${startdReStr}[^ \\t]+${enddReStr}`);
 var startiReStr = '^(?:#?[iI]gnore:) *\(';
 var endiReStr = '\+\)';
 var startcReStr = '^(?:#?[cC]onsider:?) +\(';
-RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
-RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
-RE.dlength = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
-RE.axiom = /^[aA]xiom:\s*(\S.*)/;       // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
-RE.lsystem = /^[lL][sS]ystem: *([^ \\t]+)/;
-var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
-RE.modules = new RegExp(`${moduleReStr} *`,'g');
-RE.successorModule = new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
-RE.ws = /\s+/g;
 
 var param1ReStr=`${numReStr}|${varnameReStr}`;
 
@@ -62,16 +57,31 @@ var expReStr = '(.*(?=->))';
 var prodNameStr = '(?:^[pP]\\d+:)';
 //RE.prod = new RegExp(`${prodNameStr}? *(?:(?:${moduleReStr})+<)?${moduleReStr}(?:>(?:${moduleReStr})+)?(?::${expReStr})?--?>(.+)`);
 
+RE.defineStart = new RegExp('^(?:[\\s]*define:\\s+){[\\s]*(.*)','d');
+
+RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
+RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
+RE.dlength = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
+RE.axiom = /^[aA]xiom:\s*(\S.*)/;       // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
+RE.lsystem = /^[lL][sS]ystem: *([^ \\t]+)/;
+RE.modules = new RegExp(`${moduleReStr} *`,'g');
+RE.successorModule = new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
+RE.ws = /\s+/g;
+RE.asterisk = /^\s*\*\s*/;
 RE.prodTop = new RegExp(`${prodNameStr}? *(.*?)--?>(.*)`)
 RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
+RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
 
-RE.var = new RegExp(`^${varnameReStr} *=.+`);
-RE.assign = new RegExp(`(${varnameReStr}) *= *(${numReStr}),?`,'g');
+RE.assignNum = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*(${numReStr}),?`,'g');
+RE.anyGlobal = new RegExp(`(${varnameReStr}):[ \t]*([\\S]+)`,'i');
+
+// this accepts function expressions only, not function declarations, not arrow functions
+RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)`, 'g');
 //RE.preRe = /(?:([^< ]+) *< *)?([^> ]+)(?: *> *([^ ]+))?/;
 
+//var pfindReStr=`(${param1ReStr}),?`
+//var pfindRe = new RegExp(pfindReStr, "g"); //use in loop to find parameters
 
-var pfindReStr=`(${param1ReStr}),?`
-var pfindRe = new RegExp(pfindReStr, "g"); //use in loop to find parameters
 var ParameterizedModule = function(name, parms) {
    this.m = name;
    //this.p = parms.split(','); doesn't work for expressions like (x,atan(y,x))
@@ -118,7 +128,14 @@ class Lsystem {
       puts("or by the Lsystems programs developed by Przemyslaw Prusinkiewicz' group at the University");
       puts("of Calgary, available here: http://algorithmicbotany.org");
    }
-   
+
+   // single map for all l-systems in a spec
+   // we want the first entry to be the main lsystem
+   static lsystems = new Map();
+   static modLsystemStart = new  ParameterizedModule('?', 'i,s');
+   static modLsystemEnd = '$';
+   static functions = new Map(); // functions also global for all l-systems
+
    constructor(spec,lbl = '1') {
       this.spec = null;	// should be a text file/string or empty for sub-lsystems
       if (spec == null) {
@@ -134,6 +151,7 @@ class Lsystem {
       this.Dlength = 0;	// number of iterations
       this.globals = new Map(); // from define statements
       this.locals = new Map(); // from variable assignment statements
+      this.functions = new Map();
       this.current = [];
       this.next = [];
       this.verbose = 0;
@@ -146,13 +164,6 @@ class Lsystem {
       this.needsEnvironment = false;
       this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
    }
-
-   // single map for all lsystems in a spec
-   // we want the first entry to be the main lsystem
-   static lsystems = new Map();
-   static modLsystemStart = new  ParameterizedModule('?', 'i,s');
-   static modLsystemEnd = '$';
-   
 
    // i read it in a magazine, oh
    static myTypeOf (o) {
@@ -202,11 +213,11 @@ class Lsystem {
                if (this[prop].length == 0) {
                   s = `${prop} := empty\n`;
                } else {
-	          s = `${prop}:= [pre, strict, post] [cond] [succ] [scope]\n`;
+	          s = `${prop}:= {pre, strict, post} {cond} {succ} {scope}\n`;
 	          this[prop].forEach((r) => {
                      //console.log(`Showing: ${r}`);
                      r.forEach((e,i) => {
-	                s += '\[';
+	                s += '\{';
                         if (i < 3) {
                            s += `${e}`;
                         } else if (Lsystem.myTypeOf(e) == 'map') {
@@ -229,7 +240,7 @@ class Lsystem {
                         //    s += Lsystem.listtostr(e);
                         //    break;
                         // }
-                        s += '\]';
+                        s += '\}';
                         return;
                      });
                      s += `\n`;
@@ -272,16 +283,19 @@ class Lsystem {
       let pp = new cpp_js();
       // define these here so recursive invocations of parseHelper
       // all use the same spec and indices into it.
-      let s = pp.run(spec), pos = 0;
-      s=s.replaceAll(/\n\n+/g, '\n'); // remove blank lines
+      let cppSpec = pp.run(spec), pos = 0;
+      cppSpec=cppSpec.replaceAll(/\n\n+/g, '\n'); // remove blank lines
 
-      let end = s.length;      
+      let end = cppSpec.length;      
       let m;                            // common match variable
-      let ls0 = new Lsystem(s, 'main'); // preemptively naming it 
+      let nestPos;                      // where we left line mode
+      let nestIndex=0;
+      let nesting = [];                 // keep track of define nesting;
+      let ls0 = new Lsystem(cppSpec, 'main'); // preemptively naming it 
       Lsystem.lsystems.clear();
       Lsystem.lsystems.set('main', ls0);
 
-      parseHelper(ls0);    // this is the toplevel lsystem
+      parseHelper(ls0);    // this is the toplevel l-system
 
       if (! ls0.Dlength) {
 	 if (ls0.locals.has('n')) {
@@ -298,17 +312,43 @@ class Lsystem {
       return ls0;
 
       function findEOL (s, p) {
-         let eol_ = s.indexOf('\n', p);
+         let r = `Start: ${p}`;
+         let lstart=p
+         do {
+            let eol_ = s.indexOf('\n', lstart);
             if (eol_ == -1) {
-               eol_ = s.length;
-               //puts('Warning EOL not found!'); 
+               return s.length;
+            } else {
+               lstart = eol_ + 1; // peek past end of line
+               r +=`, peek: pos: ${lstart} = '${s[lstart]}'`;
+               if(lstart >= s.length) {
+                  puts(r);
+                  return s.length;
+               } else if (s[lstart] == ' ' || s[lstart]=='\t') { // whitespace at BOL
+                  if (s.slice(lstart,s.length-1).match(/[ \\t]+\\n/)) {
+                     puts(r);
+                     return eol_;
+                  } else {
+                     continue;
+                  }
+               } else {
+                  puts(r);
+                  return eol_;
+               }
             }
+         } while(1);
          return eol_;
       }
 
+      // this is a simple state machine, so all substates return to parent 
+      // eliminating tricky transition discovery.
+      // A sub L-system invokes a recursive call to this function.
+      // states are functions, parseResult contains a code and a nextState
+      // there is one state function call per line of input, but the inDefine state
+      // keeps track of some char positions across lines.
       function parseHelper (ls, isSubLs = false) {
          let line='', eol = 0;
-         if (!isSubLs && s == 'no specification') {
+         if (!isSubLs && cppSpec == 'no specification') {
             puts('nothing to parse');
             return;
          } 
@@ -320,15 +360,15 @@ class Lsystem {
          let have_axiom=false;
          let have_homomorphism=false;
          while (pos < end) {
-            eol = findEOL(s,pos);
-            if ((eol - pos) < 3) {
-	       puts("skipping short line: " + s.slice(pos,eol));
+            eol = findEOL(cppSpec,pos);
+            if ((eol - pos) < 1) {
+	       puts("skipping short line: " + cppSpec.slice(pos,eol), LSYS_PARSE);
 	       pos = eol + 1; // advance file pointer
 	       continue;
             }
             // remove extra spaces and carriage returns
-	    line = s.slice(pos,eol).replaceAll(/  +/g,' ').replaceAll(/\r/g,'');
-            puts(`${pos}-${eol} : ${line}`);
+	    line = cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
+            puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
             pos = eol + 1; // advance file pointer
 
             let loop = true;
@@ -359,7 +399,7 @@ class Lsystem {
                   return;
                }
             } while(loop);
-            // puts(`${pos} ${eol}`);
+            puts(`${pos} ${eol}`, LSYS_PARSE);
          } // not at end of spec
          return ls;
       }
@@ -369,18 +409,33 @@ class Lsystem {
       }
 
       function inItems (ls, line) {
+         puts(`inItems looking at: ${line}`, LSYS_IN_ITEMS);
          let pr = new ParseResult(P_HANDLED, inItems);
-         if (RE.var.test(line)) {
-            let assign = line.matchAll(RE.assign);
-            for (let parts of assign) {
-               ls.locals.set(parts[1], parts[2])
-            }
+          if (m = line.match(RE.defineStart)) {
+            // start of a define section, check if there's anything beyond the open brace
+            // if (m[1] != '') {
+            //    pos = m.indices[1][0]; // reset pos to whatever's there
+            // }
+            nestPos = pos;
+            nestIndex = 0;
+            nesting = [1];
+            puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
+            pr.status = P_HANDLED;
+            pr.nextState = inItems;
+         } else if (RE.var.test(line)) {
+            m = line.matchAll(RE.assignNum);
+            if (m) {
+               for (let parts of m) {
+                  ls.locals.set(parts[1], parts[2])
+               }
+            }         
             ls.show('vars');
+            ls.show('functions');
          } else if (null != ( m = line.match(RE.lsystem))) {
             // this should happen only on the initial lsystem and covers the case
             // of strictly valid lsystems with an 'lsystem: chars' statement
             // otherwise, we should pick up the lsystem statement in wantLsystem
-            puts(`matched "lsystem: xxx" got: ${m[1]}`);
+            puts(`matched "lsystem: xxx" got: ${m[1]}`, LSYS_IN_ITEMS);
             // sanity check here
             let oldlabel = ls.label;
             let thelsystem = Lsystem.lsystems.get(oldlabel);
@@ -391,11 +446,11 @@ class Lsystem {
                Lsystem.lsystems.delete(oldlabel);
                ls.label = m[1];
                Lsystem.lsystems.set(ls.label, ls);
-               puts(`reset lsystem name to ${ls.label} from ${oldlabel}`);
+               puts(`reset lsystem name to ${ls.label} from ${oldlabel}`, LSYS_IN_ITEMS);
                ls.show('label');
             }
          } else if (null != ( m = line.match(RE.dlength))) {
-            puts(`matched "derivation length: " got: ${m[1]}`);
+            puts(`matched "derivation length: " got: ${m[1]}`, LSYS_IN_ITEMS);
             ls.Dlength = m[1];
             ls.locals.set('DLength', m[1])
             ls.show('Dlength');
@@ -424,6 +479,10 @@ class Lsystem {
             }
             pr.status=P_TRANSITION;
             pr.nextState = inProductions;
+         } else if (m = line.match(RE.anyGlobal)) {
+            ls.globals.set(m[1], m[2]);
+            ls[m[1]] = m[2];
+            puts(`matched "anyGlobal:" ${m[1]} = ${m[2]}`, LSYS_IN_ITEMS);
          } else {
             pr.status = P_UNHANDLED;
             puts(`unrecognized statement: ${line}`);
@@ -433,7 +492,7 @@ class Lsystem {
 
       function inProductions (ls, line) {
          let pr = new ParseResult(P_HANDLED, inProductions);
-         puts(`inProductions looking at: ${line}`);
+         puts(`inProductions looking at: ${line}`, LSYS_IN_PROD);
          if (line.includes('homomorphism')) {
             // should pick up warnings/no warnings
             pr.status = P_TRANSITION;
@@ -457,7 +516,7 @@ class Lsystem {
       }
       function inDecomposition (ls, line) {
          let pr = new ParseResult(P_HANDLED, inProductions);
-         puts(`inDecomposition looking at: ${line}`);
+         puts(`inDecomposition looking at: ${line}`); // , LSYS_IN_DECOMP
          if (line.includes('homomorphism')) {
             // should pick up warnings/no warnings
             pr.status = P_TRANSITION;
@@ -515,9 +574,7 @@ class Lsystem {
             let sls = new Lsystem('', lbl);
             parseHelper(sls, true);       // this is a subLs
             Lsystem.lsystems.set(lbl, sls); // update sublsystems map
-         } // else if (line.includes('#define')) { // swallow everything else
-         //    pr.status = P_UNHANDLED;
-         // } 
+         }
 
          return pr;
       }
@@ -574,6 +631,9 @@ class Lsystem {
 
          condition = leftside[4];   // undefined or not
          if (condition) {
+            condition = condition.replace(RE.asterisk,'');
+         }
+         if (condition) {
             needScope=true;
          } else {
             condition = true; // default of no condition
@@ -584,7 +644,9 @@ class Lsystem {
             initScope(scope, ls.globals, ls.locals);
             //puts("scope before funcs: " + Object.entries(scope));
 
-            scope._bind_ = function (v, exp) {math.evaluate(v+'='+exp, scope);}
+            scope._bind_ = function (v, exp) {
+               puts(`bind(${v}=${exp})`, LSYS_PARSE_PROD);
+               math.evaluate(v+'='+exp, scope);}
             //puts(`test func: _test_() = ${condition}`);
             scope._test_ = function () {return math.evaluate(`${condition}`, scope);}
             scope._expand_ = function(module) {
@@ -607,11 +669,11 @@ class Lsystem {
       // bare variables or numbers
       function parseModules(s, isStrict = false) {
          let mods = [];
-         // puts('parseModules looking at: ' + s);
+         puts('parseModules looking at: ' + s, LSYS_PARSE_MOD);
          if (s) {
             let it = s.matchAll(RE.modules);
             for (m of it) {
-               //puts('parseModules matching: ' + m);
+               puts('parseModules matching: ' + m, LSYS_PARSE_MOD);
                if (m[2] === undefined) {
                   mods.push(m[1]);
                } else {
@@ -628,13 +690,13 @@ class Lsystem {
 
       // need to handle, e.g. A((y+fn(x))), for any nested depth of function calls
       function parseSuccessor(s) {
-         //puts("parseModules");
+         puts("parseModules", LSYS_PARSE_SUCC);
          let l = new Array();
          let i = 0;
          let m;
          let re = RE.successorModule;
          while (m = re.exec(s)){
-            // puts(`matched: ${m} : lastIndex = ${re.lastIndex}`);
+            puts(`matched: ${m} : lastIndex = ${re.lastIndex}`, LSYS_PARSE_SUCC);
             if (m[2] === undefined) {
                l[i] = m[1];
             } else {
@@ -654,22 +716,69 @@ class Lsystem {
 	          l[i] = new ParameterizedModule(m[1], parms);
                   // reset s
                   re.lastIndex = j;
-                  //puts(`starting from: ${s.substring}`)
+                  puts(`starting from: ${s.substring}`, LSYS_PARSE_SUCC);
                } else {
                   let ss = s.substring(m.indices[2][0], s.substring(m.indices[2][1]));
                   throw new Error(`Error: end of input while parsing: ${ss}`);
                   break;
                }
             }
-            //puts(`module ${i} = ${l[i]}`);
+            puts(`module ${i} = ${l[i]}`, LSYS_PARSE_SUCC);
             i++;
          }
          return l;
       }
    }; // end of Parse
 
+   /* parseDefine parses function and array declarations
+      line-by-line parsing is too constrained for this.
+      first, we'll get the to the end of the define section, then 
+      chunk it into assign statements, and then we can use regular expressions to 
+   */
+   static  parseDefine (ls, start) {
+      let pr = new ParseResult(P_HANDLED, inDefine);
+      let n = 0;
+      let nesting = [0];
+      let nestIndex=0;
+
+      puts(`parseDefine looking at: ${line}`);
+      return pr;
+      while (nesting[nestIndex] > 0 && n < line.length) {
+         if (line[n] == '}') {
+            nesting[nestIndex]--;
+         } else if (line[n] == '{') {
+            nesting[nestIndex]++;
+         }
+         n++;
+      }
+      if (nesting[nestIndex] == 0) {
+         puts(`done with nestIndex ${nestIndex}`);
+         if (nestIndex == 0) { // assume we're done with this line
+            puts(`done with inDefine, nestPos=${nestPos} - ${pos+line.length}`);
+            pr.status = P_TRANSITION;
+            pr.nextState = inItems;
+         }
+      }
+      
+      return pr;
+      
+      // m = line.matchAll(RE.assignFun);
+      //     puts(m);
+      //     for (let parts of m) {
+      //        let fname = parts[1];
+      //        let parms = parts[2];
+      //        let body = parts[3];
+      //        puts(`${fname} = (${parms}) ${body}`);
+      //        //ls.functions.set(fname, Function(parms, body));
+      //        Lsystem.functions.set(fname, Function(parms, body));
+      //     }
+   }
+
+
+
    static flatten( list) {
       let r=[];
+      let v;
       for (let i=0;i<list.length;i++) {
 	 v=list[i];
 	 if (Array.isArray(v)) {
@@ -742,7 +851,7 @@ class Lsystem {
 	 lsnext = mstring.slice();     // default production is to copy
          for (let n=0; n < clength; n++) {
 	    let node = mstring[n];
-            //puts(`looking at node[${n}] = ${node}`);
+            puts(`looking at node[${n}] = ${node}`, LSYS_REWRITE);
             // special handling of cut module, %
             if (node == '%') {
                let on = n;
@@ -753,18 +862,18 @@ class Lsystem {
             // 
             let doExpand = false;
 	    for (const rule of rules) {
-               //puts(`matching against rule: ${rule}`);
+               puts(`matching against rule: ${rule}`, LSYS_REWRITE);
                let pred = rule[0]; // == [[lctxt] strictp [rctxt]]
                let scope = rule[3];
                let strictp = pred[1];
-               //puts(`comparing  ${node} to strictp: ${strictp}`);
+               puts(`comparing  ${node} to strictp: ${strictp}`, LSYS_REWRITE);
                if (this.formalMatch(strictp, node, scope)) {
 		  let lctxt = pred[0];
 		  let rctxt = pred[2];
          	  if (! lctxt.length && ! rctxt.length && scope._test_()) {
                      lsnext[n] = this.expand(rule);
                      doExpand=true;
-                     //puts(`unconditional expansion to: ${lsnext[n]}`);
+                     puts(`unconditional expansion to: ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
                      break;
 		  } else {
                      //puts(`context sensitive rule: lctxt: ${lctxt} or rctxt: ${rctxt}`);
@@ -781,7 +890,7 @@ class Lsystem {
                      if (doExpand) {
  // todo: evaluate post-condition expression 
                         lsnext[n] = this.expand(rule);
-                        //puts(`this expanded ${mstring[n]} to ${lsnext[n]}`);
+                        puts(`this expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_EXPAND);
                         break;  // stop looking through rules
                      }
 		  }
@@ -799,7 +908,7 @@ class Lsystem {
                      lsLabel= ls.label;
                      restrict = ls.restrict;
                      // what about lsystem global variables ???
-                     puts(`switching to lsystem: ${lsLabel}`);
+                     puts(`switching to lsystem: ${lsLabel}`, LSYS_REWRITE);
                      //     continue;
                   } else {
                      throw new Error(`lsystem: ${sublslabel} not found in ${node}`); 
@@ -813,14 +922,14 @@ class Lsystem {
                      lsLabel = ls.label;
                      rules = ls.rules;
                      restrict = ls.restrict;
-                     puts(`Returning to lsystem: ${lsLabel}`);
+                     puts(`Returning to lsystem: ${lsLabel}`, LSYS_REWRITE);
                      //   continue;
                   }
                }
             }
          }
          mstring = flatten(lsnext);
-         //puts(`iteration ${i + 1}\n${mstring}`);
+         puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
       }
       ls.current = mstring;
       // this.next = null;
@@ -836,15 +945,15 @@ class Lsystem {
       let scope=rule[3];
       if (scope.hasOwnProperty('_expand_')) {
          successor = rule[2].slice();
-         //puts(`successor after slice: ${successor}`)
+         puts(`successor after slice: ${successor}`, LSYS_EXPAND)
          successor.forEach((mod,ndx) => {if (typeof mod == 'object') {
             let nmod = mod.clone();
             scope._expand_(nmod);
-            //puts(`expanded module: ${nmod}`);
+            puts(`expanded module: ${nmod}`, LSYS_EXPAND);
             successor[ndx] = nmod;
          }});
-         //puts(`successor expanded: ${successor}`);
-         //puts(`rule successor: ${rule[2]}`);
+         puts(`successor expanded: ${successor}`, LSYS_EXPAND);
+         puts(`rule successor: ${rule[2]}`, LSYS_EXPAND);
       } else {
          successor = rule[2];
       }
@@ -856,7 +965,7 @@ class Lsystem {
    // nodeB is a module in the expansion with an actual numeric value which
    // gets bound to the formal parameter from nodeA
    formalMatch(nodeA, nodeB, scope=null) {
-      //puts(`formalMatch ${nodeA} against ${nodeB}`);
+      puts(`formalMatch ${nodeA} against ${nodeB}`, LSYS_MATCH);
       if (typeof nodeA == typeof nodeB) {
          if (typeof nodeA == 'string') {
             return nodeA == nodeB;
@@ -868,16 +977,18 @@ class Lsystem {
             }
             if (scope !== null && scope.hasOwnProperty('_bind_')) {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
-                  //puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]}`);
+                  puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]})`, LSYS_MATCH);
                   scope._bind_(nodeA.p[fp], nodeB.p[fp]);
-                  //puts("scope bind:");
-                  //scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
+                  if (LogTag.isSet(LSYS_MATCH)) {
+                     puts("scope bind:");
+                     scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
+                  }
                }
             }
             return true;
          }
       } else {
-         //puts(`node types mismatch: A == ${typeof nodeA}, B=${typeof nodeB}`);
+         puts(`node types mismatch: A == ${typeof nodeA}, B=${typeof nodeB}`, LSYS_MATCH);
          return false;
       }
    }
@@ -904,24 +1015,24 @@ class Lsystem {
             consider = restrict.consider.slice();
          }
       }
-      //puts(`ctxt: ${ctxt}, snode: ${snode}, dir: ${dir}`);
-      //puts(`restrict: ${restrict}, ignore: ${ignore}, consider: ${consider}`);
+      puts(`ctxt: ${ctxt}, snode: ${snode}, dir: ${dir}`, LSYS_CONTEXT);
+      puts(`restrict: ${restrict}, ignore: ${ignore}, consider: ${consider}`, LSYS_CONTEXT);
 
       while (n >= 0 && n < nmax) {
          m = mlist[n];
          c = ctxt[ci];
          if ((ignore && ignore.includes(m)) || (consider && !consider.includes(m))) {
             n += dir;           // next module, same context
-            //puts(`skipping module ${m}`);
+            puts(`skipping module ${m}`, LSYS_CONTEXT);
          } else {
             if (dir < 0) {         //# left context:upwards:acropetal
                switch (m) {
                case ']':
-                  [m, n] = this.skipbrackets(mlist, n, dir);
+                  [m, n] = Lsystem.skipbrackets(mlist, n, dir);
                   break;
                case '[': 
                   n--;             // skip over bracket
-                  //puts('skipping over [ to left');
+                  puts('skipping over [ to left', LSYS_CONTEXT);
                   break;
                default:
                   if (this.formalMatch(c, m, rscope)) {
@@ -936,14 +1047,14 @@ class Lsystem {
                }
             } else {		//# dir == 1 right context:downwards:basipetal
 	       if (m == '[' && c != '[') { 
-                  [m, n] = this.skipbrackets(mlist, n, dir);
+                  [m, n] = Lsystem.skipbrackets(mlist, n, dir);
                } else if (c == ']') {
                   while (m != ']') {
                      n++;
                      if (n < nmax) {
                         m = mlist[n];
                      } else {
-                        //puts('fell off right end of string looking for "]"');
+                        puts('fell off right end of string looking for "]"', LSYS_CONTEXT);
                         return false;
                      }
                   }
@@ -968,32 +1079,48 @@ class Lsystem {
    //# dir is +/- 1
    // returns a list of first char beyond bracketed group and its position
    // if group is at either end, returns empty char and -1 or list length
-   skipbrackets (marray, start, dir) {
+   // will skip braces if skiptype is 1, or parens if 2
+   static skipbrackets (marray, start, dir, skiptype = 0) {
       let l = marray;
       let nmax = l.length;
+      let leftb, rightb;
+      switch (skiptype) {
+      case 0:
+         leftb= '\[';
+         rightb = ']';
+         break;
+      case 1:
+         leftb= '\{';
+         rightb = '}';
+         break;
+      case 2:
+         leftb = '(';
+         rightb = ')';
+      }
+      
       let startbracket = l[start];
       let openBracket, closeBracket;
       if (dir == 1) {
-         if (startbracket == '\[') {
-	    openBracket = '\[';
-	    closeBracket = ']';
+         if (startbracket == leftb) {
+	    openBracket = leftb;
+	    closeBracket = rightb;
          } else {
-	    //puts(`starting with ${startbracket} must proceed to right`);
+	    puts(`starting with ${startbracket} must proceed to right`,LSYS_REWRITE);
 	    return ["", start];
          }
       } else {
-         if (startbracket == ']') {
-	    openBracket = ']' ;
-	    closeBracket = '\[' ;
+         if (startbracket == rightb) {
+	    openBracket = rightb ;
+	    closeBracket = leftb ;
          } else {
-	    //puts(`starting with ${startbracket} must proceed to left`);
+	    puts(`starting with ${startbracket} must proceed to left`,LSYS_REWRITE);
 	    return ["", start];
          }
       }  
       let n = start;
       let nested = 1;
       let c;
-      // puts(`at start: l[${n}] = ${l[n]}`);
+       puts(`skipbrackets at start: l[${n}] = ${l[n]}`,LSYS_REWRITE);
       while (nested > 0 && n > -1 && n < nmax) {
          n += dir;
          c = l[n];
@@ -1051,13 +1178,11 @@ class Lsystem {
  
 }
 
-Lsystem.prototype.lsystems = new Map(); // Bag of all lsystems 'main' = initial one
-
-
 // flatten a list by one level
 function flatten( list) {
    // puts('flattening');
    let r=[];
+   let v;
    for (let i=0;i<list.length;i++) {
       v=list[i];
       if (Array.isArray(v)) {
@@ -1151,8 +1276,6 @@ function substitute(defs, expr ) {
 function lappend (larray, ...items) {
    larray.splice(larray.length,0, ...items);
 }
-
-function puts(o) {console.log(o);}
 
 
 function flattenv( list) {
