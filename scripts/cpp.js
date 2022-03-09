@@ -88,7 +88,8 @@ function cpp_js(settings) {
 			}
 			
 			if (str[i] === '\n') {
-				if (str[i-1] == '\\') {
+	                   // dcd mod for lsystem
+		           if (settings.want_line_continuation && str[i-1] == '\\') {
 					// line continuation, replace by whitespace
 					str[i-1] = '';
 					str[i] = '';
@@ -143,7 +144,8 @@ function cpp_js(settings) {
 		
 		include_func : null,
                 completion_func : null,
-                traditional : true
+           traditional : false,           // dcd mod for lsystem
+           want_line_continuation : false // dcd mod for lsystem
 	};
 	
 	// apply default settings
