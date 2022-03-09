@@ -220,11 +220,16 @@ class Turtle3d {
       let c = new BABYLON.Color3();
       return c.fromArray(Array.from(cv.split(','), x=> Number(x)));
    }
-   setSize(v) {
-      // to support tapered stems
-      this.TurtleState.lastSize = this.TurtleState.size;
+
+   setSize(v, initial=false) {
+      if (initial) {
+         this.TurtleState.lastSize = v;
+      } else { // to support tapered stems
+         this.TurtleState.lastSize = this.TurtleState.size;
+      }
       this.TurtleState.size = v;
    }
+
    setTrack(v, id=null) {
       switch (v) {
       case 'line':
@@ -319,7 +324,8 @@ class Turtle3d {
 	 this.TurtleState.U = val.clone(); // in case it's a local
       }
    }
-   //
+   // orient turtle so we can see what the orientation looks like
+   // not required for actual functioning
    orientTurtle () {
       let shape = this.getTurtleShape();
       if (shape != "") {
@@ -330,6 +336,7 @@ class Turtle3d {
       }
    }
 
+   // you can set your own shape - untested
    setTurtleShape(val) {this.TurtleState.turtleShape = val;} // a mesh
 
    setTrackShape(id)  {
@@ -481,16 +488,22 @@ class Turtle3d {
    // this sets U so it is in the H-up plane
    // H is unchanged, L follows H and U and
    // the plane of H and U is perpendicular to L
-   setUp (up) {
-      if (betterTypeOf(up) == 'array') {
-	 up = BABYLON.Vector3.FromArray(up);
+   setUp (a1,a2,a3) {
+      let up;
+      if (a1 != undefined && a2 != undefined && a3 != undefined) {
+         up = new BABYLON.Vector3(a1,a2,a3);
+      } else if (betterTypeOf(a1) == 'array') {
+	 up = BABYLON.Vector3.FromArray(a1);
+      } else { //assume a1 is a vector
+         up=a1;
       }
       up.normalize();
       let H = this.getH();
       //let angle = -1*acosd(dot(z, h));
       let p1 = H.cross(up); // p1 is perp to H-up
       if (p1.length() < 1.0e-10) {
-         return	;	// parallel
+         console.warn(`up (${a1}, ${a2}, ${a3}) is parallel to heading, can't set U`);
+         return	;	
       }
       p1.normalize();	
       let p2 = p1.cross(H);	// the new up
@@ -748,9 +761,16 @@ class Turtle3d {
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
 
-   newTrack(type='p0', udata=null) {
+   newBranch(udata=null) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
-
+   }
+   endBranch() {
+      const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
+      this.setState(last.tstate);
+      this.TurtleState.trackPath = last.tstate.trackPath;
+      return last.userData;
+   }
+   newTrack(type='p0') {
       if (this.TurtleState.trackShape == null) {
          this.TurtleState.trackShape = this.trackContours.get('default');
       }
@@ -767,11 +787,6 @@ class Turtle3d {
 
    endTrack() {
       this.drawTrack();
-      const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
-      this.setState(last.tstate);
-      this.TurtleState.trackPath = last.tstate.trackPath;
-
-      return last.userData;
    }
 
 
@@ -1161,7 +1176,7 @@ function showColorTable(tu) {
    }
 }
 // some helper functions
-var puts =console.log;          // nod to TCL
+//var puts =console.log;          // nod to TCL
 function betterTypeOf (o) {
     return Object.prototype.toString.call(o).slice(8,-1).toLowerCase(); 
 }
