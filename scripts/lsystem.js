@@ -1,10 +1,19 @@
-
-// cpp.js to remove comments and expand #defines.
-//    this version modified to ignore // comments, since they 
-//    can occur in production strings
-// math.js for math.evaluate
-// babylon.js for color, and probably more, like meshes
-// turtle3d.js for actually drawing a tree.
+/* required packages
+   supplied here
+   turtle3d.js for actually drawing
+   interpret.js unites this file and turtle3d.js
+   colortables.js
+   logtag.js for tagged logging
+   
+   external packages
+   cpp.js to remove comments and expand #defines.
+      this version modified to ignore // comments, since they 
+      can occur in production strings
+   math.js for math.evaluate
+   babylon.js and some of its dependencies, for underlying graphics environment
+   one of earcut, libtess, or triangulate for mesh triangulation
+      libtess is winning, so far
+*/
 
 // var testls = `n=30,delta=22.5
 // #ignore +-F
