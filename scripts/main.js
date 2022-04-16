@@ -66,10 +66,13 @@ const createScene = function () {
 
    camera.attachControl(canvas, true);
 
-   const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 10, 0));
-   light.intensity = 1.5;
-   light.diffuse = new BABYLON.Color3(206/255, 227/255, 240/255);
-   light.groundColor = new BABYLON.Color3(1, 1, 1);
+   const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(5, 10, 0));
+   // light.intensity = 1.25
+   // light.diffuse = new BABYLON.Color3(206/255, 227/255, 240/255);
+   // light.groundColor = new BABYLON.Color3(1, 1, 1);
+
+  // scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+
    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
    var gMaterial = new BABYLON.StandardMaterial("gMaterial", scene);
    
@@ -168,9 +171,10 @@ function markSky(t,axis='x', r=skysize/2) {
 //    t.setState(savedState);
 // }
 
-function makeAxes (t, size=10) {
+function makeAxes (size=10) {
    var xaxis = BABYLON.Mesh.CreateLines('xaxis',[
-      new BABYLON.Vector3(-20,0,0), new BABYLON.Vector3(20,0,0)
+      new BABYLON.Vector3(-20,0,0), 
+      new BABYLON.Vector3(20,0,0)
    ], scene);
    xaxis.color = BABYLON.Color3.Red();
    BABYLON.Tags.AddTagsTo(xaxis, `axes`); 
@@ -195,7 +199,7 @@ updateTurtleInfo(t,0);
 // console.log(Turtle3d.prototype.t3dIDTag);
 // console.log(t1.TurtleState);
 
-makeAxes(t);
+makeAxes();
 //markSky(t);
 
 showhidebtn.addEventListener("click", () => {
@@ -513,6 +517,7 @@ function createMesh(poly) {
    var amat = new BABYLON.StandardMaterial("a", scene);
    mat.backFaceCulling = false;
    mat.diffuseColor = new BABYLON.Color3(0.6,0.83,0.6);
+   mat.ambientColor = new BABYLON.Color3(0.6,0.83,0.6);
    var amesh = new BABYLON.Mesh("a", scene);
    vertexData.applyToMesh(amesh,true);
 
