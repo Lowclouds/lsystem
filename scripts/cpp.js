@@ -144,7 +144,7 @@ function cpp_js(settings) {
 		
 		include_func : null,
                 completion_func : null,
-           traditional : false,           // dcd mod for lsystem
+           traditional : true,            // dcd mod for lsystem
            want_line_continuation : false // dcd mod for lsystem
 	};
 	

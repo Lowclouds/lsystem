@@ -48,7 +48,7 @@ A(t)>F : t==10 -> -FFFA(0)
 // RE is the container for all regular expressions
 const RE = {};
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
+var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 
