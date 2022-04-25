@@ -40,14 +40,14 @@ class Turtle3d {
 	 size: 0.1,
          lastSize: 0.1,
 	 turtleShape: null,
-	 trackType: 'tube',
+         drawMode: Turtle3d.DRAW_IMMEDIATE, 
+	 trackType: Turtle3d.TRACK_TUBE, // line is really slow
          trackPath: null,
+         trackShapeID: 'default',
          trackShape: null,
 	 trackMesh: null,
          trackTag: '',          // additional tag
          trackMaterial: 0,      // index into material list
-         drawMode: 'd',         // 'd': draw, 'p': extrude (p1-p4 for splines?)
-         shapeMode: '',         // 'p': polygon, 'c': shape/contour
          accumRoll: 0,
       }
 
@@ -73,6 +73,7 @@ class Turtle3d {
          this.materialList[0].diffuseColor = this.toColorVector();
          this.materialList[0].ambientColor = this.toColorVector();
          this.trackContours.set('default', generateCircle(this.size));
+         this.TurtleState.trackShape = this.trackContours.get('default');
 	 Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
 	 return true;
       }
@@ -172,6 +173,7 @@ class Turtle3d {
    getColor() { return this.TurtleState.color;}
    getSize() { return this.TurtleState.size;}
    getTurtleShape() { return this.TurtleState.turtleShape;} // a mesh
+   getTrackShapeID() {return this.TurtleState.trackShapeID;} // number or string
    getTrackShape() {return this.TurtleState.trackShape;} // array of Vector3
    getTrack() { return this.TurtleState.trackType;}
    getTurtle() {return this.TurtleState.Turtle;}
@@ -253,35 +255,37 @@ class Turtle3d {
          this.TurtleState.lastSize = this.TurtleState.size;
       }
       this.TurtleState.size = v;
+      puts(`setSize: new size == ${v}`);
       return this;
    }
 
    setTrack(v, id=null) {
       switch (v) {
       case 'line':
-      case 'tube': {
-         this.TurtleState.trackType = v; return true;
+         this.TurtleState.trackType = Turtle3d.TRACK_LINE;
          break;
-      }
+      case 'tube': 
+         this.TurtleState.trackType = Turtle3d.TRACK_TUBE;
+         break;
       case 'cyl':
       case 'cylinder':
       case 'extrusion':
-      case 'ext': {
-         this.TurtleState.trackType = 'ext';
+      case 'ext':
+         this.TurtleState.trackType = Turtle3d.TRACK_EXT;
          if (id === null) {
-            this.TurtleState.trackShape = this.trackContours.get('default');
+            this.TurtleState.trackShapeID = 'default';
          } else {
-            this.TurtleState.trackShape = this.trackContours.get(id);
+            this.TurtleState.trackShapeID = id;
          }
-         return true;
+         this.TurtleState.trackShape = this.trackContours.get(this.TurtleState.trackShapeID);
          break;
-      }
       default: {
 	 console.log(`track type of ${v} not supported`);
-	 this.TurtleState.trackType = 'line';
-	 return false;
+	 this.TurtleState.trackType = Turtle3d.TRACK_TUBE;
+	 return null;
       }
       } 
+      return this;
    }
    getState () {
       let s = Object.assign({}, this.TurtleState);
@@ -295,23 +299,25 @@ class Turtle3d {
    }
 
    setState (savedstate) {
-      Object.assign(this.TurtleState, savedstate);
-      this.TurtleState.P = savedstate.P.clone();  // the user may expect to re-use the saved state
-      this.TurtleState.H = savedstate.H.clone();
-      this.TurtleState.L = savedstate.L.clone();
-      this.TurtleState.U = savedstate.U.clone();
-      if (savedstate.trackMesh != null) { this.TurtleState.trackMesh = savedstate.trackMesh;}
-      if (savedstate.trackPath != null) { this.TurtleState.trackPath = savedstate.trackPath;}
-    
-      const cidx = this.TurtleState.trackMaterial;
+      let ts = this.TurtleState;
+      Object.assign(ts, savedstate);
+      ts.P = savedstate.P.clone();  // the user may expect to re-use the saved state
+      ts.H = savedstate.H.clone();
+      ts.L = savedstate.L.clone();
+      ts.U = savedstate.U.clone();
+      ts.trackShape = this.trackContours.get(ts.trackShapeID);
+      if (savedstate.trackMesh != null) { ts.trackMesh = savedstate.trackMesh;}
+      if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
+
+      const cidx = ts.trackMaterial;
       this.materialList[cidx].diffuseColor = this.toColorVector();
 
       let s = this.getTurtleShape();
       if (s != '') {
 	 s.position = this.getPos();
-	 let meshes = this.scene.getMeshesByTags(this.TurtleState.Turtle);
+	 let meshes = this.scene.getMeshesByTags(ts.Turtle);
 	 for (var index = 0; index < meshes.length; index++) {
-	    meshes[index].isVisible = this.TurtleState.isShown;
+	    meshes[index].isVisible = ts.isShown;
 	 }
 	 this.orientTurtle();
       }
@@ -372,17 +378,20 @@ class Turtle3d {
       return this;
    }
 
-   setTrackShape(id)  {
+   setTrackShape (id)  {
+      puts(`set track shape to: ${id}, size == ${this.getSize()}`);
       let c = this.trackContours.get(id);
       if (c) {
+         this.TurtleState.trackShapeID = id;
          this.TurtleState.trackShape = c;
          if (this.TurtleState.trackPath != null) {
             this.TurtleState.trackPath.shape = c
          }
-         this.TurtleState.trackType='ext';
+         this.TurtleState.trackType=Turtle3d.TRACK_EXT;
       } else {
-         puts(`Contour ${id} not found`);;
+         puts(`Contour ${id} not found`);
       }
+      puts(`set track shape to: ${id}, size == ${this.getSize()}`);
       return this;
    }
    /**
@@ -478,19 +487,19 @@ class Turtle3d {
       this.clear();
       this.home();
       let ts = this.TurtleState;
-      ts.drawMode = 'd';        // immediate mode
-      ts.trackType = 'tube';
+      ts.drawMode = Turtle3d.DRAW_IMMEDIATE;
+      ts.trackType = Turtle3d.TRACK_TUBE;
       ts.trackPath = null;
       if (all) {
          ts.penIsDown = true;
          ts.isShown = true;
          ts.size = 0.1;
          ts.lastSize = ts.size;
-         ts.turtleShape = null;
+         ts.trackShapeID = 'default';
+         ts.trackShape = this.trackContours.get('default');
          ts.trackMaterial = 0;
          ts.color = '0,0,0';
          ts.accumRoll = 0;
-         ts.shapeMode = '';
 
          this.branchStack=[];
          this.polygonStack=[];
@@ -500,7 +509,10 @@ class Turtle3d {
       return this;
    }
 
-   forward (dist) {
+   // to support the G/g modules in TABOP
+   // we add the addpathpt param to turn off
+   // point capture
+   forward (dist, addpathpt = true) {
       let pos  = this.TurtleState.P;
       let oldP = pos.clone(); 
       let newP = pos.clone();
@@ -510,7 +522,19 @@ class Turtle3d {
 
       this.TurtleState.P.copyFrom(newP);
       this.draw(oldP, newP);
-      //this.draw(oldP, pos);
+      if (addpathpt) {
+         switch ( this.TurtleState.drawMode ) {
+         case Turtle3d.CAPTURE_PATH:
+            this.addPathPt(this.TurtleState, newP);
+            break;
+         case Turtle3d.CAPTURE_POLYGON:
+            this.updatePolygon(newP);
+            break;
+         case Turtle3d.CAPTURE_CONTOUR:
+            this.updateContour(newP);
+            break;
+         }
+      }
       return this;
    }
 
@@ -518,6 +542,7 @@ class Turtle3d {
       return this.forward(-1*dist);
    }
    
+   // goto never captures a point on it's own
    goto (a1,a2,a3) {
       let pos;
       if (a1 != undefined && a2 != undefined && a3 != undefined) {
@@ -527,8 +552,6 @@ class Turtle3d {
       } else { //assume a1 is a vector
          pos = a1;
       }
-
-      //this.updatePolygon(pos); // or not
 
       let oldP = this.TurtleState.P.clone();
       this.setPos(pos);
@@ -664,20 +687,8 @@ class Turtle3d {
 
    draw(oldPos, newPos) {
       let ts = this.TurtleState;
-      if (this.isPenDown()) {
-         switch (ts.drawMode) {
-         case 'd': // 'normal', one mesh/draw call
-            this.drawImmediate(ts, oldPos, newPos);
-            break;
-         case 'p':  // assuming 'extrusion'
-         case 'p0':
-         case 'p1':
-            this.addPathPt(ts, oldPos, newPos);
-            break;
-         case 'c':              // contour mode
-            puts('Warning: drawing not expected in contour mode')
-            break;
-         }
+      if (this.isPenDown() && ts.drawMode == Turtle3d.DRAW_IMMEDIATE) {
+         this.drawImmediate(ts, oldPos, newPos);
       }
       // update visual turtle position
       let tmesh = ts.turtleShape;
@@ -691,16 +702,17 @@ class Turtle3d {
       let type = ts.trackType;
       let tag = `track${t} ${ttag}`;
       let segment;
-      if (type == 'line') {
+
+      switch (type ) {
+      case Turtle3d.TRACK_LINE:
 	 segment = BABYLON.MeshBuilder.CreateLines('tpath',
                                                    {points: [oldPos, newPos],
                                                     tessellation: 32}, this.scene);
 	 segment.color = this.toColorVector();
 	 BABYLON.Tags.AddTagsTo(segment, tag , this.scene);
 	 segment.isVisible = true;
-
-
-      } else if (type == 'tube') {
+         break;
+      case Turtle3d.TRACK_TUBE:
          let radiusFunc = (i,distance) => {
             return (i == 0) ? ts.lastSize : ts.size;
          }
@@ -714,20 +726,9 @@ class Turtle3d {
          this.meshCount[0]++;
 	 segment.isVisible = true;
          segment.material = this.materialList[ts.trackMaterial];
-         if  (true) {
-            BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
-         } else {
-            if (ts.trackMesh == null) {
-               ts.trackMesh = segment;
-               this.meshCount[1]++;
-            } else {
-               ts.trackMesh = BABYLON.Mesh.MergeMeshes([ts.trackMesh, segment],true, true);
-            }
-            ts.trackMesh.id = t;
-            ts.trackMesh.name = `track${t}`;
-            BABYLON.Tags.AddTagsTo(ts.trackMesh, tag, this.scene);
-         }
-      } else if (type == 'ext') {
+         BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
+         break;
+      case Turtle3d.TRACK_EXT:
          let pathpts = [oldPos, newPos];
          let s = ts.size;
          let ls = ts.lastSize;
@@ -735,10 +736,9 @@ class Turtle3d {
             return (i == 0) ? ts.lastSize : ts.size;
          }
          function getrotation(i,distance) {
-            return ts.accumRoll;
+            return (i==0) ? 0 : ts.accumRoll;
          }
-
-         const segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
+         segment = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, 
                                                                 {shape: ts.trackShape, 
                                                                  path: pathpts, 
                                                                  updatable: true, 
@@ -750,6 +750,9 @@ class Turtle3d {
          segment.isVisible=true;
          segment.material = this.materialList[ts.trackMaterial];
          BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
+         ts.accumRoll = 0;
+         ts.lastSize = ts.size;
+         break;
       }
    }
 
@@ -761,26 +764,6 @@ class Turtle3d {
          return;
       }
       var pathpts = tp.points;
-      switch (ts.drawMode) {
-      case 'p':
-      case 'p0':
-         break;
-      case 'p1':                // catmullrom spline - probably unnecessary
-         // if (pathpts.length >= 4) {
-         //    //let numpts = Math.max(4, Math.round(pathpts.length*4));
-         //    let numpts = 1;
-         //    let cmspline = BABYLON.Curve3.CreateCatmullRomSpline(pathpts,numpts, false);
-         //    pathpts = cmspline.getPoints();
-         //    puts(`catmullrom track with numpts: ${numpts}, pathpts: ${pathpts.length}`);
-         // } else {
-         //    puts(`only ${pathpts.length} pts in track - using simple extrude`);
-         // }
-         break;
-      default:
-         // pathpts = tp.points
-         break;
-
-      }
       //puts(`trackPath.length: ${pathpts.length}`);
       //puts(`pathpts: ${pathpts}`);
       var srm = tp.srm;
@@ -873,14 +856,38 @@ class Turtle3d {
       this.TurtleState.trackPath = last.tstate.trackPath;
       return last.userData;
    }
-   newTrack(mode='p0') {
-      if (this.TurtleState.trackShape == null) {
-         this.TurtleState.trackShape = this.trackContours.get('default');
+
+   newTrack(ctype='p0') {
+      let ptype;
+      switch (ctype) {
+      case 'p0':
+         ptype = Turtle3d.PATH_POINTS;
+         break;
+      case 'p1':
+         ptype = Turtle3d.PATH_HERMITE_OPEN;
+         break;
+      case 'p2':
+         ptype = Turtle3d.PATH_HERMITE_CLOSED;
+         break;
+      case 'p3':
+         ptype = Turtle3d.PATH_BSPLINE_OPEN;
+         break;
+      case 'p4':
+         ptype = Turtle3d.PATH_BSPLINE_CLOSED;
+         console.warn('Hermite and B-spline curves not implemented');
+         break;
+      default:
+         console.error('Undefined track type: ' + ptype);
+         return;
       }
-      let tp = new TrackPath({s: this.TurtleState.trackShape});
+
+      if (this.TurtleState.trackShape == null) {
+         this.TurtleState.trackShape = this.trackContours.get(this.TurtleState.trackShapeID);
+      }
+      let tp = new TrackPath({s: this.TurtleState.trackShape, type: ptype});
       
-      this.TurtleState.trackType = 'ext';
-      this.TurtleState.drawMode = mode;
+      this.TurtleState.trackType = Turtle3d.TRACK_EXT;
+      this.TurtleState.drawMode = Turtle3d.CAPTURE_PATH;
       this.TurtleState.trackPath = tp;
       this.TurtleState.accumRoll = 0;
 
@@ -890,61 +897,79 @@ class Turtle3d {
 
    endTrack() {
       let ts = this.TurtleState;
+      let tp = ts.trackPath;
+      switch (tp.type) {
+      case Turtle3d.PATH_POINTS:
+         break;
+      case Turtle3d.PATH_HERMIT_OPEN:
+      case Turtle3d.PATH_HERMIT_CLOSED:  
+      case Turtle3d.PATH_BSPLINE_OPEN:
+      case Turtle3d.PATH_BSPLINE_CLOSED:
+         console.warn('Hermite and B-spline curves not implemented');
+         tp.type = Turtle3d.PATH_POINTS;
+         break;
+      default:
+         console.error('Unexpected path type: ' + tp.type);
+         break;
+      }
       this.drawTrack();
-      ts.drawMode = 'd';        // back to immediate draw
+      ts.drawMode = Turtle3d.DRAW_IMMEDIATE; // back to immediate draw
       ts.trackPath = null;
    }
 
-
    /** 
     * addPathPt at a point when in path mode
+    * ts = TurtleState
+    * newPos = position to add
     **/
-   addPathPt(ts, oldPos, newPos) {
+   addPathPt(ts, newPos) {
       // puts(`addPathPt from ${oldPos} to ${newPos}`);
       // assuming 'extrusion'
       let tp = ts.trackPath;
       if (tp.points.length == 0) { // push first point
          //puts(`added initial path pt: ${oldPos}, size: ${ts.lastSize}`);
-         tp.points.push(oldPos);
-         tp.srm.push({s: ts.lastSize, r: 0, m: 0})
-      }
-      tp.distance+= BABYLON.Vector3.Distance(newPos, oldPos);
-      let roll = ts.accumRoll;
-      let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
-      let rolldiff = roll - lastroll; // total additional roll
-      // puts(tp.srm);
-      let npts = Math.abs(Math.trunc(roll / tp.maxTwist)); // number of pts
-      let rollinc = roll / (npts+1); // divide by # sections
-      // puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, rollinc: ${rollinc}, npts: ${npts}`);
-      if (npts > 0) {
-         // add intermediate points
-         let vecdiff = newPos.subtract(oldPos).scaleInPlace(1/(npts+1));
-         // insert intermediate points
-         let r = rollinc;
-         let lpt = oldPos;
-         //puts(`adding ${npts} points, with incremental roll of ${rollinc}`);
-         let troll=0;
-         for (let pti = 0; pti < npts+1; pti++) {
-            lpt = lpt.add(vecdiff);
-            tp.points.push(lpt);
-            tp.srm.push({s: ts.size,
-                         r: r * degtorad,
-                         m: ts.trackMaterial
-                        });
-            troll += rollinc;
-            // puts(`inserted path pt: ${lpt}, total roll: ${troll}`);
-         }
-      } else {
-         // add new position
          tp.points.push(newPos);
-         tp.srm.push({s: ts.size,
-                      r: rollinc * degtorad,
-                      m: ts.trackMaterial
-                     }); 
-         // puts(`added path pt: ${newPos}`);
-      }
-      ts.accumRoll = 0;
-   }      
+         tp.srm.push({s: ts.lastSize, r: 0, m: 0})
+      } else {
+         let lastPos = tp.points[tp.points.length-1];
+         tp.distance+= BABYLON.Vector3.Distance(newPos, lastPos);
+         let roll = ts.accumRoll;
+         let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
+         let rolldiff = roll - lastroll; // total additional roll
+         // puts(tp.srm);
+         let npts = Math.abs(Math.trunc(roll / tp.maxTwist)); // number of pts
+         let rollinc = roll / (npts+1); // divide by # sections
+         // puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, rollinc: ${rollinc}, npts: ${npts}`);
+         if (npts > 0) {
+            // add intermediate points
+            let vecdiff = newPos.subtract(lastPos).scaleInPlace(1/(npts+1));
+            // insert intermediate points
+            let r = rollinc;
+            let lpt = lastPos;
+            //puts(`adding ${npts} points, with incremental roll of ${rollinc}`);
+            let troll=0;
+            for (let pti = 0; pti < npts+1; pti++) {
+               lpt = lpt.add(vecdiff);
+               tp.points.push(lpt);
+               tp.srm.push({s: ts.size,
+                            r: r * degtorad,
+                            m: ts.trackMaterial
+                           });
+               troll += rollinc;
+               // puts(`inserted path pt: ${lpt}, total roll: ${troll}`);
+            }
+         } else {
+            // add new position
+            tp.points.push(newPos);
+            tp.srm.push({s: ts.size,
+                         r: rollinc * degtorad,
+                         m: ts.trackMaterial
+                        }); 
+            // puts(`added path pt: ${newPos}`);
+         }
+         ts.accumRoll = 0;
+      }      
+   }
 
    drawDisc(d = 1, arc = 1, qual = 64, scaling = null) {
       let mesh,p, opts = {};
@@ -1033,7 +1058,7 @@ class Turtle3d {
       // save state
       this.polygonStack.push({s: this.getState(), a: Array.from(this.polygonVerts)});
       this.polygonVerts = new Array();
-      //this.TurtleState.shapeMode = 'p';
+      this.TurtleState.drawMode = Turtle3d.CAPTURE_POLYGON;
    }
 
    // implements the '.' module
@@ -1103,22 +1128,24 @@ class Turtle3d {
     *  newContour initializes the path. Types 1-4 are from TABOP/cpfg user manual
     * ***  All collected points are projected onto the XY plane. ***
     *  @param id   - the id of the path, can be number or string, typically single letter
-    *  @param type - type of path. 0-4, default 0 is simple path, i.e. points added form
-    *                the path; user must close path explicitly, by adding initial point at
-    *                the end before ending path.
-    *                type 1: an open Hermite spline, points in area are Hermite spline
-    *                control points.
-    *                type 2: a closed Hermite spline
-    *                types 3 & 4 are open/closed B-splines
+    *  @param type - type of path. 
+    *                default, TURTLE3D.CAPTURE_PATH, is simple path, i.e. points added
+    *                form the path; user must close path explicitly, by adding initial
+    *                point at the end before ending path.
+    *                type TURTLE3D.CAPTURE_HERMITE_OPEN: an open Hermite spline, 
+    *                points in array are Hermite spline control points.
+    *                type TURTLE3D.CAPTURE_HERMITE_CLOSED: a closed Hermite spline
+    *                types TURTLE3D.CAPTURE_BSPLINE_OPEN/CLOSED are open/closed B-splines
     * 
     * Notes: you shouldn't call this inside of a track or inside a contour, since it
-    * redefines the draw mode and resets the contour array
-    * thus stealing points from the path. Conversely, you shouldn't start a track/generalized 
-    * cylinder while defining a contour. Branching within a contour is also not advised
+    * steals points from those paths. Conversely, you shouldn't start a 
+    * track/generalized cylinder while defining a contour. 
+    * Branching or starting a new contour within a contour is also not advised.
     **/
-   beginContour(id, type=0, udata=null) {
+   beginContour(id, type=Turtle3d.PATH_POINTS, udata=null) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
       this.tempContour = new Contour(id, type);
+      this.TurtleState.drawMode = Turtle3d.CAPTURE_CONTOUR;
    }
    updateContour(pos=null) {
       if (this.tempContour != null ) {
@@ -1130,46 +1157,137 @@ class Turtle3d {
       }
    }
    /**
-     end a contour. leave the id parameter in the off chance we ever allow nested
-     contour calls.
+     end a contour. 
     */
-   endContour(id=null) { 
+   endContour() { 
+      let id = this.tempContour.id;
       if (this.tempContour != null) {
-         if (id === null || id === this.tempContour.id) {
-            switch (this.tempContour.type) {
-            case 0:
-               this.trackContours.set(this.tempContour.id, this.tempContour.pts);
-               break;
-            default:
-               puts(`contour type: ${this.tempContour.type} not implemented`);
-            }
-            this.tempContour = null;
-         } else {
-            throw new Error(`Ended contour with id: ${id}, expected ${this.tempContour.id}`);
+         let id = this.tempContour.id;
+         let pts;
+         let olds;
+         switch (this.tempContour.type) {
+         case Turtle3d.PATH_POINTS:
+            pts = Array.from(this.tempContour.pts);
+            olds = this.branchStack.pop();
+            this.setState(olds.tstate); // this destroys tempContour
+            this.addTrackShape(id, pts, true);
+            break;
+         case Turtle3d.PATH_HERMITE_OPEN:
+         case Turtle3d.PATH_HERMITE_CLOSED:
+         case Turtle3d.PATH_BSPLINE_OPEN:
+         case Turtle3d.PATH_BSPLINE_CLOSED:
+         default:
+            puts(`contour type: ${this.tempContour.type} not implemented`);
          }
+         this.tempContour = null;
+         return olds.udata;
+      } else {
+         throw new Error(`Ended contour with id: ${id}, expected ${this.tempContour.id}`);
       }
    }
 
-   storePoint(pos=null) 
-   {
+   storePoint(pos=null) {
       let pt = vclamp(pos==null? this.getPos() : pos);
-      
-      if (this.polygonStack.length > 0) {
+
+      switch (this.TurtleState.drawMode) {
+      case Turtle3d.CAPTURE_PATH:
+         this.addPathPt(this.TurtleState, pt);
+         break;
+      case Turtle3d.CAPTURE_POLYGON: 
          this.updatePolygon(pt);
-         puts(`added pt ${pt} to polygon(${this.polygonStack.length})`);
-      }
-      if (this.tempContour != null) {
-         this.updateContour(pt);
-         puts(`added contour pt ${pt}`);
+         puts(`added pt ${pt} to polygon${this.polygonStack.length}`, TRTL_CAPTURE);
+         break;
+      case Turtle3d.CAPTURE_CONTOUR:
+         if ( this.tempContour ) {
+            this.updateContour(pt);
+            puts(`added contour pt ${pt}`, TRTL_CAPTURE | TRTL_CONTOUR);
+         } else {
+            console.error(`Contour not initialized: can't add point`);
+         }
+         break;
+      case Turtle3d.DRAW_IMMEDIATE:
+         console.warn('storePoint called when no point capture mode in progress');
+         break;
+      default:
+         puts(`Capture type ${type} not implemented`, TRTL_CAPTURE);
+         break;
       }
    }
-   
 }
 
 Turtle3d.prototype.fd = Turtle3d.prototype.forward;
 Turtle3d.prototype.bk = Turtle3d.prototype.back;
 Turtle3d.prototype.lt = Turtle3d.prototype.yaw;
+Turtle3d.prototype.pu = Turtle3d.prototype.penUp;
+Turtle3d.prototype.pd = Turtle3d.prototype.penDown;
 
+function defconst (aclass, map) {
+   Object.keys(map).forEach(key => {
+      Object.defineProperty(aclass, key, {
+         value: map[key],
+         writable: false,
+         enumerable: true,
+         configurable: false
+      });
+   });
+}
+
+defconst(Turtle3d, {
+   DRAW_IMMEDIATE: 0,           // TurtleState.drawMode
+   CAPTURE_NONE: 0,             // synonym of DRAW_IMMEDIATE
+   CAPTURE_PATH: 1,
+   CAPTURE_POLYGON: 2,
+   CAPTURE_CONTOUR: 3,
+
+   TRACK_LINE: 0,               // TurtleState.trackType
+   TRACK_TUBE: 1,
+   TRACK_EXT: 2,
+
+   PATH_POINTS: 0,              // trackPath.type
+   PATH_HERMIT_OPEN: 1,
+   PATH_HERMIT_CLOSED:  2,
+   PATH_BSPLINE_OPEN: 3,
+   PATH_BSPLINE_CLOSED: 4,
+
+});
+/*
+// define your tags here or elsewhere
+const  MAIN_ALL         =1;  //0
+const  LSYS_PARSE       =2;  // 1
+const  LSYS_IN_ITEMS    =4;  // 2
+const  LSYS_IN_PROD     =8;  // 3
+const  LSYS_IN_DECOMP  =16;  // 4
+const  LSYS_IN_HOMO    =32;  // 5
+const  LSYS_IN_WANT    =64;  // 6
+const  LSYS_PARSE_PROD=128; // 7  
+const  LSYS_PARSE_MOD =256; // 8  
+const  LSYS_PARSE_SUCC=512; // 9  
+
+const  LSYS_REWRITE = 1024; // 10
+const  LSYS_EXPAND  = 2048; // 11
+const  LSYS_MATCH   = 4096; // 12
+const  LSYS_CONTEXT = 8192; // 13
+
+const  TRTL_CAPTURE  =  16384; // 14
+const  TRTL_MATERIAL =  2**15;
+const  TRTL_TEXTURE  =  2**16; 
+const  TRTL_TRACK    =  2**17; 
+const  TRTL_CONTOUR  =  2**18; 
+const  TRTL_DRAW  =     2**19;
+const  TRTL_POLYGON  =  2**20; 
+
+const  NTRP_INIT     =  2**21;
+const  NTRP_SETTING  =  2**22;
+const  NTRP_MOTION   =  2**23;
+const  NTRP_HEADING  =  2**25;
+const  NTRP_SIZE     =  2**26;
+const  NTRP_BRANCH   =  2**27;
+const  NTRP_PROGRESS =  2**28;
+*/
+// leaving space here for different triangulation routines
+
+
+                           
 // Turtle3d.prototype.getTurtle = function(id=null) {
 //    let t;
 //    if (Turtle3d.Turtles === null) {
@@ -1195,6 +1313,11 @@ function TrackPath(opts={}) {
    } else {
       this.maxTwist = opts.maxTwist;
    }
+   if (! opts.type) {
+      this.type = Turtle3d.PATH_POINTS;
+   } else {
+      this.type = opts.type;
+   }
    this.points=[];
    this.srm = [];               // scale, rotation, material
    this.distance = 0;           // sum of straight-line lengths
@@ -1202,6 +1325,7 @@ function TrackPath(opts={}) {
    //puts(`maxTwist: ${this.maxTwist}`);
    this.clone = function () {
       let tpc = new TrackPath(this.accumRoll, {s: Array.from(this.shape)});
+      tpc.type = this.type;
       tpc.points = Array.from(this.points);
       tpc.srm = Array.from(this.srm);
       tpc.maxTwist = this.maxTwist;
@@ -1215,6 +1339,12 @@ function Contour(id, type=0) {
    this.type = type;
    this.pts = new Array ();  // vector 3 array with z=0;
    this.controlPts = new Array(); // same as above
+   this.clone = function () {
+      let cclone = new Contour(id, type);
+      cclone.pts = Array.from(this.pts);
+      cclone.controlPts = Array.from(this.controlPts);
+      return cclone;
+   }
 }
 
 function generateCircle(r=1, q=12) {
