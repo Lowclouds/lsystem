@@ -23,6 +23,8 @@
 // This links the lsystem generator with turtle graphics
 
 function turtleInterp (ti, ls, opts=null) {
+   let desiredFps = 10;
+
    idata = {
       step:  1,
       stemsize: 0.1,
@@ -31,15 +33,18 @@ function turtleInterp (ti, ls, opts=null) {
 
       ci: 0,                       // color index
       inPolygon: 0,                // not
-      ptCaptureMode: 0,             // we're going to use bit manipulation here
+      ptCaptureMode: Turtle3d.CAPTURE_NONE, // 
       mi: 0,                       // module index
+      miCount: 2000,               // number of modules to interpret/frame
+      interval: 1000 / (10 * desiredFps),
+      lastTime: performance.now(),
       ctable:  null,
       //ctable: colorTableDefault,
       cpoly: null,
-      useTracksAlways: true
+      useTracksAlways: false
    }
    idata.show =  function () {
-      return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}`;
+      return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}, useTracksAlways: ${idata.useTracksAlways}`;
    }
 
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
@@ -85,6 +90,7 @@ function turtleInterp (ti, ls, opts=null) {
       ti.setMaterial(1);
       puts(`set ${ti.getTurtle()} material to idx ${numMat}, color ${ti.getColor()}`);
    }
+   lblNumDrawn.textContent = 0;
    ti.hide();
    ti.penDown();
    branchstack = [];
@@ -92,12 +98,44 @@ function turtleInterp (ti, ls, opts=null) {
    let tree = ls.current;
    puts(`lsystem has ${tree.length} modules`);
    puts(`using settings: ` + idata.show());
+   
 
    function doModule () {
       let i;
       let isPM = false;
-      
-      for (i=idata.mi; i < Math.min(tree.length, idata.mi+2000); i++) {
+
+      if (idata.mi < tree.length) {
+         rAF = requestAnimationFrame(doModule); 
+
+         let now = performance.now();
+         let delta = now - idata.lastTime;
+         if (delta < idata.interval) {
+            // ease off on number of modules to interpret
+            idata.miCount *= 0.95;
+            return;
+         } else {
+            idata.miCount *=1.05;
+         }
+      } else {
+         let ts = ti.getState()
+         if (ti.branchStack.length > 0) {
+            puts(' done with tree');
+            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
+            //   puts(`tp.shape is: ${ti.getState().trackPath.shape}`);
+            if (idata.useTrackAlways || ts.trackPath != null) {
+               ti.endTrack();
+            }           
+         } else {
+            if (idata.useTrackAlways || ts.trackPath != null) {
+               ti.endTrack();
+            }           
+            puts('done with tree and ti.branchStack.length == 0');
+         }
+         updateTurtleInfo(ti,0);
+         lblNumDrawn.backgroundColor = "green";
+      }
+
+      for (i=idata.mi; i < Math.min(tree.length, idata.mi+idata.miCount); i++) {
          let pM = tree[i];
          //puts(pM.toString());
          //puts(ti.getPos());
@@ -117,9 +155,6 @@ function turtleInterp (ti, ls, opts=null) {
             let d = isPm ? p0 : idata.step;
             ti.penDown();
             ti.forward(d);
-            if (idata.ptCaptureMode) {
-               ti.storePoint(ti.getPos());
-            }
             //puts('fd: ' + d);
             break;
          }
@@ -130,9 +165,7 @@ function turtleInterp (ti, ls, opts=null) {
                ti.penUp();
             }
 	    ti.forward(d); 
-            if (idata.ptCaptureMode) {
-               ti.storePoint();
-            }
+
             if (pState) {
                ti.penDown();
             }
@@ -141,7 +174,7 @@ function turtleInterp (ti, ls, opts=null) {
          case 'G': {
             let d = isPm ? p0 : idata.step;
             ti.penDown();
-            ti.forward(d);
+            ti.forward(d, false);
             //puts('Gfd: ' + d);
             break;
          }
@@ -151,7 +184,7 @@ function turtleInterp (ti, ls, opts=null) {
             if (p) {
                ti.penUp();
             }
-	    ti.forward(d); 
+	    ti.forward(d,false); 
             if (p) {
                ti.penDown();
             }
@@ -235,6 +268,7 @@ function turtleInterp (ti, ls, opts=null) {
                      throw new Error(`@R / setheading requires 3 or 6 parameters: ${pM.p}`);
                   }
                }
+               puts(`heading: ${pM}`,NTRP_SETTING);
             } else {
                throw new Error('@R / setheading requires 3 or 6 parameters');
             }
@@ -249,7 +283,7 @@ function turtleInterp (ti, ls, opts=null) {
             } else {
                idata.stemsize -= idata.stemsize > 1 ? 1 : 0;
             }
-            //puts(`set stemsize to: ${idata.stemsize}`);
+            puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
             ti.setSize(idata.stemsize);
             break;
          }
@@ -259,13 +293,17 @@ function turtleInterp (ti, ls, opts=null) {
             } else {
                idata.stemsize += 1;
             }
-            //puts(`set stemsize to: ${idata.stemsize}`);
+            puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
             ti.setSize(idata.stemsize);
             break;
          }
          case "'": {            // increment color table index
-            let mi = ti.getMaterialIdx()
-            mi--;
+            if (isPm) {
+               mi = p0;
+            } else { 
+               mi = t.getMaterialIdx();
+               mi--;
+            }
             ti.setMaterial(mi); // 
             // idata.ci %= idata.ctable.length;
             // ti.setColor(idata.ctable[idata.ci]);
@@ -288,6 +326,7 @@ function turtleInterp (ti, ls, opts=null) {
             if (idata.useTracksAlways) {
                ti.newTrack('p0');
                puts('newTrack: p0', NTRP_MOTION);
+               ti.storePoint();
             }
             // ti.newMesh();
             break;
@@ -302,40 +341,63 @@ function turtleInterp (ti, ls, opts=null) {
             break;
          }
          case '{': {
-            idata.inPolygon++;
-            idata.ptCaptureMode |= 1; // turn on polygon pt capture
-            ti.newPolygon();
-            idata.cpoly = [];
+            if (!isPM) {
+               idata.inPolygon++;
+               idata.ptCaptureMode = Turtle3d.CAPTURE_POLYGON; // turn on polygon pt capture
+               ti.newPolygon();
+               idata.cpoly = [];
+            } else {
+               let ptype;
+               switch (p0) {
+               case 0:          // TABOP says this s.b. polygon, but we make it a path
+                  ptype = 'p0';
+                  break;
+               case 1:          // hermite open
+                  ptype = 'p1';
+                  break;
+               case 2:          // hermite closed
+                  ptype = 'p2';
+                  break;
+               case 3:          // bspline open
+                  ptype = 'p3';
+                  break;
+               case 4:          // bspline closed
+                  ptype = 'p4';
+                  break;
+               }
+               ti.newTrack('p0'); // 
+            }
             break;}
          case '}': {
-            if ( idata.inPolygon > 0) {
-               puts('ending polygon');
-               ti.endPolygon();
-               idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
-               if (idata.inPolygon < 1) {
-                  idata.ptCaptureMode ^= 1; // turn off polygon capture
+            if (!isPM) {
+               if ( idata.inPolygon > 0) {
+                  puts('ending polygon');
+                  ti.endPolygon();
+                  idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
+                  if (idata.inPolygon < 1) {
+                     idata.ptCaptureMode = Turtle3d.CAPTURE_NONE; // turn off polygon capture
+                  }
+               } else {
+                  puts('end polygon attempted when no polygon started');
                }
             } else {
-               puts('end polygon attempted when no polygon started');
+               ti.endTrack();
             }
             break;
          }
-         case '.': {            // record a polygon point
+         case '.': {            // record a polygon or path point
            // idata.cpoly.push(otoa(ti.getPos()));
-            if (idata.ptCaptureMode) {
-               ti.storePoint();
-               //puts(`added pt ${ti.getPos()}, using "."`);
-            } else {
-               throw new Error(`saw "." while not in ptCaptureMode`);
-            }
-            //puts(`save state in polygon mode: ${ti.getPos()}`)
+            ti.storePoint(ti.getPos());
+            //puts(`added pt ${ti.getPos()}, using "."`);
             break;
          }
          case '@Ds': {
             if (isPm) {
-               let p1 = pM.p.length > 1 ? pM.p[1] : 0;
-               ti.beginContour(p0, p1, null) ;
-               idata.ptCaptureMode |= 2;
+               // we're capturing points for a contour, but the contour, 
+               // itself can be a plain path, or a spline of some type
+               let p1 = pM.p.length > 1 ? pM.p[1] : Turtle3d.PATH_POINTS;
+               ti.beginContour(p0, p1, p0) ;
+               idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
             } else {
                throw new Error('@Ds module requires an id/name parameter');
             }
@@ -343,18 +405,20 @@ function turtleInterp (ti, ls, opts=null) {
          }
          case '@De': {
             if (isPm) {
-               ti.endContour(p0);
-               puts(`endContour(${p0})`);
-               puts(`trackContours.get(${p0}) = ${ti.trackContours.get(p0)}`)
+               let cid = ti.endContour(p0);
+               puts(`endContour(${cid})`);
+               puts(`trackContours.get(${cid}) = ${ti.trackContours.get(cid)}`)
+            } else {
+               throw new Error('@De end Contour module requires an id parameter');
             }
-            idata.ptCaptureMode ^= 2; 
+            idata.ptCaptureMode = Turtle3d.CAPTURE_NONE;
             break;
          }
          case '@#': {
             if (isPm) {
                ti.setTrackShape(p0);
                puts (`setTrackShape(${p0})`);
-               puts (`trackPath.shape = ${ti.TurtleState.trackPath.shape}`);
+               //puts (`trackPath.shape = ${ti.TurtleState.trackPath.shape}`);
             } else {
                throw new Error('@#/setTrackShape module requires an id parameter');
             }
@@ -370,38 +434,12 @@ function turtleInterp (ti, ls, opts=null) {
          default: {}//puts(`no Action for module ${i}: ${m}`);}
          }
       }
-      //updateTurtleInfo(t,0);
+      idata.mi = i;
       lblNumDrawn.textContent=i;
-      if (i < tree.length) {
-         idata.mi = i;
-         rAF = requestAnimationFrame(doModule); 
-
-         // if (i % 2500 != 0) {
-         //    setTimeout(doModule,1000);  
-         // } else {
-         //    setTimeout(doModule,100);
-         // }
-      } else {
-         let ts = ti.getState()
-         if (ti.branchStack.length > 0) {
-            puts(' done with tree');
-            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
-            //   puts(`tp.shape is: ${ti.getState().trackPath.shape}`);
-            if (idata.useTrackAlways || ts.trackPath != null) {
-               ti.endTrack();
-            }           
-         } else {
-            if (idata.useTrackAlways || ts.trackPath != null) {
-               ti.endTrack();
-            }           
-            puts('done with tree and ti.branchStack.length == 0');
-         }
-         updateTurtleInfo(ti,0);
-         lblNumDrawn.backgroundColor = "green";
-      }
    }
 
-   if (idata.useTrackAlways) {      ti.newTrack();
+   if (idata.useTrackAlways) {
+      ti.newTrack();
    }
    let ts = ti.getState()
    puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
