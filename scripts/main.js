@@ -300,6 +300,7 @@ cameraTargetbtn.addEventListener("click", () => {
 
 const lsSrc = document.getElementById('lsSrc');
 const lsFile = document.getElementById('lsFile');
+const lsCode = document.getElementById('lsCode');
 const lsSave = document.getElementById('lsSave');
 const lsResult = document.getElementById('lsResult');
 
@@ -378,6 +379,15 @@ function saveasLSfile(event) {
 }
 
 lsSave.addEventListener("click", saveasLSfile);
+
+lsSaveCode.addEventListener("click", () => {
+   let file = 'gencode.js';
+   if (lsCode.value != "") {
+      var blob = new Blob( [lsCode.value], {type: "text/plain;charset=utf-8"});
+      saveAs.saveAs(blob, file);
+   };
+});
+
 
 var rwresult=null;
 btnDraw.addEventListener("click", () => {
