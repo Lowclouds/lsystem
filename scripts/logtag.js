@@ -47,7 +47,7 @@ const  LSYS_EXPAND  = 2048; // 11
 const  LSYS_MATCH   = 4096; // 12
 const  LSYS_CONTEXT = 8192; // 13
 
-const  TRTL_ALL      =16384; // 14
+const  TRTL_CAPTURE  =  16384; // 14
 const  TRTL_MATERIAL =  2**15;
 const  TRTL_TEXTURE  =  2**16; 
 const  TRTL_TRACK    =  2**17; 
@@ -56,8 +56,10 @@ const  TRTL_DRAW  =     2**19;
 const  TRTL_POLYGON  =  2**20; 
 
 const  NTRP_INIT     =  2**21;
+const  NTRP_SETTING  =  2**22;
 const  NTRP_MOTION   =  2**23;
-const  NTRP_HEADING  =  2**24;
-const  NTRP_SIZE     =  2**25;
-const  NTRP_BRANCH   =  2**26;
-const  NTRP_PROGRESS =  2**27;
+const  NTRP_HEADING  =  2**25;
+const  NTRP_SIZE     =  2**26;
+const  NTRP_BRANCH   =  2**27;
+const  NTRP_PROGRESS =  2**28;
+

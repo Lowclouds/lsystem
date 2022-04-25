@@ -243,8 +243,7 @@ homebtn.addEventListener("click", () => {
 
 resetbtn.addEventListener("click", () => {
    try {
-      t.home();
-      t.clear();
+      t.reset();
       // initCTable(t);
       camera.position.subtractInPlace(camera.position.subtract(cameraHomePosition));
       camera.setTarget(t.getPos());
@@ -340,7 +339,7 @@ btnParse.onclick = function() {
 
 btnRewrite.onclick = function() {
     if (lsys && lsResult.textContent != 'Empty') {
-	lsResult.value = lsys.Rewrite(); //.toString();
+       lsResult.value =listtostr(lsys.Rewrite()); //.toString();
 	lsState = 'Rewritten';
     }
 }
@@ -399,8 +398,7 @@ btnRPRD.addEventListener("click", () => {
           lsResult.value = lsys.Rewrite(); //.toString();
           lsState = 'Rewritten';
           // reset
-          t.home();
-          t.clear();
+          t.reset();
           //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
           camera.setTarget(t.getPos());
           // draw
