@@ -310,7 +310,7 @@ class Turtle3d {
       if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
 
       const cidx = ts.trackMaterial;
-      this.materialList[cidx].diffuseColor = this.toColorVector();
+      ts.color = normalizeColor(this.materialList[cidx].diffuseColor);
 
       let s = this.getTurtleShape();
       if (s != '') {
@@ -606,13 +606,18 @@ class Turtle3d {
    // the plane of H and U is perpendicular to L
    setUp (a1,a2,a3) {
       let up;
-      if (a1 != undefined && a2 != undefined && a3 != undefined) {
-         up = new BABYLON.Vector3(a1,a2,a3);
-      } else if (betterTypeOf(a1) == 'array') {
-	 up = BABYLON.Vector3.FromArray(a1);
-      } else { //assume a1 is a vector
-         up=a1;
+      if (a1 != undefined ) {
+         if (a2 != undefined && a3 != undefined) {
+            up = new BABYLON.Vector3(a1,a2,a3);
+         } else if (betterTypeOf(a1) == 'array') {
+	    up = BABYLON.Vector3.FromArray(a1);
+         } else { //assume a1 is a vector
+            up=a1;
+         }
+      } else {
+         throw new Error('setUp needs a Vector3, an array of three numbers, or 3 numbers as input');
       }
+
       up.normalize();
       let H = this.getH();
       //let angle = -1*acosd(dot(z, h));
@@ -646,7 +651,14 @@ class Turtle3d {
    // applyTropism() {
    // }
 
-   //  yaw, pitch, roll, adjusted for left-handed system
+   //  yaw, pitch, roll, adjusted for left-handed system 
+   //  Note: this differs from Babylon's notion of a YXZ or a ZXY standard.
+   // This is a ZYX system, where Y masquerades as Z, Z as Y. X also is positive
+   // forwards, and Z points up, rather than the aircraft norm of down. In other
+   // words, what you learned in your vector analysis class in the late 1970's
+   // The mechanism is based on Turtle Geometry by Abelson and diSessa, i.e.
+   // rotateTG, which is where the HLU notation comes from: Heading, Left, Up
+   
    // yaw: rotate around U, positive angle is from H towards L
    yaw (angle) {
       angle *= -1;              // lh system
@@ -714,7 +726,7 @@ class Turtle3d {
          break;
       case Turtle3d.TRACK_TUBE:
          let radiusFunc = (i,distance) => {
-            return (i == 0) ? ts.lastSize : ts.size;
+            return ((i == 0) ? ts.lastSize : ts.size)/2;
          }
          segment = BABYLON.MeshBuilder.CreateTube(t, 
                                                   {path: [oldPos, newPos], 
@@ -1094,9 +1106,9 @@ class Turtle3d {
          // }
          vertexData.normals = [];
          BABYLON.VertexData.ComputeNormals(vertexData.positions, vertexData.indices, vertexData.normals);
-         puts(`positions: ${vertexData.positions}`);
-         puts(`indices: ${vertexData.indices}`);
-         puts(`normals: ${vertexData.normals}`);
+         // puts(`positions: ${vertexData.positions}`);
+         // puts(`indices: ${vertexData.indices}`);
+         // puts(`normals: ${vertexData.normals}`);
 
   
          pmesh = new BABYLON.Mesh("poly", this.scene);
@@ -1453,6 +1465,22 @@ function vclamp(v) {
    if (Math.abs(v.y) < eps) {v.y=0;}
    if (Math.abs(v.z) < eps) {v.z=0;}
    return v;
+}
+function dround(f,d) {
+   d=Math.round(d);
+   if (d < -15 || d>15) {return f;}
+   if (d==0) { return Math.round(f);}
+   let s = Math.pow(10,d);
+   let ff = s*f;
+   return Math.round(ff)/s;
+}
+
+function vround(v, d) {
+    let va = [];
+    v.toArray(va);
+    va.forEach((e,ndx) => {
+       va[ndx]=dround(va[ndx],d);})
+    return v.fromArray(va);
 }
 
 function dot (v, w) { 
