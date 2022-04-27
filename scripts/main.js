@@ -32,10 +32,10 @@ var turtleInfo = [
 
 function updateTurtleInfo(t,idx) {
     turtleInfo[idx][0].textContent = t.getTurtle();
-    turtleInfo[idx][1].textContent = t.getPos();
-    turtleInfo[idx][2].textContent = t.getH();
-    turtleInfo[idx][3].textContent = t.getL();
-    turtleInfo[idx][4].textContent = t.getU();
+   turtleInfo[idx][1].textContent = vround(t.getPos(),2);
+    turtleInfo[idx][2].textContent = vround(t.getH(),2);
+    turtleInfo[idx][3].textContent = vround(t.getL(),2);
+   turtleInfo[idx][4].textContent = vround(t.getU(),2);
 }
 
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
@@ -312,9 +312,11 @@ btnParse = document.getElementById('btnParse');
 btnRewrite = document.getElementById('btnRewrite');
 btnDraw = document.getElementById('btnDraw');
 btnRPRD = document.getElementById('btnRPRD');
+btnAllTracks = document.getElementById('btnAllTracks');
 
 lblNumNodes = document.getElementById('numNodes');
 lblNumDrawn = document.getElementById('numDrawn');
+
 
 var lsState = 'Start';
 var lsys; // = new Lsystem();
@@ -388,12 +390,15 @@ lsSaveCode.addEventListener("click", () => {
    };
 });
 
-
 var rwresult=null;
+
+var interpOpts=null;
+var tracksAlways = true;
+
 btnDraw.addEventListener("click", () => {
     try {
-        t.setHeading([0,1,0]);
-       turtleInterp(t, lsys);
+       t.setHeading([0,1,0]);
+       turtleInterp(t, lsys, {useTracksAlways: tracksAlways});
     } catch (error) {puts(error);}
 });
 
@@ -419,6 +424,16 @@ btnRPRD.addEventListener("click", () => {
     } catch (error) {puts(error);}
 });
 
+btnAllTracks.addEventListener("click", () => {
+   try {
+      if (tracksAlways) {
+         btnAllTracks.textContent = 'Tracks Off';
+      } else {
+         btnAllTracks.textContent = 'Tracks On';
+      }
+      tracksAlways = !tracksAlways;
+   } catch (error) {puts(error);}
+});
 // ------------------------------------------------------------
 //  end of UI
 // ------------------------------------------------------------
@@ -550,29 +565,31 @@ function downloadMesh(filename, mesh) {
       },
    };
 
-    BABYLON.GLTF2Export.GLBAsync(scene, "test1", options).then((glb) => {
-                            glb.downloadFiles();
-                    });
-    return scene;
-   var serializedMesh = BABYLON.SceneSerializer.SerializeMesh(mesh);
+//    BABYLON.GLTF2Export.GLBAsync(scene, "test1", options).then((glb) => {
+   BABYLON.GLTF2Export.GLTFAsync(scene, "test1.gltf", options).then((gltf) => {
+      gltf.downloadFiles();
+   });
+   return mesh;
 
-   var strMesh = JSON.stringify(serializedMesh);
+   // var serializedMesh = BABYLON.SceneSerializer.SerializeMesh(mesh);
 
-   if (filename.toLowerCase().lastIndexOf(".babylon") !== filename.length - 8 || filename.length < 9) {
-      filename += ".babylon";
-   }
+   // var strMesh = JSON.stringify(serializedMesh);
 
-   var blob = new Blob([strMesh], { type: "octet/stream" });
+   // if (filename.toLowerCase().lastIndexOf(".babylon") !== filename.length - 8 || filename.length < 9) {
+   //    filename += ".babylon";
+   // }
 
-   // turn blob into an object URL; saved as a member, so can be cleaned out later
-   objectUrl = (window.webkitURL || window.URL).createObjectURL(blob);
+   // var blob = new Blob([strMesh], { type: "octet/stream" });
 
-   var link = window.document.createElement("meshd");
-   link.href = objectUrl;
-   link.download = filename;
-   var click = document.createEvent("MouseEvents");
-   click.initEvent("click", true, false);
-   link.dispatchEvent(click);
+   // // turn blob into an object URL; saved as a member, so can be cleaned out later
+   // objectUrl = (window.webkitURL || window.URL).createObjectURL(blob);
+
+   // var link = window.document.createElement("meshd");
+   // link.href = objectUrl;
+   // link.download = filename;
+   // var click = document.createEvent("MouseEvents");
+   // click.initEvent("click", true, false);
+   // link.dispatchEvent(click);
 }
 
 
