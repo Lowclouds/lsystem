@@ -968,7 +968,13 @@ class Lsystem {
       }
       return successor;
    }
-
+   moduleName(m) {
+      if (typeof m == 'string') {
+         return m;
+      } else {                  // assume parameterized Module
+         return m.m;
+      }
+   }
    // when rewriting/deriving an lsystem
    // nodeA must be a module in the rule with formal parameters
    // nodeB is a module in the expansion with an actual numeric value which
@@ -1030,7 +1036,9 @@ class Lsystem {
       while (n >= 0 && n < nmax) {
          m = mlist[n];
          c = ctxt[ci];
-         if ((ignore && ignore.includes(m)) || (consider && !consider.includes(m))) {
+         let mn = this.moduleName(mlist[n]);
+         let cn = this.moduleName(ctxt[ci]);
+         if ((ignore && ignore.includes(mn)) || (consider && !consider.includes(mn))) {
             n += dir;           // next module, same context
             puts(`skipping module ${m}`, LSYS_CONTEXT);
          } else {
