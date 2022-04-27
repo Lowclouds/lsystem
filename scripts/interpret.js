@@ -150,7 +150,7 @@ function turtleInterp (ti, ls, opts=null) {
 
       for (i=idata.mi; i < Math.min(tree.length, idata.mi+idata.miCount); i++) {
          let pM = tree[i];
-         //puts(pM.toString());
+         puts(pM.toString(), NTRP_PROGRESS);
          //puts(ti.getPos());
          let m;
          let pmArg, p0;         // most functions have only one parameter
@@ -303,7 +303,7 @@ function turtleInterp (ti, ls, opts=null) {
             break; }
          case '|': {
             ti.yaw(180); 
-            idata.code  += `ti.yaw(${a});\n`;
+            idata.code  += `ti.yaw(180);\n`;
             break;
          }
          case '@R':             // set heading
@@ -398,7 +398,7 @@ function turtleInterp (ti, ls, opts=null) {
             break;
          }
          case '{': {
-            if (!isPM) {
+            if (!isPm) {
                idata.inPolygon++;
                idata.ptCaptureMode = Turtle3d.CAPTURE_POLYGON; // turn on polygon pt capture
                ti.newPolygon();
@@ -408,29 +408,27 @@ function turtleInterp (ti, ls, opts=null) {
                let ptype;
                switch (p0) {
                case 0:          // TABOP says this s.b. polygon, but we make it a path
-                  ptype = 'p0';
-                  break;
                case 1:          // hermite open
-                  ptype = 'p1';
-                  break;
                case 2:          // hermite closed
-                  ptype = 'p2';
-                  break;
                case 3:          // bspline open
-                  ptype = 'p3';
-                  break;
                case 4:          // bspline closed
-                  ptype = 'p4';
+               case '0':          // TABOP says this s.b. polygon, but we make it a path
+               case '1':          // hermite open
+               case '2':          // hermite closed
+               case '3':          // bspline open
+               case '4':          // bspline closed
+                  ptype = 'p'+p0;
                   break;
                default:
-                  throw new Error('capture type of ' + p0 + 'not supported');
+                  puts('capture type of ' + p0 + 'not supported');
                }
                ti.newTrack('p0');
                idata.code  += `ti.newTrack(${ptype});\n`;
+               puts(`Starting new Track, type: ${ptype}`);
             }
             break;}
          case '}': {
-            if (!isPM) {
+            if (!isPm) {
                if ( idata.inPolygon > 0) {
                   puts('ending polygon');
                   ti.endPolygon();
