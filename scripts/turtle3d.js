@@ -187,7 +187,8 @@ class Turtle3d {
 
    // setters
 
-   // setColor has no concept of a color/material table, it just sets the current color
+   // setColor sets the diffuse color of the current material
+   // this is not called by turtleInterp, which uses setMaterial
    setColor(diffuse, specular=null, emissive=null, ambient=null, alpha=1) {
       this.TurtleState.color = normalizeColor(diffuse);
 
@@ -255,7 +256,7 @@ class Turtle3d {
          this.TurtleState.lastSize = this.TurtleState.size;
       }
       this.TurtleState.size = v;
-      puts(`setSize: new size == ${v}`);
+      puts(`setSize: new size == ${v}`, TRTL_SETGET);
       return this;
    }
 
@@ -280,7 +281,7 @@ class Turtle3d {
          this.TurtleState.trackShape = this.trackContours.get(this.TurtleState.trackShapeID);
          break;
       default: {
-	 console.log(`track type of ${v} not supported`);
+	 console.warn(`track type of ${v} not supported`);
 	 this.TurtleState.trackType = Turtle3d.TRACK_TUBE;
 	 return null;
       }
@@ -391,7 +392,7 @@ class Turtle3d {
       } else {
          puts(`Contour ${id} not found`);
       }
-      puts(`set track shape to: ${id}, size == ${this.getSize()}`);
+      puts(`set track shape to: ${id}, size == ${this.getSize()}`, TRTL_SETGET);
       return this;
    }
    /**
@@ -411,7 +412,7 @@ class Turtle3d {
          }  
          this.trackContours.set(id, pts);
       } else {
-         puts(`contour: ${id} not added, not enough points.`);
+         console.warn(`contour: ${id} not added, not enough points.`);
       }
    }
 
@@ -903,8 +904,8 @@ class Turtle3d {
       this.TurtleState.trackPath = tp;
       this.TurtleState.accumRoll = 0;
 
-      //puts(`trackshape is: ${this.TurtleState.trackShape}`);
-      //puts(`tp.shape is: ${tp.shape}`);
+      puts(`trackshape is: ${this.TurtleState.trackShape}`, TRTL_TRACK);
+      puts(`tp.shape is: ${tp.shape}`, TRTL_TRACK);
    }
 
    endTrack() {
@@ -935,11 +936,11 @@ class Turtle3d {
     * newPos = position to add
     **/
    addPathPt(ts, newPos) {
-      // puts(`addPathPt from ${oldPos} to ${newPos}`);
+      puts(`addPathPt ${newPos}`, TRTL_TRACK, TRTL_CAPTURE);
       // assuming 'extrusion'
       let tp = ts.trackPath;
       if (tp.points.length == 0) { // push first point
-         //puts(`added initial path pt: ${oldPos}, size: ${ts.lastSize}`);
+         puts(`added initial path pt: ${newPos}, size: ${ts.lastSize}`, TRTL_TRACK);
          tp.points.push(newPos);
          tp.srm.push({s: ts.lastSize, r: 0, m: 0})
       } else {
@@ -951,14 +952,14 @@ class Turtle3d {
          // puts(tp.srm);
          let npts = Math.abs(Math.trunc(roll / tp.maxTwist)); // number of pts
          let rollinc = roll / (npts+1); // divide by # sections
-         // puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, rollinc: ${rollinc}, npts: ${npts}`);
+         puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, rollinc: ${rollinc}, npts: ${npts}`, TRTL_TRACK);
          if (npts > 0) {
             // add intermediate points
             let vecdiff = newPos.subtract(lastPos).scaleInPlace(1/(npts+1));
             // insert intermediate points
             let r = rollinc;
             let lpt = lastPos;
-            //puts(`adding ${npts} points, with incremental roll of ${rollinc}`);
+            puts(`adding ${npts} points, with incremental roll of ${rollinc}`, TRTL_TRACK);
             let troll=0;
             for (let pti = 0; pti < npts+1; pti++) {
                lpt = lpt.add(vecdiff);
@@ -968,7 +969,7 @@ class Turtle3d {
                             m: ts.trackMaterial
                            });
                troll += rollinc;
-               // puts(`inserted path pt: ${lpt}, total roll: ${troll}`);
+               puts(`inserted path pt: ${lpt}, total roll: ${troll}`, TRTL_TRACK);
             }
          } else {
             // add new position
@@ -977,7 +978,7 @@ class Turtle3d {
                          r: rollinc * degtorad,
                          m: ts.trackMaterial
                         }); 
-            // puts(`added path pt: ${newPos}`);
+            //puts(`added path pt: ${newPos}`, TRTL_TRACK);
          }
          ts.accumRoll = 0;
       }      
@@ -1079,7 +1080,7 @@ class Turtle3d {
          if (pos === null) {
             pos = this.getPos();
          }
-         //puts(`adding ${pos} to polygonVerts`);
+         puts(`adding ${pos} to polygonVerts`, TRTL_POLYGON);
          this.polygonVerts.push(otoa(pos));
       }
    }
@@ -1121,7 +1122,7 @@ class Turtle3d {
 
          // make sure the material has backFaceCulling set to false
          this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
-         puts(`created a new polygon(${this.polygonStack.length})`);
+         puts(`created a new polygon(${this.polygonStack.length})`, TRTL_POLYGON);
       } else {
          puts('polygon creation failed: polygonVerts.length = ' + this.polygonVerts.length );
       }
@@ -1203,16 +1204,17 @@ class Turtle3d {
 
       switch (this.TurtleState.drawMode) {
       case Turtle3d.CAPTURE_PATH:
-         this.addPathPt(this.TurtleState, pt);
+         puts(`storePoint adding pt ${pt} to path`, TRTL_CAPTURE, TRTL_TRACK);
+         this.addPathPt(this.TurtleState, pt.clone());
          break;
       case Turtle3d.CAPTURE_POLYGON: 
+         puts(`storePoint adding pt ${pt} to polygon${this.polygonStack.length}`, TRTL_CAPTURE, TRTL_POLYGON);
          this.updatePolygon(pt);
-         puts(`added pt ${pt} to polygon${this.polygonStack.length}`, TRTL_CAPTURE);
          break;
       case Turtle3d.CAPTURE_CONTOUR:
          if ( this.tempContour ) {
+            puts(`storePoint adding contour pt ${pt}`, TRTL_CAPTURE | TRTL_CONTOUR);
             this.updateContour(pt);
-            puts(`added contour pt ${pt}`, TRTL_CAPTURE | TRTL_CONTOUR);
          } else {
             console.error(`Contour not initialized: can't add point`);
          }
@@ -1221,7 +1223,7 @@ class Turtle3d {
          console.warn('storePoint called when no point capture mode in progress');
          break;
       default:
-         puts(`Capture type ${type} not implemented`, TRTL_CAPTURE);
+         puts(`Capture type ${type} not implemented`);
          break;
       }
    }
