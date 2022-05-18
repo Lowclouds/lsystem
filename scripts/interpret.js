@@ -33,7 +33,7 @@ function turtleInterp (ti, ls, opts=null) {
 
       ci: 0,                       // color index
       inPolygon: 0,                // not
-      ptCaptureMode: Turtle3d.CAPTURE_NONE, // 
+      ptCaptureMode: Turtle3d.CAPTURE_NONE, //
       mi: 0,                       // module index
       miCount: 2000,               // number of modules to interpret/frame
       interval: 1000 / (10 * desiredFps),
@@ -42,8 +42,8 @@ function turtleInterp (ti, ls, opts=null) {
       //ctable: colorTableDefault,
       cpoly: null,
       useTracksAlways: false,
-      code: ''
    }
+
    idata.show =  function () {
       return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}, useTracksAlways: ${idata.useTracksAlways}`;
    }
@@ -78,44 +78,48 @@ function turtleInterp (ti, ls, opts=null) {
          puts(`set idata[${p}] to ${opts[p]}`);
       }
    }
-   idata.ndelta= -1*idata.delta,
+   idata.ndelta= -1*idata.delta;
    ti.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
-   idata.code  += 'ti.setSize(' + idata.stemsize + ', true);\n';
-   //  ti.fd(0); // this was the first way; i waffle
+   var code = '';
+   ti.setHeading([0,1,0]);
+   code  += 'ti.setHeading([0,1,0])';
+   code  += 'ti.setSize(' + idata.stemsize + ', true);\n';
+
    if (idata.ctable != null && idata.ctable != []) {
       ti.deleteMaterials();
       let numMat = ti.materialList.length;
       idata.ctable.forEach((e) => {
          ti.addMaterial(null, e);
-         puts(`add material w/color: ${e}`);
-      }); 
+         puts(`add material w/color: ${e}`, NTRP_INIT);
+      });
       ti.setMaterial(1);
-      puts(`set ${ti.getTurtle()} material to idx ${numMat}, color ${ti.getColor()}`);
+      puts(`set ${ti.getTurtle()} material to idx ${numMat}, color ${ti.getColor()}`, NTRP_INIT);
    }
    lblNumDrawn.textContent = 0;
    ti.hide();
    ti.penDown();
-   idata.code  += 'ti.hide();\n';
-   idata.code  += 'ti.penDown();\n';
-   branchstack = [];
-   polygonstack = [];
+   code  += 'ti.hide();\n';
+   code  += 'ti.penDown();\n';
+
+   var branchstack = [];
+   var polygonstack = [];
    let tree = ls.current;
-   puts(`lsystem has ${tree.length} modules`);
-   puts(`using settings: ` + idata.show());
-   
+   puts(`lsystem has ${tree.length} modules`, NTRP_INIT);
+   puts(`using settings: ` + idata.show(), NTRP_INIT);
+
    if (idata.useTrackAlways) {
       ti.newTrack();
       code += 'ti.newTrack();\n'
    }
    let ts = ti.getState()
-   puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
+   puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`); // , NTRP_INIT
 
    function doModule () {
       let i;
       let isPM = false;
 
       if (idata.mi < tree.length) {
-         rAF = requestAnimationFrame(doModule); 
+         rAF = requestAnimationFrame(doModule);
 
          let now = performance.now();
          let delta = now - idata.lastTime;
@@ -129,23 +133,23 @@ function turtleInterp (ti, ls, opts=null) {
       } else {
          let ts = ti.getState()
          if (ti.branchStack.length > 0) {
-            puts(' done with tree');
-            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`);
+            puts(' done with tree'); // , NTRP_INIT
+            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`); // , NTRP_PROGRESS
             //   puts(`tp.shape is: ${ti.getState().trackPath.shape}`);
             if (idata.useTrackAlways || ts.trackPath != null) {
                ti.endTrack();
-               idata.code  += 'ti.endTrack();\n';
-            }           
+               code  += 'ti.endTrack();\n';
+            }
          } else {
             if (idata.useTrackAlways || ts.trackPath != null) {
                ti.endTrack();
-               idata.code  += 'ti.endTrack();\n';
-            }           
-            puts('done with tree and ti.branchStack.length == 0');
+               code  += 'ti.endTrack();\n';
+            }
+            puts('done with tree and ti.branchStack.length == 0', NTRP_PROGRESS);
          }
          updateTurtleInfo(ti,0);
          lblNumDrawn.backgroundColor = "green";
-         lsCode.value = idata.code;
+         lsCode.value = code;
       }
 
       for (i=idata.mi; i < Math.min(tree.length, idata.mi+idata.miCount); i++) {
@@ -166,69 +170,69 @@ function turtleInterp (ti, ls, opts=null) {
          switch (m) {
          case 'F': {
             let d = isPm ? p0 : idata.step;
-            idata.code  += 'ti';
+            code  += 'ti';
             if (! ti.isPenDown()) {
                ti.penDown();
-               idata.code += '.pd()';
+               code += '.pd()';
             }
             ti.forward(d);
-            idata.code  += `.fd(${d});\n`;
+            code  += `.fd(${d});\n`;
             //puts('fd: ' + d);
             break;
          }
          case 'f': {
             let d = isPm ? p0 : idata.step;
             let pState = ti.isPenDown();
-            idata.code += 'ti';
+            code += 'ti';
             if (pState) {
                ti.penUp();
-               idata.code  += '.pu()';
+               code  += '.pu()';
             }
-	    ti.forward(d); 
-	    idata.code  += `.fd(${d})`;
+            ti.forward(d);
+            code  += `.fd(${d})`;
 
             if (pState) {
                ti.penDown();
-               idata.code  += 'ti.pd()';
+               code  += '.pd()';
             }
-            idata.code += ';\n';
+            code += ';\n';
             break;
          }
          case 'G': {
             let d = isPm ? p0 : idata.step;
-            idata.code  += 'ti';
+            code  += 'ti';
             if (! ti.isPenDown()) {
                ti.penDown();
-               idata.code += '.pd()';
+               code += '.pd()';
             }
             ti.forward(d, false);
-	    idata.code  += `.fd(${d},false);\n`;
+            code  += `.fd(${d},false);\n`;
             //puts('Gfd: ' + d);
             break;
          }
          case 'g': {
             let d = isPm ? p0 : idata.step;
             let p = ti.isPenDown();
-            idata.code  += 'ti';
+            code  += 'ti';
             if (p) {
                ti.penUp();
-               idata.code  += '.pu()';
+               code  += '.pu()';
             }
-	    ti.forward(d,false); 
-	    idata.code  += `.fd(${d},false)`;
+            ti.forward(d,false);
+            code  += `.fd(${d},false)`;
             if (p) {
                ti.penDown();
-               idata.code  += '.pd()';
+               code  += '.pd()';
             }
-            idata.code  += ';\n';
+            code  += ';\n';
             // puts('gfd: ' + d);
             break;
          }
          case '@M': {
             if (isPm) {
                ti.goto(pM.p[0], pM.p[1],pM.p[2]);
-               idata.code  += `ti.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]});\n`;
-               puts(`ti.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`);
+               code  += `ti.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]});\n`;
+               puts(`ti.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`, NTRP_MOTION );
             } else {
                throw new Error('module @M requires three x,y,z parameters not ' + pM.toString());
             }
@@ -237,19 +241,19 @@ function turtleInterp (ti, ls, opts=null) {
          case '@m': {
             if (isPm) {
                let p = ti.isPenDown();
-               idata.code  += 'ti';
+               code  += 'ti';
                if (p) {
                   ti.penUp();
-                  idata.code  += '.pu()';
+                  code  += '.pu()';
                }
                ti.goto(pM.p[0], pM.p[1],pM.p[2]);
-               idata.code  += `.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`;
+               code  += `.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`;
                if (p) {
                   ti.penDown();
-                  idata.code  += '.pd()';
+                  code  += '.pd()';
                }
-               idata.code += ';\n';
-               puts(`ti.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`);
+               code += ';\n';
+               puts(`ti.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`, NTRP_MOTION);
             } else {
                throw new Error('module @M requires three x,y,z parameters not ' + pM.toString());
             }
@@ -257,108 +261,108 @@ function turtleInterp (ti, ls, opts=null) {
          }
          case '@O': {
             ti.drawSphere(p0);
-            idata.code  += `ti.drawSphere(${p0});\n`;
+            code  += `ti.drawSphere(${p0});\n`;
             break;
          }
          case '@o': {
             ti.drawDisc(p0);
-            idata.code  += `ti.drawDisc(${p0});\n`;
+            code  += `ti.drawDisc(${p0});\n`;
             break;
          }
          case '+': {            // yaw left
             let a = isPm ? p0 : idata.delta;
             ti.yaw(a);
-            idata.code  += `ti.yaw(${a});\n`;
-            // puts('yaw: ' + a);
+            code  += `ti.yaw(${a});\n`;
+            puts('yaw: ' + a, NTRP_HEADING);
             break; }
          case '-': {            // yaw right
             let a = -1*(isPm ? p0 : idata.delta);
             ti.yaw(a);
-            idata.code  += `ti.yaw(${a});\n`;
-            // puts('yaw: ' + a);
+            code  += `ti.yaw(${a});\n`;
+            puts('yaw: ' + a, NTRP_HEADING);
             break; }
          case '&': {            // pitch down
             let a = isPm ? p0 : idata.delta;
             ti.pitch(a);
-            idata.code  += `ti.pitch(${a});\n`;
-            //puts('pitch: ' + a);
+            code  += `ti.pitch(${a});\n`;
+            puts('pitch: ' + a, NTRP_HEADING);
             break; }
          case '^': {            // pitch up
             let a = -1*(isPm ? p0 : idata.delta);
             ti.pitch(a);
-            idata.code  += `ti.pitch(${a});\n`;
-            //puts('pitch: ' + a);
+            code  += `ti.pitch(${a});\n`;
+            puts('pitch: ' + a, NTRP_HEADING);
             break; }
          case '\\': {           // roll left
             let a = isPm ? p0 : idata.delta;
             ti.roll(a);
-            idata.code  += `ti.roll(${a});\n`;
-            //puts('roll: ' + a);
+            code  += `ti.roll(${a});\n`;
+            puts('roll: ' + a, NTRP_HEADING);
             break; }
          case '/': {            // roll right
             let a = -1*(isPm ? p0 : idata.delta);
-            ti.roll(a); 
-            idata.code  += `ti.roll(${a});\n`;
-            //puts('roll: ' + a);
+            ti.roll(a);
+            code  += `ti.roll(${a});\n`;
+            puts('roll: ' + a, NTRP_HEADING);
             break; }
          case '|': {
-            ti.yaw(180); 
-            idata.code  += `ti.yaw(180);\n`;
+            ti.yaw(180);
+            code  += `ti.yaw(180);\n`;
             break;
          }
          case '@R':             // set heading
             if (isPm) {
                if (pM.p.length >= 3 ) {
                   ti.setHeading(pM.p[0], pM.p[1], pM.p[2]);
-                  idata.code  += `ti.setHeading(${pM.p[0]}, ${pM.p[1]}, ${pM.p[2]});\n`;
+                  code  += `ti.setHeading(${pM.p[0]}, ${pM.p[1]}, ${pM.p[2]});\n`;
                   if ( pM.p.length == 6) {
                      ti.setUp(pM.p[3], pM.p[4], pM.p[5]);
-                     idata.code  += `ti.setUp(${pM.p[3]}, ${pM.p[4]}, ${pM.p[5]});\n`;
+                     code  += `ti.setUp(${pM.p[3]}, ${pM.p[4]}, ${pM.p[5]});\n`;
                   } else if (pM.p.length !=3 ) {
                      throw new Error(`@R / setheading requires 3 or 6 parameters: ${pM.p}`);
                   }
                }
-               puts(`heading: ${pM}`,NTRP_SETTING);
+               puts(`heading: ${pM}`, NTRP_HEADING);
             } else {
                throw new Error('@R / setheading requires 3 or 6 parameters');
             }
             break;
          case '@v': {            // set L horizontal
             ti.levelL();
-            idata.code  += `ti.levelL()`;
+            code  += `ti.levelL()`;
             break;
-         }   
+         }
          case '!': {   // decrease or set stem/branch size
             if (isPm ) {
                idata.stemsize = p0;
             } else {
-               idata.stemsize -= idata.stemsize > 1 ? 1 : 0;
+               idata.stemsize -= idata.stemsize > .1 ? .1 : 0;
             }
             puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
             ti.setSize(idata.stemsize);
-            idata.code  += `ti.setSize(${idata.stemsize});\n`;
+            code  += `ti.setSize(${idata.stemsize});\n`;
             break;
          }
          case '#': {    // increase or set stem/branch size
             if (isPm ) {
                idata.stemsize = p0;
             } else {
-               idata.stemsize += 1;
+               idata.stemsize += 0.1;
             }
             puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
             ti.setSize(idata.stemsize);
-            idata.code  += `ti.setSize(${idata.stemsize});\n`;
+            code  += `ti.setSize(${idata.stemsize});\n`;
             break;
          }
          case "'": {            // increment color table index
             if (isPm) {
                mi = p0;
-            } else { 
+            } else {
                mi = t.getMaterialIdx();
                mi--;
             }
             ti.setMaterial(mi);
-            idata.code  += `ti.setMaterial(${mi});\n`;
+            code  += `ti.setMaterial(${mi});\n`;
             // idata.ci %= idata.ctable.length;
             // ti.setColor(idata.ctable[idata.ci]);
             break;
@@ -367,20 +371,20 @@ function turtleInterp (ti, ls, opts=null) {
             let mi;
             if (isPm) {
                mi = p0;
-            } else { 
+            } else {
                mi = t.getMaterialIdx();
                mi++;
             }
             //puts(`setMaterial(${mi})`);
             ti.setMaterial(mi);
-            idata.code  += `ti.setMaterial(${mi});\n`;
+            code  += `ti.setMaterial(${mi});\n`;
             break;
          }
          case '\[': {           // start a branch
             ti.newBranch({ci: idata.ci, st: idata.st});
             if (idata.useTracksAlways) {
                ti.newTrack('p0');
-               puts('newTrack: p0', NTRP_MOTION);
+               puts('newTrack(useTracksAlways in branch): p0', NTRP_BRANCH);
                ti.storePoint();
             }
             // ti.newMesh();
@@ -389,10 +393,10 @@ function turtleInterp (ti, ls, opts=null) {
          case '\]': {           // end a branch
             if (idata.useTracksAlways) {
                ti.endTrack();
-               idata.code  += 'ti.endTrack();\n';
+               code  += 'ti.endTrack();\n';
             }
             let s = ti.endBranch();
-            idata.code  += `ti.endBranch();\n`;
+            code  += `ti.endBranch();\n`;
             idata.ci = ti.trackMaterial;
 	    idata.stemsize = ti.getSize();
             break;
@@ -402,7 +406,7 @@ function turtleInterp (ti, ls, opts=null) {
                idata.inPolygon++;
                idata.ptCaptureMode = Turtle3d.CAPTURE_POLYGON; // turn on polygon pt capture
                ti.newPolygon();
-               idata.code  += `ti.newPolygon();\n`;
+               code  += `ti.newPolygon();\n`;
                idata.cpoly = [];
             } else {
                let ptype;
@@ -423,43 +427,44 @@ function turtleInterp (ti, ls, opts=null) {
                   puts('capture type of ' + p0 + 'not supported');
                }
                ti.newTrack('p0');
-               idata.code  += `ti.newTrack(${ptype});\n`;
-               puts(`Starting new Track, type: ${ptype}`);
+               code  += `ti.newTrack(${ptype});\n`;
+               puts(`Starting new Track, type: ${ptype}`, NTRP_TRACKS);
             }
             break;}
          case '}': {
             if (!isPm) {
                if ( idata.inPolygon > 0) {
-                  puts('ending polygon');
+                  puts('ending polygon', NTRP_TRACKS);
                   ti.endPolygon();
-                  idata.code  += `ti.endPolygon();\n`;
+                  code  += `ti.endPolygon();\n`;
                   idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
                   if (idata.inPolygon < 1) {
                      idata.ptCaptureMode = Turtle3d.CAPTURE_NONE; // turn off polygon capture
                   }
                } else {
-                  puts('end polygon attempted when no polygon started');
+                  puts('end polygon attempted when no polygon started', NTRP_TRACKS);
                }
             } else {
-               ti.endTrack();
-               idata.code  += `ti.endTrack();\n`;
+               ti.endTrack(p0);
+               code  += `ti.endTrack();\n`;
+               puts('ending track, type:' + p0, NTRP_TRACKS);
             }
             break;
          }
          case '.': {            // record a polygon or path point
            // idata.cpoly.push(otoa(ti.getPos()));
             ti.storePoint(ti.getPos());
-            idata.code  += `ti.storePoint(ti.getPos());\n`;
-            //puts(`added pt ${ti.getPos()}, using "."`);
+            code  += `ti.storePoint(ti.getPos());\n`;
+            puts(`added pt ${ti.getPos()}, using "."`, NTRP_TRACKS);
             break;
          }
          case '@Ds': {
             if (isPm) {
-               // we're capturing points for a contour, but the contour, 
+               // we're capturing points for a contour, but the contour,
                // itself can be a plain path, or a spline of some type
                let p1 = pM.p.length > 1 ? pM.p[1] : Turtle3d.PATH_POINTS;
-               ti.beginContour(p0, p1, p0) ;
-               idata.code  += `ti.beginContour('${p0}', ${p1}, '${p0}');\n`;
+               ti.beginContour(p0, p1, p0);
+               code  += `ti.beginContour('${p0}', ${p1}, '${p0}');\n`;
                idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
             } else {
                throw new Error('@Ds module requires an id/name parameter');
@@ -469,9 +474,9 @@ function turtleInterp (ti, ls, opts=null) {
          case '@De': {
             if (isPm) {
                let cid = ti.endContour(p0);
-               idata.code  += `ti.endContour('${p0}');\n`;
-               puts(`endContour(${cid})`);
-               puts(`trackContours.get(${cid}) = ${ti.trackContours.get(cid)}`)
+               code  += `ti.endContour('${p0}');\n`;
+               puts(`endContour(${cid})`, NTRP_CONTOUR);
+               puts(`trackContours.get(${cid}) = ${ti.trackContours.get(cid)}`, NTRP_CONTOUR)
             } else {
                throw new Error('@De end Contour module requires an id parameter');
             }
@@ -481,8 +486,8 @@ function turtleInterp (ti, ls, opts=null) {
          case '@#': {
             if (isPm) {
                ti.setTrackShape(p0);
-               idata.code  += `ti.setTrackShape('${p0}');\n`;
-               puts (`setTrackShape('${p0}')`);
+               code  += `ti.setTrackShape('${p0}');\n`;
+               puts (`setTrackShape('${p0}')`, NTRP_CONTOUR);
                //puts (`trackPath.shape = ${ti.TurtleState.trackPath.shape}`);
             } else {
                throw new Error('@#/setTrackShape module requires an id parameter');
@@ -490,7 +495,7 @@ function turtleInterp (ti, ls, opts=null) {
             break;
          }
          case '$': {
-            
+
             break;
          }
          case 'A':

@@ -81,7 +81,10 @@ RE.prodTop = new RegExp(`${prodNameStr}? *(.*?)--?>(.*)`)
 RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
 RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
 
+RE.assignAny = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*([^;]+);?`,'g');
+
 RE.assignNum = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*(${numReStr}),?`,'g');
+
 RE.anyGlobal = new RegExp(`(${varnameReStr}):[ \t]*([\\S]+)`,'i');
 
 // this accepts function expressions only, not function declarations, not arrow functions
@@ -432,10 +435,16 @@ class Lsystem {
             pr.status = P_HANDLED;
             pr.nextState = inItems;
          } else if (RE.var.test(line)) {
-            m = line.matchAll(RE.assignNum);
+            //m = line.matchAll(RE.assignNum);
+            m = line.matchAll(RE.assignAny);
             if (m) {
-               for (let parts of m) {
-                  ls.locals.set(parts[1], parts[2])
+               try {
+                  for (let parts of m) {
+                     math.evaluate(parts[1]+'='+parts[2], ls.locals);
+                     //ls.locals.set(parts[1], parts[2]);
+                  }
+               } catch (error) {
+                  puts(`Error setting variable: ${error}`);
                }
             }         
             ls.show('vars');
@@ -639,8 +648,10 @@ class Lsystem {
          ];
 
          condition = leftside[4];   // undefined or not
+         puts(`parseProd: condition = ${condition}`);
          if (condition) {
             condition = condition.replace(RE.asterisk,'');
+            puts(`parseProd: condition = ${condition} after asterisk replacement`);
          }
          if (condition) {
             needScope=true;

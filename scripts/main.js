@@ -393,34 +393,33 @@ lsSaveCode.addEventListener("click", () => {
 var rwresult=null;
 
 var interpOpts=null;
-var tracksAlways = true;
+var tracksAlways = false;
+btnAllTracks.textContent = 'Tracks Off';
 
 btnDraw.addEventListener("click", () => {
     try {
-       t.setHeading([0,1,0]);
        turtleInterp(t, lsys, {useTracksAlways: tracksAlways});
     } catch (error) {puts(error);}
 });
 
 btnRPRD.addEventListener("click", () => {
     try {
-       // reparse
+       /* --------- reparse ---------*/
        lsys = Lsystem.Parse(lsSrc.value);
        lsResult.value = lsys.serialize();
        lsState = 'Parsed';
-       // rewrite
+       /* --------- rewrite ---------*/
        if (lsResult.textContent != 'Empty') {
           lsResult.value = lsys.Rewrite(); //.toString();
           lsState = 'Rewritten';
-          // reset
+          /* --------- reset ---------*/
           t.reset();
           //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-          camera.setTarget(t.getPos());
-          // draw
-          t.setHeading([0,1,0]);
-          turtleInterp(t, lsys);
+          //camera.setTarget(t.getPos());
+          /* --------- draw ---------*/
+          // t.setHeading([0,1,0]);
+          turtleInterp(t, lsys, {useTracksAlways: tracksAlways});
        }
-
     } catch (error) {puts(error);}
 });
 
