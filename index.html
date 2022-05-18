@@ -26,16 +26,19 @@
             }
 	    
 	    .right-side {
+	        overflow: auto;
 		width:38%;
 		height:100%;
 	    }
 	    .tbl {
-		width: 100%;
+		width: 95%;
+        <!---
 		border: 2px solid black;
-		margin: 5px;
+		--->
+		margin: 0px;
 	    }
 	    tr, td {
-		border: 2px solid black;
+		border: 1px solid black;
 	    }
 	    button, lsprogress {
 		border: 2px solid black;
@@ -49,13 +52,18 @@
 	    }
         </style>
 
+        <!---
 	<script src="https://cdn.babylonjs.com/babylon.js"></script>
         <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
         <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        -->
+	<script src="./node_modules/babylonjs/babylon.js"></script>
+        <script src="./node_modules/babylonjs-loaders/babylonjs.loaders.min.js"></script>
+        <script src="./node_modules/babylonjs-serializers/babylonjs.serializers.min.js"></script>
         <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
         <script src="./node_modules/mathjs/lib/browser/math.js"></script>
         <script src="./node_modules/earcut/dist/earcut.dev.js"></script>
-        <script src="./node_modules/libtess/libtess.minify.js"></script>
+        <script src="./node_modules/libtess/libtess.min.js"></script>
         <script src="./scripts/triangulate.js"></script>
         <!-- <script src="./node_modules/delaunator/delaunator.js"></script> -->
         <script src="./node_modules/handjs/hand.js"></script>
@@ -66,6 +74,7 @@
         <script src="scripts/cpp.js"></script>
 	<script src="scripts/colortables/initColorTable.js"></script>
 	<script src="scripts/interpret.js"></script>
+	<script src="scripts/shapebuilder.js"></script>
     </head>
 
    <body>
