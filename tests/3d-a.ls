@@ -1,4 +1,4 @@
-n=2, delta=22.5
+n=2; delta=22.5
 stemsize=0.2
 derivation length: 6
 axiom: A

@@ -1,4 +1,4 @@
-n=5, delta=20
+n=5; delta=20
 stemsize=0.1
 derivation length: 5
 axiom: F
