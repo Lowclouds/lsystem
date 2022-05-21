@@ -32,15 +32,12 @@
 	    }
 	    .tbl {
 		width: 95%;
-        <!---
-		border: 2px solid black;
-		--->
 		margin: 0px;
 	    }
 	    tr, td {
 		border: 1px solid black;
 	    }
-	    button, lsprogress {
+	    lsprogress {
 		border: 2px solid black;
 		margin: 5px;
 		padding: 3px;
@@ -50,6 +47,12 @@
 		border: 2px solid black;
 		margin: 5px; /**/
 	    }
+            menu {
+                display: flex;
+                list-style: none;
+                padding: 0;
+                width: 100%;
+            }
         </style>
 
         <!---
@@ -87,23 +90,27 @@
        
        <div class="right-side">
 	 <label for="btns1" id="btnlbl">Turtle Control</label>
-	 <p>
-	 <span class="btnrow" id="btns1"> 
-	   <button class="abutton" id="btn1">Click</button>
-	   <button class="abutton" id="btn2">Click</button>
-	   <button class="abutton" id="btn3">Click</button>
-	   <button class="abutton" id="btn4">Click</button>
-	   <button class="abutton" id="btn5">Click</button>
-	 </span>
-	 <table class="tbl">
-	   <tr><td id="t/v"></td><td id="t1">Turtle 1</td><td id="t2">Turtle 2</td></tr>
-	   <tr><td>Pos</td><td id="t1P"></td><td id="t2P"></td></tr>
-	   <tr><td>H(eading)</td><td id="t1H"></td><td id="t2H"></td></tr>
-	   <tr><td>L(left)</td><td id="t1L"></td><td id="t2L"></td></tr>
-	   <tr><td>U(p)</td><td id="t1U"></td><td id="t2U"></td></tr>
-	 </table>
-	 <!-- <textarea class="tio" id="text1" rows="1" cols="40"></textarea> -->
+         <button id="tcbtn">v</button>
+         <div id="turtleall">
+	   <p>
+             <menu class="buttonbar" id="turtlectrls">
+               <li><button id="btn1"></button></li>
+               <li><button id="btn2"></button></li>
+               <li><button id="btn3"></button></li>
+               <li><button id="btn4"></button></li>
+               <li><button id="btn5"></button></li>
+               <li><button id="tinfoctrlbtn">v</button></li>
+             </menu>
 
+	     <table class="tbl" id="turtleinfo">
+	       <tr><td></td><td id="t1">Turtle 1</td><td id="t2">Turtle 2</td></tr>
+	       <tr><td>Pos</td><td id="t1P"></td><td id="t2P"></td></tr>
+	       <tr><td>H(eading)</td><td id="t1H"></td><td id="t2H"></td></tr>
+	       <tr><td>L(left)</td><td id="t1L"></td><td id="t2L"></td></tr>
+	       <tr><td>U(p)</td><td id="t1U"></td><td id="t2U"></td></tr>
+	     </table>
+	     <!-- <textarea class="tio" id="text1" rows="1" cols="40"></textarea> -->
+         </div>
 	 <div class="lsystem">
 	   <p>L-System Controls</p>
 	   <p>

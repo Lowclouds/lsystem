@@ -2,9 +2,11 @@
 const myHeading = document.querySelector('h1');
 myHeading.textContent = 'An L-system interpreter';
 
-//var button = document.createElement("button");
+var turtleCtrlBtn = document.getElementById('tcbtn');
+var turtleInfoBtn = document.getElementById('tinfoctrlbtn');
+
 var showhidebtn = document.getElementById('btn1');
-showhidebtn.textContent = "Show/Hide";
+showhidebtn.textContent = "Hide";
 
 var clearbtn = document.getElementById('btn2');
 clearbtn.textContent = "Clear";
@@ -16,7 +18,7 @@ var resetbtn = document.getElementById('btn4');
 resetbtn.textContent = "Reset";
 
 var cameraTargetbtn = document.getElementById('btn5');
-cameraTargetbtn.textContent = "Camera Lookat Turtle"
+cameraTargetbtn.textContent = "Look at Turtle"
 
 var turtleInfo = [
     [document.getElementById('t1'),
@@ -31,10 +33,10 @@ var turtleInfo = [
      document.getElementById('t2U')]];
 
 function updateTurtleInfo(t,idx) {
-    turtleInfo[idx][0].textContent = t.getTurtle();
+   turtleInfo[idx][0].textContent = t.getTurtle();
    turtleInfo[idx][1].textContent = vround(t.getPos(),2);
-    turtleInfo[idx][2].textContent = vround(t.getH(),2);
-    turtleInfo[idx][3].textContent = vround(t.getL(),2);
+   turtleInfo[idx][2].textContent = vround(t.getH(),2);
+   turtleInfo[idx][3].textContent = vround(t.getL(),2);
    turtleInfo[idx][4].textContent = vround(t.getU(),2);
 }
 
@@ -202,25 +204,61 @@ updateTurtleInfo(t,0);
 makeAxes();
 //markSky(t);
 
+ turtleCtrlBtn.addEventListener("click", () => {
+    try {
+       let tcshown = turtleCtrlBtn.textContent;
+       let tall = document.getElementById("turtleall");
+       if (tcshown == '>') {
+          tall.style.display = '';
+          turtleCtrlBtn.textContent = 'v';
+       } else {
+          tall.style.display = 'none';
+          turtleCtrlBtn.textContent = '>';
+       }
+    } catch (error) {}
+ });
+
+ turtleInfoBtn.addEventListener("click", () => {
+    try {
+       let tcshown = turtleInfoBtn.textContent;
+       let tctrls = document.getElementById("turtleinfo");
+       if (tcshown == '>') {
+          tctrls.style.display = '';
+          turtleInfoBtn.textContent = 'v';
+       } else {
+          tctrls.style.display = 'none';
+          turtleInfoBtn.textContent = '>';
+       }
+    } catch (error) {}
+ });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 showhidebtn.addEventListener("click", () => {
     try {
         if (t.isShown()) {
-            t.hide();
-            if (t1) {t1.show();}
+           t.hide();
+           showhidebtn.textContent = "Show";
+
+           if (t1) {t1.show();}
         } else {
-            t.show();
-            if (t1) {t1.hide();}
+           t.show();
+           showhidebtn.textContent = "Hide";
+
+           if (t1) {t1.hide();}
         }
     } catch (error) { }// ignore
-    try {
-        if (t1.isShown()) {
-            t1.hide();
-            if (t) {t.show();}
-        } else {
-            t1.show();
-            if (t) {t.hide();}
-        }
-    } catch (error) {} // ignore
 })
 clearbtn.addEventListener("click", () => {
     try {

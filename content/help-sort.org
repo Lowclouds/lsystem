@@ -1,0 +1,69 @@
+#+TITLE: L-System Modules Quick Guide
+
+#+BEGIN_VERSE
+Why are they called modules and not commands or something else?
+Because module is an old term used by botanists for a unit of
+growth (article in French from the Latin for branch and
+translated to module in English.)
+
+Modules marked *u* are *unimplemented*
+Modules marked *p* are *partially implemented*
+#+END_VERSE
+
+* Turtle Motion
+|F(d) | move d units w/pen down, records track point
+|f(d) | move d units w/pen up, records track point
+|G(d) | ==== F(d), but does not record track points
+|g(d) | ==== f(d), w/o recording track points
+|@M(x,y,z) | goto position, draw or not|
+
+* Turtle Orientation
+| +(a)                    | yaw left a degrees                       |
+| &(a)                    | pitch down a degrees                     |
+| ^(a)                    | pitch up a degrees                       |
+| \(a)                    | roll left a degrees                      |
+| /(a)                    | roll right a degrees                     |
+| \vert                   | yaw 180 degrees |
+| @v                      | roll so U is parallel to up [y]          |
+| @R(hx,hy,hz[,ux,uy,uz]) | set heading to [hx,hy,hz]                |
+|                         | set U parallel to [ux,uy,z], if supplied |
+
+* Turtle Settings
+|;(i)   |increase or set color/material index|
+|,(i)   |decrease or set color/material index|
+|@;(n)  |increase or set back face color/material index|
+|@,(n)  |decrease or set back face color/material index|
+|#(n)   |increase or set line width|
+|!(n)   |decrease or set line width|
+|@Tx(n) *u* |set texture index|
+|@D(s) *u* |set scale factor of subsequent geometry|
+|@Di(f) *u* |multiply scale factor by f|
+
+* Turtle Geometry
+| @o(d)    | circle of diameter d                              |
+| @C(d)*u* | circle of diameter d in HL plane                  |
+| @O(d)    | sphere of diameter d                              |
+| ~S *u*   | insert predefined surface, Sym                    |
+| @Ds(id)  | start a contour with tag id                       |
+| @De(id)  | end contour id                                    |
+| @#(id)   | set contour(id) as current track shape            |
+| {        | start polygon                                     |
+| }        | end polygon                                       |
+| {(0)     | start path with stepwise control pts              |
+| {(1)     | start open path with Hermite spline control pts   |
+| {(2)     | start closed path with Hermite spline control pts |
+| {(3)     | start open path with B-spline control pts         |
+| {(4)     | start closed path with B-spline control pts       |
+| }(i)     | end path with type i and extrude contour          |
+| .        | add current position to path, polygon, or contour |
+
+* L-system Geometry
+| [               | start branch, pushing state onto stack    |
+| ]               | end branch, popping branch state stack    |
+| % *u*           | cut modules to end of branch              |
+| ?(id,scale) *p* | push current L-system and use L-system id |
+| $               | end current L-system, return to previous  |
+  
+
+
+
