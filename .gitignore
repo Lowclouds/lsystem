@@ -3,3 +3,7 @@ html-gui.zip
 octree.zip
 octree.html
 *.*~
+/scripts/*.ts
+/stuff/**
+/node_modules/**
+
