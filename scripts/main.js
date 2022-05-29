@@ -1,9 +1,10 @@
 
-const myHeading = document.querySelector('h1');
-myHeading.textContent = 'An L-system interpreter';
+// const myHeading = document.querySelector('h1');
+// myHeading.textContent = 'An L-system interpreter';
 
 var turtleCtrlBtn = document.getElementById('tcbtn');
 var turtleInfoBtn = document.getElementById('tinfoctrlbtn');
+document.getElementById("turtleinfo").style.display='none'; // turn off turtle info
 
 var showhidebtn = document.getElementById('btn1');
 showhidebtn.textContent = "Hide";
@@ -338,12 +339,14 @@ cameraTargetbtn.addEventListener("click", () => {
 
 const lsSrc = document.getElementById('lsSrc');
 const lsFile = document.getElementById('lsFile');
-const lsCode = document.getElementById('lsCode');
 const lsSave = document.getElementById('lsSave');
 const lsResult = document.getElementById('lsResult');
+const lsSaveCode = document.getElementById('lsSaveCode');
+const lsSaveCodeEnable = document.getElementById('lsSaveCodeEnable');
+
+const lsCode = document.getElementById('lsCode');
 
 lsSrc.placeholder = 'Paste/enter/edit your L-system here';
-
 lsResult.placeholder = 'Empty';
 
 btnParse = document.getElementById('btnParse');
@@ -428,15 +431,30 @@ lsSaveCode.addEventListener("click", () => {
    };
 });
 
-var rwresult=null;
+lsSaveCodeEnable.addEventListener("click", () => {
+   let cv = lsSaveCodeEnable.textContent;
+   if (cv == 'Enable Codegen') {
+      codegenOn = true;
+      lsSaveCodeEnable.textContent = 'Disable Codegen';
+   } else {
+      codegenOn = false;
+      lsSaveCodeEnable.textContent = 'Enable Codegen';
+   }
+   lsSaveCode.toggleAttribute('disabled');
 
+});
+
+var codegenOn = false;
+
+var rwresult=null;
 var interpOpts=null;
 var tracksAlways = false;
+
 btnAllTracks.textContent = 'Tracks Off';
 
 btnDraw.addEventListener("click", () => {
     try {
-       turtleInterp(t, lsys, {useTracksAlways: tracksAlways});
+       turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
     } catch (error) {puts(error);}
 });
 
@@ -456,7 +474,7 @@ btnRPRD.addEventListener("click", () => {
           //camera.setTarget(t.getPos());
           /* --------- draw ---------*/
           // t.setHeading([0,1,0]);
-          turtleInterp(t, lsys, {useTracksAlways: tracksAlways});
+          turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
        }
     } catch (error) {puts(error);}
 });
