@@ -39,7 +39,7 @@ function ExtrudeShapeFix(
    const invertUV = options.invertUV || false;
    const closeShape = options.closeShape || false;
    const closePath = options.closePath || false;
-   console.log(`extrudeShapeFix. firstNormal: ${firstNormal}`);
+//   console.log(`extrudeShapeFix. firstNormal: ${firstNormal}`);
 
    return _ExtrudeShapeFixGeneric(
       name,
@@ -89,7 +89,7 @@ function ExtrudeShapeFixCustom(
    const path = options.path;
    const shape = options.shape;
    const firstNormal = options.firstNormal || null;
-   console.log(`extrudeShapeFixCustom. firstNormal: ${firstNormal}`);
+   //console.log(`extrudeShapeFixCustom. firstNormal: ${firstNormal}`);
    const scaleFunction =
          options.scaleFunction ||
          (() => {
@@ -104,7 +104,7 @@ function ExtrudeShapeFixCustom(
    const ribbonClosePath = options.closeShape || options.ribbonClosePath || false;
    const cap = options.cap === 0 ? 0 : options.cap || BABYLON.Mesh.NO_CAP;
    const updatable = options.updatable;
-   const sideOrientation = BABYLON.Mesh.FRONTSIDE;
+   const sideOrientation = options.sideOrientation || BABYLON.Mesh.FRONTSIDE;
    const instance = options.instance;
    const invertUV = options.invertUV || false;
    
@@ -169,7 +169,7 @@ function _ExtrudeShapeFixGeneric(
         const normals = path3D.getNormals();
         const binormals = path3D.getBinormals();
         const distances = path3D.getDistances();
-       console.log(`extrusionPathArray: normals: ${normals}`);
+        console.log(`extrusionPathArray: normals: ${normals}`);
         let angle = 0;
         const returnScale = () => {
             return scale !== null ? scale : 1;
@@ -186,8 +186,8 @@ function _ExtrudeShapeFixGeneric(
             const shapePath = new Array();
             const angleStep = rotate(i, distances[i]);
             const scaleRatio = scl(i, distances[i]);
-           BABYLON.Matrix.RotationAxisToRef(tangents[i], angle, rotationMatrix);
            for (let p = 0; p < shape.length; p++) {
+              BABYLON.Matrix.RotationAxisToRef(tangents[i], angle, rotationMatrix);
               const planed = tangents[i].scale(shape[p].z).add(normals[i].scale(shape[p].x)).add(binormals[i].scale(shape[p].y));
               const rotated = shapePath[p] ? shapePath[p] : BABYLON.Vector3.Zero();
               BABYLON.Vector3.TransformCoordinatesToRef(planed, rotationMatrix, rotated);
@@ -249,7 +249,7 @@ function _ExtrudeShapeFixGeneric(
    
    path3D = firstNormal ? new BABYLON.Path3D(curve, firstNormal) : new BABYLON.Path3D(curve);
    console.log(`extrudeShapeGeneric. firstNormal: ${firstNormal}`);
-   console.log(`path3D normals: ${path3D._normals}`);
+   //console.log(`path3D normals: ${path3D._normals}`);
    const newShapePaths = new Array();
    cap = cap < 0 || cap > 3 ? 0 : cap;
    pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, cap, custom);
