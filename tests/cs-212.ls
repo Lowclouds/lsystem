@@ -1,5 +1,5 @@
 derivation length: 30
-n=30,delta=22.5
+n=30;delta=22.5
 ignore: +-F
 axiom: F1F1F1
 p1: 0 < 0 > 0 -> 1

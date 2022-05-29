@@ -1,5 +1,5 @@
 derivation length: 24
-delta=25.75,stemsize=0.1
+delta=25.75;stemsize=0.1
 ignore: +-F
 axiom: F0F1F1
 p1: 0 < 0 > 0 -> 1

@@ -1,4 +1,8 @@
-LA=5, RA=1, LB=1, RB = 1, PD=1
+#define LA 5
+#define RA 1
+#define LB 1
+#define RB 1
+#define PD 1
 delta=60
 stemsize=0.01
 derivation length: 20
