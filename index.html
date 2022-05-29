@@ -3,7 +3,7 @@
 
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <title>Turtle3d Playground</title>
+        <title>L-System Explorer</title>
 
         <style>
             html, body {
@@ -53,6 +53,9 @@
                 padding: 0;
                 width: 100%;
             }
+            .styled:disabled {
+                background-color: rgba(160,160,160,1);
+            }
         </style>
 
         <!---
@@ -81,9 +84,9 @@
     </head>
 
    <body>
-     <header> 
-       <h1 align="center">Turtle3d Playground </h1>
-     </header>
+     <!-- <header>  -->
+     <!--   <h1 align="center">Turtle3d Playground </h1> -->
+     <!-- </header> -->
 
      <div class="mbox">
        <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
@@ -99,7 +102,7 @@
                <li><button id="btn3"></button></li>
                <li><button id="btn4"></button></li>
                <li><button id="btn5"></button></li>
-               <li><button id="tinfoctrlbtn">v</button></li>
+               <li><button id="tinfoctrlbtn">></button></li>
              </menu>
 
 	     <table class="tbl" id="turtleinfo">
@@ -117,12 +120,12 @@
 	     <label for="lsFile">Load: </label>
 	     <input id="lsFile" name="lsFile" type="file">
              <button id="lsSave" name="lsSave">Save</button>
-             <button id="lsSaveCode" name="lsSaveCode">Save Code</button>
+             <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
+             <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Enable Codegen</button>
 	   </p>
-
 	   <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
 	   <p>
-	     <span class="btnrow" id="btns2"> 
+	     <menu class="buttonbar" id="lsctrls"> 
 	       <button class="abutton"  id="btnParse">Parse</button>
 	       <button class="abutton"  id="btnRewrite">Rewrite</button>
 	       <button class="abutton"  id="btnDraw">Draw</button>
@@ -131,6 +134,7 @@
 
                <button class="lsprogress" id="numNodes">0</button>
                <button class="lsprogress" id="numDrawn">0</button>
+             </menu>
 	   </p>
 	   <textarea class="tio" id="lsResult" name="lsResult" rows="15" cols="45"></textarea>
            <textarea class="tio" id="lsCode" name="lsCode" rows="1" cols="45"></textarea>
