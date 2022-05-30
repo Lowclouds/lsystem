@@ -871,6 +871,8 @@ class Turtle3d {
 
             extrusion.material = multimat;
          }
+      } else {
+         extrusion.material = this.materialList[srm[1].m];
       }
       extrusion.id= t + this.trackPaths.length;
       BABYLON.Tags.AddTagsTo(extrusion, `track${t} path`, this.scene);
@@ -940,28 +942,47 @@ class Turtle3d {
    endTrack() {
       let ts = this.TurtleState;
       let tp = ts.trackPath;
-      switch (tp.type) {
-      case Turtle3d.PATH_POINTS:
-         break;
-      case Turtle3d.PATH_HERMITE_OPEN:
-      case Turtle3d.PATH_HERMITE_CLOSED:
-         tp.generatePath();
-         break;
-      case Turtle3d.PATH_BSPLINE_OPEN:
-      case Turtle3d.PATH_BSPLINE_CLOSED:
-         console.warn('Hermite and B-spline curves not implemented');
-         tp.type = Turtle3d.PATH_POINTS;
-         break;
-      default:
-         console.error('Unexpected path type: ' + tp.type);
-         break;
+      if (tp) {
+         switch (tp.type) {
+         case Turtle3d.PATH_POINTS:
+            break;
+         case Turtle3d.PATH_HERMITE_OPEN:
+         case Turtle3d.PATH_HERMITE_CLOSED:
+            tp.generatePath();
+            break;
+         case Turtle3d.PATH_BSPLINE_OPEN:
+         case Turtle3d.PATH_BSPLINE_CLOSED:
+            console.warn('Hermite and B-spline curves not implemented');
+            tp.type = Turtle3d.PATH_POINTS;
+            break;
+         default:
+            console.error('Unexpected path type: ' + tp.type);
+            break;
+         }
+         this.drawTrack();
+         ts.drawMode = Turtle3d.DRAW_IMMEDIATE; // back to immediate draw
+         ts.trackPath = null;
+      } else {
+         console.warn('endTrack: no track in progress');
       }
-      this.drawTrack();
-      ts.drawMode = Turtle3d.DRAW_IMMEDIATE; // back to immediate draw
-      ts.trackPath = null;
    }
 
+   setTrackMultipliers(m0,m1) {
+      let tp = this.TurtleState.trackPath;
+      if (tp.type == Turtle3d.PATH_HERMITE_OPEN || tp.type == Turtle3d.PATH_HERMITE_CLOSED) {
+         tp.setMultipliers(m0,m1);
+      }
+   }
 
+   setTrackRadiusSpline(angle0,len0,angle1,len1) {
+      let tp = this.TurtleState.trackPath;
+      if (tp.type == Turtle3d.PATH_HERMITE_OPEN || tp.type == Turtle3d.PATH_HERMITE_CLOSED) {
+         tp.setRadiusSpline (angle0,len0,angle1,len1) 
+      }
+   }
+
+   setTrackQuality (q=30) {
+   }
 
    drawDisc(d = 1, arc = 1, qual = 64, scaling = null) {
       let mesh,p, opts = {};
@@ -1368,9 +1389,9 @@ class HermiteSpline extends TrackPath {
          this.pointPair.rt = ts.size;
          this.pointPair.normt = ts.L.clone();
          this.controlPoints.push(this.pointPair);
-         let newPair = {p0: this.pointPair.p1, t0: this.pointPair.t1,tm0: 1.2, tm1: 1.2,
-                        rb: this.pointPair.rt, normb: this.pointPair.normt, radiusSpline: null};
-         this.pointsPair = newPair;
+         let newPair = {p0: newPos.clone(), t0: this.pointPair.t1.clone(),tm0: 1.2, tm1: 1.2,
+                        rb: this.pointPair.rt, normb: this.pointPair.normt.clone(), radiusSpline: null};
+         this.pointPair = newPair;
       }
    }
    generatePath() {
@@ -1388,7 +1409,10 @@ class HermiteSpline extends TrackPath {
          let twistInc = totalTwist/this.ptsPerSegment;
          let pathspline = BABYLON.Curve3.CreateHermiteSpline(
             p0,t0.scale(blen*pp.tm0),p1,pp.t1.scale(blen*pp.tm1),this.ptsPerSegment);
-         
+
+         // var pmesh = BABYLON.Mesh.CreateLines("hermite",pathspline.getPoints(), scene);
+         // pmesh.color = BABYLON.Color3.Yellow()
+
          if ( pp.radiusSpline)  { // recalc pathspline
             let rs = pp.radiusSpline;
             let x = cosd(90 - rs[0]);
@@ -1397,26 +1421,36 @@ class HermiteSpline extends TrackPath {
             x = cosd(90 - rs[2]);
             y = sind(90 - rs[2]);
             let r1 = pp.normb.scale(x).add(t0.scale(y)).scale(rs[3]);
+            let prb = p0.add(pp.normb.scale(pp.rb));
+            let prt = p1.add(pp.normb.scale(pp.rt));
             let radiusSpline = BABYLON.Curve3.CreateHermiteSpline(
-               normb.scale(pp.rb),r0,normb.scale(pp.rt),r1,this.ptsPerSegment);
+               prb,r0,prt,r1,this.ptsPerSegment);
+
             let  radiuspath = new BABYLON.Path3D(radiusSpline.getPoints());
+
+            // let rmesh = BABYLON.Mesh.CreateLines("hermite",radiusSpline.getPoints(), scene);
+            // rmesh.color = BABYLON.Color3.Red()
+            // let bmesh = BABYLON.Mesh.CreateLines("hermite",[p0,p1], scene);
+            // bmesh.color = BABYLON.Color3.Blue()
+
             let tmap = [];
             let radii = [];
             let bheading = p1.subtract(p0).normalize();
             let step = 1/this.ptsPerSegment;
             for (let t = 0; t <= 1 + step/2; t += step) {
-               let rt = radiuspath.getPointAt(t);
+               let rt = radiuspath.getPointAt(t).subtract(p0);
                let ru = BABYLON.Vector3.Dot(rt, bheading);
                tmap.push(ru/blen); 
                radii.push(BABYLON.Vector3.Dot(rt, pp.normb));
             }
 
-            console.log(`tmap length: ${tmap.length}`);
+            // console.log(`tmap length: ${tmap.length}\n ${tmap}`); 
             let extpath = new BABYLON.Path3D(pathspline.getPoints());
             for (let i = 0; i < tmap.length; i++) {
                this.points.push(extpath.getPointAt(tmap[i]));
                this.srm.push({s:radii[i], r: twistInc, m: this.material});
             }
+            // console.log(`points: ${this.points}`);
          } else {
             let pts = pathspline.getPoints();
             let radiusInc = (pp.rt - pp.rb)/pts.length; // s.b. this.ptsPerSegment

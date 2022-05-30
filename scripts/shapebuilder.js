@@ -169,7 +169,7 @@ function _ExtrudeShapeFixGeneric(
         const normals = path3D.getNormals();
         const binormals = path3D.getBinormals();
         const distances = path3D.getDistances();
-        console.log(`extrusionPathArray: normals: ${normals}`);
+       //console.log(`extrusionPathArray: normals: ${normals}`);
         let angle = 0;
         const returnScale = () => {
             return scale !== null ? scale : 1;
@@ -248,7 +248,7 @@ function _ExtrudeShapeFixGeneric(
     // extruded shape creation
    
    path3D = firstNormal ? new BABYLON.Path3D(curve, firstNormal) : new BABYLON.Path3D(curve);
-   console.log(`extrudeShapeGeneric. firstNormal: ${firstNormal}`);
+   //console.log(`extrudeShapeGeneric. firstNormal: ${firstNormal}`);
    //console.log(`path3D normals: ${path3D._normals}`);
    const newShapePaths = new Array();
    cap = cap < 0 || cap > 3 ? 0 : cap;
