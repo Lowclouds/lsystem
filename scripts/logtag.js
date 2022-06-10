@@ -123,3 +123,4 @@ const NTRP_BRANCH        = 2n**29n;
 const NTRP_PROGRESS      = 2n**30n;
 const NTRP_TRACKS        = 2n**31n;
 const NTRP_CONTOUR       = 2n**32n;
+const TRTL_HERMITE       = 2n**33n;

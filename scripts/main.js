@@ -384,22 +384,22 @@ btnParse.onclick = function() {
 btnRewrite.onclick = function() {
     if (lsys && lsResult.textContent != 'Empty') {
        lsResult.value =listtostr(lsys.Rewrite()); //.toString();
-	lsState = 'Rewritten';
+       lsState = 'Rewritten';
     }
 }
 
 function loadLSfile(event) {
-    let file = lsFile.files.item(0);
-    if (file != null) {
-	let reader = new FileReader();
-	
-	reader.onload = function() {
-	   lsSrc.value = reader.result;
-	   //lsResult.value = '';
-	   lsState='Start';
-           // btnCpp.textContent = 'Show CPP';
-	}
-	reader.readAsText(file);
+   let file = lsFile.files.item(0);
+   if (file != null) {
+      let reader = new FileReader();
+      
+      reader.onload = function() {
+         lsSrc.value = reader.result;
+         //lsResult.value = '';
+         lsState='Start';
+         // btnCpp.textContent = 'Show CPP';
+      }
+      reader.readAsText(file);
     }
 }
 

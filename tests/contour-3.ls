@@ -8,7 +8,7 @@
 derivation length:40
 stemsize=STEM
 
-axiom: C;(85)F(5))B(1)
+axiom: C;(85)F(5)B(1)
 A(t) : t<=5 ->  #(t*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) : (t>=LEAFL-5) and (t <= LEAFL) -->  #((LEAFL-t)*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) --> F(STEPL)&(STEPA)A(t+1)
