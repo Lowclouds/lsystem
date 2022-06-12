@@ -14,9 +14,9 @@ There is provisional support for sub-L-systems, not well-tested yet, and support
 path contours for all path types. 
 
 Features in the  works:
-  Animations
-  Homomorphisms
-  Array specified contours and surfaces
-  L-system surface generation
-  Textures - currently just standard materials
+   - Animations
+   - Homomorphisms
+   - Array specified contours and surfaces
+   - L-system surface generation
+   - Textures - currently just standard materials
   
