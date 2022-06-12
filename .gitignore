@@ -17,7 +17,6 @@ octree.html
 /node_modules/fraction.js/**
 /node_modules/handjs/**
 /node_modules/javascript-natural-sort/**
-/node_modules/libtess/**
 /node_modules/mathjs/**
 /node_modules/regenerator-runtime/**
 /node_modules/seedrandom/**
