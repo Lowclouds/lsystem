@@ -227,6 +227,7 @@ class Turtle3d {
       }
       m.diffuseColor = this.toColorVector(color);
       this.materialList.push(m);
+      return this;
    }
    // get the material index
    getMaterialIdx() {
@@ -240,10 +241,11 @@ class Turtle3d {
       this.materialList = [];
       this.TurtleState.trackMaterial = null;
       this.TurtleState.color = null;
+      return this;
    }
    // where dt, et al. are images
    setTexture(dt, st=null, et=null, at=null, hasAlpha=false) {
-
+      return this;
    }
 
    toColorVector(cv = this.TurtleState.color) {
@@ -322,12 +324,12 @@ class Turtle3d {
          for (var index = 0; index < meshes.length; index++) {
             meshes[index].isVisible = ts.isShown;
          }
-         this.orientTurtle();
+         this.#orientTurtle();
       }
    }
 
    // some internal setter functions that I'd like to hide
-   setPos (val) {
+   #setPos (val) {
       try {
          if (betterTypeOf(val) == 'array'){
             this.TurtleState.P.fromArray(val);
@@ -338,14 +340,14 @@ class Turtle3d {
          puts(`${error}, calling setPos(${val})`);
       }
    }
-   setH (val) {
+   #setH (val) {
       if (betterTypeOf(val) == 'array'){
          this.TurtleState.H.fromArray(val);
       } else {   // assume it's a Vector3
          this.TurtleState.H = val.clone(); // in case it's a local
       }
    }
-   setL (val) {
+   #setL (val) {
       if (betterTypeOf(val) == 'array'){
          this.TurtleState.L.fromArray(val);
       } else {   // assume it's a Vector3
@@ -354,7 +356,7 @@ class Turtle3d {
       this.TurtleState.lastNormal.copyFrom(this.TurtleState.L).scaleInPlace(-1);
    }
 
-   setU (val) {
+   #setU (val) {
       if (betterTypeOf(val) == 'array'){
          this.TurtleState.U.fromArray(val);
       } else {   // assume it's a Vector3
@@ -363,7 +365,7 @@ class Turtle3d {
    }
    // orient turtle so we can see what the orientation looks like
    // not required for actual functioning
-   orientTurtle () {
+   #orientTurtle () {
       let shape = this.getTurtleShape();
       if (shape != "") {
          shape.rotation =
@@ -476,13 +478,13 @@ class Turtle3d {
       let tshape = this.TurtleState.turtleShape;
       let newPos = newV(0, 0, 0);
 
-      this.setPos(newPos);
-      this.setH(newV(1, 0, 0));
-      this.setU(newV(0, 1, 0));
-      this.setL(newV(0, 0, 1));
+      this.#setPos(newPos);
+      this.#setH(newV(1, 0, 0));
+      this.#setU(newV(0, 1, 0));
+      this.#setL(newV(0, 0, 1));
       if (tshape != "") {
          tshape.position = newPos;
-         this.orientTurtle();
+         this.#orientTurtle();
       }
       return this;
    }
@@ -564,7 +566,7 @@ class Turtle3d {
       }
 
       let oldP = this.TurtleState.P.clone();
-      this.setPos(pos);
+      this.#setPos(pos);
       //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
       this.draw(oldP, pos);
       return this;
@@ -596,18 +598,37 @@ class Turtle3d {
       p1.normalize();
       let p2 = v.cross(p1).normalize().scale(-1); // up axis
       // puts(`v: ${v}; perp1: ${p1}; perp2: ${p2}`);
-      this.setH(v);
-      this.setL(p1);
-      this.setU(p2);
+      this.#setH(v);
+      this.#setL(p1);
+      this.#setU(p2);
 
-      this.orientTurtle();
+      this.#orientTurtle();
       return this;
    }
 
    // given a mesh, setHeading towards it
-   lookat (mesh) {
-      let v = mesh.position.subtract(this.getPos());
-      this.setHeading(v);
+   lookAt (p, u1, u2) {
+      let target;
+      switch (arguments.length) {
+      case 1:
+         if (betterTypeOf(a1) == 'array') {
+            target = BABYLON.Vector3.FromArray(p);
+         } else { // assume vector3 or mesh
+            if (p._isMesh) {
+               target = p.position;
+            } else {
+               target = p;
+            }
+         }
+         break;
+      case 3:
+         target = BABYLON.Vector3.FromArray([p,u1,u2]);
+         break;
+      default:
+         console.warn(`lookAt requires either a Vector3, Mesh, a 3-element array, or x,y,z as arguments`);
+         return;
+      }
+      this.setHeading(target.subtract(this.getPos()));
       return this;
    }
 
@@ -638,9 +659,9 @@ class Turtle3d {
       p1.normalize();
       let p2 = p1.cross(H); // the new up
       // H doesn't change
-      this.setL(p1);
-      this.setU(p2);
-      this.orientTurtle();
+      this.#setL(p1);
+      this.#setU(p2);
+      this.#orientTurtle();
       return this;
    }
    // a special case of setUp
@@ -673,9 +694,9 @@ class Turtle3d {
       angle *= -1;              // lh system
       let H = this.TurtleState.H.clone();
       let L = this.TurtleState.L.clone();
-      this.setH(rotateTG(H, smult(-1, L), angle));
-      this.setL(rotateTG(L, H, angle));
-      this.orientTurtle();
+      this.#setH(rotateTG(H, smult(-1, L), angle));
+      this.#setL(rotateTG(L, H, angle));
+      this.#orientTurtle();
       return this;
    }
    // pitch: rotate around L, positive is U towards H
@@ -683,9 +704,9 @@ class Turtle3d {
       angle *= -1;              // lh system
       let H = this.TurtleState.H.clone();
       let U = this.TurtleState.U.clone();
-      this.setH(rotateTG(H, U, angle));
-      this.setU(rotateTG(U, smult(-1, H), angle));
-      this.orientTurtle();
+      this.#setH(rotateTG(H, U, angle));
+      this.#setU(rotateTG(U, smult(-1, H), angle));
+      this.#orientTurtle();
       return this;
    }
    // roll: rotate around H, positive is L towards U
@@ -693,9 +714,9 @@ class Turtle3d {
       angle *= -1;              // lh system
       let L = this.TurtleState.L.clone();
       let U = this.TurtleState.U.clone();
-      this.setL(rotateTG(L, smult(-1,U), angle));
-      this.setU( rotateTG(U, L, angle));
-      this.orientTurtle();
+      this.#setL(rotateTG(L, smult(-1,U), angle));
+      this.#setU(rotateTG(U, L, angle));
+      this.#orientTurtle();
       this.TurtleState.accumRoll += angle;
       this.TurtleState.accumRoll %= 360;
       return this;
@@ -884,6 +905,7 @@ class Turtle3d {
 
    newBranch(udata=null) {
       this.branchStack.push({tstate: this.getState(), userData: udata});
+      return this;
    }
    endBranch() {
       const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
@@ -936,6 +958,8 @@ class Turtle3d {
 
       puts(`trackshape is: ${this.TurtleState.trackShape}`, TRTL_TRACK);
       puts(`tp.shape is: ${tp.shape}`, TRTL_TRACK);
+
+      return this;
    }
 
    endTrack() {
@@ -964,6 +988,7 @@ class Turtle3d {
       } else {
          console.warn('endTrack: no track in progress');
       }
+      return this;
    }
 
    setTrackMultipliers(m0,m1) {
@@ -971,6 +996,7 @@ class Turtle3d {
       if (tp.type == Turtle3d.PATH_HERMITE_OPEN || tp.type == Turtle3d.PATH_HERMITE_CLOSED) {
          tp.setMultipliers(m0,m1);
       }
+      return this;
    }
 
    setTrackRadiusSpline(angle0,len0,angle1,len1) {
@@ -978,6 +1004,7 @@ class Turtle3d {
       if (tp.type == Turtle3d.PATH_HERMITE_OPEN || tp.type == Turtle3d.PATH_HERMITE_CLOSED) {
          tp.setRadiusSpline (angle0,len0,angle1,len1) 
       }
+      return this;
    }
 
    setTrackQuality (q=30) {
@@ -995,6 +1022,7 @@ class Turtle3d {
       mesh = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
 
       this.meshCommonSetup(mesh, scaling);
+      return this;
    }
 
    drawSphere(d=1, arc=1, qual=32, slice=1, scaling=null) {
@@ -1011,6 +1039,7 @@ class Turtle3d {
       mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
 
       this.meshCommonSetup(mesh, scaling);
+      return this;
    }
 
    // drawCapsule(d=1, arc=1, qual=32, slice=1, scaling=null) {
@@ -1071,6 +1100,7 @@ class Turtle3d {
       this.polygonStack.push({a: Array.from(this.polygonVerts)});
       this.polygonVerts = new Array();
       //this.TurtleState.drawMode = Turtle3d.CAPTURE_POLYGON;
+      return this;
    }
 
    // implements the '.' module
@@ -1082,6 +1112,7 @@ class Turtle3d {
          puts(`adding ${pos} to polygonVerts`, TRTL_POLYGON);
          this.polygonVerts.push(otoa(pos));
       }
+      return this;
    }
 
    // implements the '}' module
@@ -1132,6 +1163,7 @@ class Turtle3d {
       } else {
          this.polygonVerts = [];
       }
+      return this;
    }
 
    /**
@@ -1157,6 +1189,7 @@ class Turtle3d {
       this.branchStack.push({tstate: this.getState(), userData: udata});
       this.tempContour = new Contour(id, type);
       this.TurtleState.drawMode = Turtle3d.CAPTURE_CONTOUR;
+      return this;
    }
    updateContour(pos=null) {
       if (this.tempContour != null ) {
@@ -1168,6 +1201,7 @@ class Turtle3d {
       } else {
          console.warn(`Can't store contour point: no contour started`);
       }
+      return this;
    }
    /**
       end a contour.
@@ -1231,6 +1265,7 @@ class Turtle3d {
          puts(`Capture type ${type} not implemented`);
          break;
       }
+      return this;
    }
 }
 
@@ -1729,67 +1764,3 @@ function fanTriangulate(verts) {
    }
    return indices;
 }
-   /**
-    * addPathPt at a point when in path mode
-    * ts = TurtleState
-    * newPos = position to add
-    **/
-/*
-   addPathPt(ts, newPos) {
-      puts(`addPathPt ${newPos}`, TRTL_TRACK, TRTL_CAPTURE);
-      // assuming 'extrusion'
-      let tp = ts.trackPath;
-      switch (tp.type) {
-      case Turtle3d.PATH_HERMITE_OPEN:
-      case Turtle3d.PATH_HERMITE_OPEN:
-         tp.
-         break;
-      default:
-         if (tp.points.klength == 0) { // push first point
-            puts(`added initial path pt: ${newPos}, size: ${ts.lastSize}`, TRTL_TRACK);
-            tp.points.push(newPos);
-            tp.srm.push({s: ts.lastSize, r: 0, m: 0})
-            tp.firstNormal.copyFrom(ts.lastNormal); //
-            puts(`addPathPt: firstNormal = ${tp.firstNormal}`, TRTL_TRACK);
-         } else {
-            let lastPos = tp.points[tp.points.length-1];
-            tp.distance+= BABYLON.Vector3.Distance(newPos, lastPos);
-            let roll = ts.accumRoll;
-            let lastroll = tp.srm[tp.srm.length - 1].r * radtodeg;
-            let rolldiff = roll - lastroll; // total additional roll
-            // puts(tp.srm);
-            let npts = Math.abs(Math.trunc(roll / tp.maxTwist)); // number of pts
-            let rollinc = roll / (npts+1); // divide by # sections
-            puts(`tp.srm.length: ${tp.srm.length}, roll: ${roll}, lastroll: ${lastroll}, rolldiff: ${rolldiff}, rollinc: ${rollinc}, npts: ${npts}`, TRTL_TRACK);
-            if (npts > 0) {
-               // add intermediate points
-               let vecdiff = newPos.subtract(lastPos).scaleInPlace(1/(npts+1));
-               // insert intermediate points
-               let r = rollinc;
-               let lpt = lastPos;
-               puts(`adding ${npts} points, with incremental roll of ${rollinc}`, TRTL_TRACK);
-               let troll=0;
-               for (let pti = 0; pti < npts+1; pti++) {
-                  lpt = lpt.add(vecdiff);
-                  tp.points.push(lpt);
-                  tp.srm.push({s: ts.size,
-                               r: r * degtorad,
-                               m: ts.trackMaterial
-                              });
-                  troll += rollinc;
-                  puts(`inserted path pt: ${lpt}, total roll: ${troll}`, TRTL_TRACK);
-               }
-            } else {
-               // add new position
-               tp.points.push(newPos);
-               tp.srm.push({s: ts.size,
-                            r: rollinc * degtorad,
-                            m: ts.trackMaterial
-                           });
-               //puts(`added path pt: ${newPos}`, TRTL_TRACK);
-            }
-            ts.accumRoll = 0;
-         }
-      }
-   }
-*/
