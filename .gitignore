@@ -7,3 +7,5 @@ octree.html
 /stuff/**
 /node_modules/**
 
+/scripts/turtle3d-playground.js
+#*#
