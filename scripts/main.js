@@ -44,7 +44,7 @@ function updateTurtleInfo(t,idx) {
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
-const cameraHomePosition = new BABYLON.Vector3(10, 15,-20);
+const cameraHomePosition = new BABYLON.Vector3(35, 10 ,-5);
 //const cameraHomeDirection = new BABYLON.Vector3(-2, -5, 10);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
@@ -60,8 +60,7 @@ const createScene = function () {
   //  camera.setPosition(new BABYLON.Vector3(2, 5,-10));
   //  camera.wheelDeltaPercentage = 0.001;
   //  camera.zoomToMouseLocation = true;
-   camera = new BABYLON.UniversalCamera("camera",
-                                        cameraHomePosition.clone(), scene);
+   camera = new BABYLON.UniversalCamera("camera", cameraHomePosition.clone(), scene);
    camera.setTarget(cameraHomeTarget.clone());
    camera.inputs.addMouseWheel();
    camera.wheelDeltaPercentage = 0.0001;
@@ -232,19 +231,6 @@ makeAxes();
        }
     } catch (error) {}
  });
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 showhidebtn.addEventListener("click", () => {
     try {
@@ -433,12 +419,12 @@ lsSaveCode.addEventListener("click", () => {
 
 lsSaveCodeEnable.addEventListener("click", () => {
    let cv = lsSaveCodeEnable.textContent;
-   if (cv == 'Enable Codegen') {
+   if (cv == 'Gen Code') {
       codegenOn = true;
-      lsSaveCodeEnable.textContent = 'Disable Codegen';
+      lsSaveCodeEnable.textContent = 'No Code';
    } else {
       codegenOn = false;
-      lsSaveCodeEnable.textContent = 'Enable Codegen';
+      lsSaveCodeEnable.textContent = 'Gen Code';
    }
    lsSaveCode.toggleAttribute('disabled');
 
@@ -489,6 +475,36 @@ btnAllTracks.addEventListener("click", () => {
       tracksAlways = !tracksAlways;
    } catch (error) {puts(error);}
 });
+
+// load an example file
+fetch('./tests/3d-a.ls')
+   .then( response => {
+      if (! response.ok) {
+         throw new Error(`${response.status}`);
+      }
+      return response.text();
+   })
+   .then(text => {
+      lsSrc.value = text;
+      lsys = Lsystem.Parse(lsSrc.value);
+      lsResult.value = lsys.serialize();
+      lsState = 'Parsed';
+      if (lsResult.textContent != 'Empty') {
+         lsResult.value = lsys.Rewrite(); //.toString();
+         lsState = 'Rewritten';
+         /* --------- reset ---------*/
+         t.reset();
+         //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
+         //camera.setTarget(t.getPos());
+         /* --------- draw ---------*/
+         // t.setHeading([0,1,0]);
+         turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
+         camera.setTarget(newV(0,10,0));
+   }
+   })
+   .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
+
+
 // ------------------------------------------------------------
 //  end of UI
 // ------------------------------------------------------------

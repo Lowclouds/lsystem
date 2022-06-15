@@ -30,6 +30,16 @@
 		width:38%;
 		height:100%;
 	    }
+            .lsystem {
+                width: 95%;
+            }
+            .section-info {
+                width: 95%;
+                display: flex;
+                flex: auto;
+                column-gap: 2em;
+              
+            }
 	    .tbl {
 		width: 95%;
 		margin: 0px;
@@ -80,27 +90,22 @@
         <script src="./node_modules/handjs/hand.js"></script>
         <script src="./node_modules/file-saver/src/FileSaver.js"></script>
         -->
-
 	<script src="scripts/logtag.js"></script>
+	<script src="scripts/colortables/initColorTable.js"></script>
+        <script src="scripts/cpp.js"></script>
+	<script src="scripts/shapebuilder.js"></script>
 	<script src="scripts/lsystem.js"></script>
 	<script src="scripts/turtle3d.js"></script>
-        <script src="scripts/cpp.js"></script>
-	<script src="scripts/colortables/initColorTable.js"></script>
 	<script src="scripts/interpret.js"></script>
-	<script src="scripts/shapebuilder.js"></script>
     </head>
 
    <body>
-     <!-- <header>  -->
-     <!--   <h1 align="center">Turtle3d Playground </h1> -->
-     <!-- </header> -->
-
      <div class="mbox">
        <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
        
        <div class="right-side">
-	 <label for="btns1" id="btnlbl">Turtle Control</label>
-         <button id="tcbtn">v</button>
+              <label for="btns1" id="btnlbl">Turtle Control</label>
+              <button id="tcbtn">v</button>
          <div id="turtleall">
 	   <p>
              <menu class="buttonbar" id="turtlectrls">
@@ -122,13 +127,15 @@
 	     <!-- <textarea class="tio" id="text1" rows="1" cols="40"></textarea> -->
          </div>
 	 <div class="lsystem">
-	   <p>L-System Controls</p>
-	   <p>
-	     <label for="lsFile">Load: </label>
-	     <input id="lsFile" name="lsFile" type="file">
+	   <div class="section-info">
+	     <div>L-System Controls</div>
+             <div> <a href="./content/quick-guide.html">Quick Guide</a> </div>
+           </div class="section-info">
+	   <!--- <label for="lsFile">Load: </label> -->
+	     <input id="lsFile" name="lsFile" type="file" accept=".ls,.txt,text/plain">
              <button id="lsSave" name="lsSave">Save</button>
+             <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Gen Code</button>
              <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
-             <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Enable Codegen</button>
 	   </p>
 	   <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
 	   <p>
