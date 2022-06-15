@@ -541,8 +541,8 @@ class Turtle3d {
             break;
          }
          if (this.polygonStack.length) {
-            puts(`storePoint adding pt ${pt} to polygon${this.polygonStack.length}`, TRTL_CAPTURE, TRTL_POLYGON);
-            this.updatePolygon(pt);
+             puts(`storePoint adding pt ${newP} to polygon${this.polygonStack.length}`, TRTL_CAPTURE, TRTL_POLYGON);
+             this.updatePolygon(newP);
          }
       }
 
