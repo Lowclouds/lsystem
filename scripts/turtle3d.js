@@ -87,7 +87,7 @@ class Turtle3d {
          } else if (shape != null) {
             turtle = shape;
          } else {
-            turtle = maketurtle.call(this, tag);
+            turtle = defaultTurtle.call(this, tag);
          }
          BABYLON.Tags.AddTagsTo(turtle, `${tag} turtle`);
          return turtle;
@@ -108,7 +108,7 @@ class Turtle3d {
          }
       }
 
-      function maketurtle (tag) {
+      function defaultTurtle (tag) {
          let scene = this.scene;
          var tMesh = BABYLON.MeshBuilder.CreateSphere("turtle",
                                                       {diameterX: 0.25,
@@ -186,6 +186,11 @@ class Turtle3d {
    isPenUp() {return ! this.TurtleState.penIsDown;}
    isShown() {return this.TurtleState.isShown;}
 
+
+   getTrackMeshes() {
+      return this.scene.getMeshesByTags('track'+this.getTurtle());
+   }
+
    // setters
 
    // setColor sets the diffuse color of the current material
@@ -214,9 +219,11 @@ class Turtle3d {
       if (m == null) {
          if (this.materialList[this.TurtleState.trackMaterial] == null) {
             m = new BABYLON.StandardMaterial("trackMat", scene);
+            m.twoSidedLighting = true;
             this.TurtleState.trackMaterial = 0;
             this.TurtleState.color = normalizeColor('green');
-         } else {
+
+      } else {
             m = this.materialList[this.TurtleState.trackMaterial].clone();
          }
       }
@@ -314,8 +321,7 @@ class Turtle3d {
       if (savedstate.trackMesh != null) { ts.trackMesh = savedstate.trackMesh;}
       if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
 
-      const cidx = ts.trackMaterial;
-      ts.color = normalizeColor(this.materialList[cidx].diffuseColor);
+      //this.materialList[ts.trackMaterial];
 
       let s = this.getTurtleShape();
       if (s != '') {
@@ -380,6 +386,8 @@ class Turtle3d {
    // you can set your own shape - untested
    // this uses your shape, as is
    setTurtleShape(val) {
+      let t = this.TurtleState.Turtle;
+      BABYLON.Tags.AddTagsTo(val, t, this.scene);
       this.TurtleState.turtleShape = val; // a mesh
       return this;
    }
@@ -592,17 +600,21 @@ class Turtle3d {
       let H = this.getH();
       let p1 = v.cross(H).scale(-1); // left axis
       if (p1.length() < 1.0e-10) {
-         return this;  // v is nearly parallel to H
+         // v is nearly parallel to H
+         if (BABYLON.Vector3.Dot(v, H) < 0) {
+            // ok parallel but reversed }
+            this.yaw(180);
+         }
+      } else {
+         v.normalize();
+         p1.normalize();
+         let p2 = v.cross(p1).normalize().scale(-1); // up axis
+         // puts(`v: ${v}; perp1: ${p1}; perp2: ${p2}`);
+         this.#setH(v);
+         this.#setL(p1);
+         this.#setU(p2);
+         this.#orientTurtle();
       }
-      v.normalize();
-      p1.normalize();
-      let p2 = v.cross(p1).normalize().scale(-1); // up axis
-      // puts(`v: ${v}; perp1: ${p1}; perp2: ${p2}`);
-      this.#setH(v);
-      this.#setL(p1);
-      this.#setU(p2);
-
-      this.#orientTurtle();
       return this;
    }
 
