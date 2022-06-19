@@ -94,6 +94,8 @@ RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)
 //var pfindReStr=`(${param1ReStr}),?`
 //var pfindRe = new RegExp(pfindReStr, "g"); //use in loop to find parameters
 
+// ParameterizedModule class
+// {m: <modulename>, p: <parameter array> }
 var ParameterizedModule = function(name, parms) {
    this.m = name;
    //this.p = parms.split(','); doesn't work for expressions like (x,atan(y,x))
@@ -124,7 +126,9 @@ var ParameterizedModule = function(name, parms) {
    this.p = parseParens(parms);
    this.toString = function() {return this.m + '(' + this.p.toString() + ')';}
    this.clone = function() {
-      return new ParameterizedModule(this.m, this.p.toString());
+      let pm =  new ParameterizedModule(this.m, '');
+      pm.p = Array.from(this.p);
+      return pm;
    }
 }
 //var formalparmsReStr=`(${varnameReStr})(,\[^)]+)?`;
@@ -133,7 +137,7 @@ var ParameterizedModule = function(name, parms) {
 
 // the goal is to handle most Lsystems defined in TABOP, The Algorithmic Beauty of Plants,
 // or by the Lsystems programs developed Przemyslaw Prusinkiewicz' group at the University
-//  of Calgary, available here: http://algorithmicbotany.org
+// of Calgary, available here: http://algorithmicbotany.org
 class Lsystem {
    about() {
       puts('the goal is to handle most Lsystems defined in TABOP, The Algorithmic Beauty of Plants,');
@@ -289,6 +293,12 @@ class Lsystem {
    }
 
 
+   /*
+     Parse a user supplied spec
+     The Parse function is a wrapper for a bunch of variables used in the parse functions and 
+     delegates all the work to parseHelper.
+     Returns a parsed Lsystem instance
+    */ 
    static Parse (spec) {
       const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_TRANSITION=3;
       // preprocess the spec with standard Cpp-like preprocessor
@@ -336,7 +346,7 @@ class Lsystem {
                if(lstart >= s.length) {
                   puts(r);
                   return s.length;
-               } else if (s[lstart] == ' ' || s[lstart]=='\t') { // whitespace at BOL
+               } else if (s[lstart] == ' ' || s[lstart] == '\t') { // whitespace at BOL
                   if (s.slice(lstart,s.length-1).match(/[ \\t]+\\n/)) {
                      puts(r);
                      return eol_;
@@ -608,6 +618,7 @@ class Lsystem {
          // then break leftside into: [lcontext <] strictpredecessor [> rcontext] [: condition]
          // prodname, lcontext, rcontext, and condition are optional. 
          // condition is only for parameterized lsystems. 
+         // condition breaks into: [{precondition expr}] test [{postcondition expr}]
          // TABOP is fairly consistent for parameterized systems, but
          // kinda all over the map in terms of syntax. This tries to follow the grammar
          // and meaning described in documentation of the software here:
@@ -626,7 +637,7 @@ class Lsystem {
 
          m = RE.prodTop.exec(line);        // .replaceAll(' ',''));
          if (m == null) {
-            puts(`Unrecognized production: ${line}`); 
+            puts(`Unrecognized production: ${line}`, LSYS_PARSE, LSYS_IN_PROD); 
             return null;
          }
          //puts(m);
@@ -648,10 +659,11 @@ class Lsystem {
          ];
 
          condition = leftside[4];   // undefined or not
-         puts(`parseProd: condition = ${condition}`);
+         puts(`parseProd: condition = ${condition}`, LSYS_PARSE, LSYS_PARSE_PROD);
          if (condition) {
             condition = condition.replace(RE.asterisk,'');
-            puts(`parseProd: condition = ${condition} after asterisk replacement`);
+            puts(`parseProd: condition = ${condition} after asterisk replacement`, LSYS_PARSE, LSYS_PARSE_PROD);
+            
          }
          if (condition) {
             needScope=true;
@@ -855,7 +867,7 @@ class Lsystem {
       } else {
          ls.current = axiom;
       }
-      puts(`axiom: ${ls.current}`);
+      puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       let mstring = ls.current;
       let lsnext;
       let lsLabel = ls.label;
@@ -863,8 +875,8 @@ class Lsystem {
       let lsStack = [];
       let restrict = ls.restrict;
       let niter = (ls.Dlength ? ls.Dlength : 1);
-      puts(`Number of iterations is ${niter}`);
-      // parallelize this later
+      puts(`Number of iterations is ${niter}`, LSYS_REWRITE);
+      // parallelize this later?
       let clength;
       for (let i=0; i < niter; i++) {
          clength = mstring.length;
@@ -890,6 +902,7 @@ class Lsystem {
                if (this.formalMatch(strictp, node, scope)) {
 		  let lctxt = pred[0];
 		  let rctxt = pred[2];
+ // todo: evaluate pre-condition expression before evaluating scope._test_()
          	  if (! lctxt.length && ! rctxt.length && scope._test_()) {
                      lsnext[n] = this.expand(rule);
                      doExpand=true;
