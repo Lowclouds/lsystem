@@ -1,4 +1,3 @@
-
 // const myHeading = document.querySelector('h1');
 // myHeading.textContent = 'An L-system interpreter';
 
@@ -53,13 +52,13 @@ const skysize = 5000;
 
 // Add your code here matching the playground format
 const createScene = function () {
-    
+   
    const scene = new BABYLON.Scene(engine);  
-    
-  // const camera = new BABYLON.ArcRotateCamera("Camera",0,0,20, BABYLON.Vector3.Zero(), scene);
-  //  camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-  //  camera.wheelDeltaPercentage = 0.001;
-  //  camera.zoomToMouseLocation = true;
+   
+   // const camera = new BABYLON.ArcRotateCamera("Camera",0,0,20, BABYLON.Vector3.Zero(), scene);
+   //  camera.setPosition(new BABYLON.Vector3(2, 5,-10));
+   //  camera.wheelDeltaPercentage = 0.001;
+   //  camera.zoomToMouseLocation = true;
    camera = new BABYLON.UniversalCamera("camera", cameraHomePosition.clone(), scene);
    camera.setTarget(cameraHomeTarget.clone());
    camera.inputs.addMouseWheel();
@@ -72,14 +71,14 @@ const createScene = function () {
    // light.intensity = 1.25
    // light.diffuse = new BABYLON.Color3(206/255, 227/255, 240/255);
    // light.groundColor = new BABYLON.Color3(1, 1, 1);
-
-  // scene.ambientColor = new BABYLON.Color3(1, 1, 1);
+   // scene.ambientColor = new BABYLON.Color3(1, 1, 1);
 
    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
-   var gMaterial = new BABYLON.StandardMaterial("gMaterial", scene);
-   
-   gMaterial.diffuseColor = new BABYLON.Color3(.58, .58, .58);
-   ground.material = gMaterial;
+   var gmaterial = new BABYLON.StandardMaterial("gmaterial", scene);
+   var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.57,0.46,0.30)});
+   gmaterial.ambientTexture = gtexture;
+   //gmaterial.diffuseColor = new BABYLON.Color3(.58, .58, .58);
+   ground.material = gmaterial;
 
    // var  pack = new BABYLON.TexturePacker('TestPack', [], {}, scene);
    // loadTpack(pack,gMaterial);
@@ -104,12 +103,12 @@ const scene = createScene(); //Call the createScene function
 
 // Register a render loop to repeatedly render the scene
 engine.runRenderLoop(function () {
-    scene.render();
+   scene.render();
 });
 
 // Watch for browser/canvas resize events
 window.addEventListener("resize", function () {
-    engine.resize();
+   engine.resize();
 });
 
 function markSky(t,axis='x', r=skysize/2) {
@@ -204,66 +203,68 @@ updateTurtleInfo(t,0);
 makeAxes();
 //markSky(t);
 
- turtleCtrlBtn.addEventListener("click", () => {
-    try {
-       let tcshown = turtleCtrlBtn.textContent;
-       let tall = document.getElementById("turtleall");
-       if (tcshown == '>') {
-          tall.style.display = '';
-          turtleCtrlBtn.textContent = 'v';
-       } else {
-          tall.style.display = 'none';
-          turtleCtrlBtn.textContent = '>';
-       }
-    } catch (error) {}
- });
+turtleCtrlBtn.addEventListener("click", () => {
+   try {
+      let tcshown = turtleCtrlBtn.textContent;
+      let tall = document.getElementById("turtleall");
+      if (tcshown == '>') {
+         tall.style.display = '';
+         turtleCtrlBtn.textContent = 'v';
+      } else {
+         tall.style.display = 'none';
+         turtleCtrlBtn.textContent = '>';
+      }
+   } catch (error) {}
+});
 
- turtleInfoBtn.addEventListener("click", () => {
-    try {
-       let tcshown = turtleInfoBtn.textContent;
-       let tctrls = document.getElementById("turtleinfo");
-       if (tcshown == '>') {
-          tctrls.style.display = '';
-          turtleInfoBtn.textContent = 'v';
-       } else {
-          tctrls.style.display = 'none';
-          turtleInfoBtn.textContent = '>';
-       }
-    } catch (error) {}
- });
+turtleInfoBtn.addEventListener("click", () => {
+   try {
+      let tcshown = turtleInfoBtn.textContent;
+      let tctrls = document.getElementById("turtleinfo");
+      if (tcshown == '>') {
+         tctrls.style.display = '';
+         turtleInfoBtn.textContent = 'v';
+      } else {
+         tctrls.style.display = 'none';
+         turtleInfoBtn.textContent = '>';
+      }
+   } catch (error) {}
+});
 
 showhidebtn.addEventListener("click", () => {
-    try {
-        if (t.isShown()) {
-           t.hide();
-           showhidebtn.textContent = "Show";
+   try {
+      if (t.isShown()) {
+         t.hide();
+         showhidebtn.textContent = "Show";
 
-           if (t1) {t1.show();}
-        } else {
-           t.show();
-           showhidebtn.textContent = "Hide";
+         if (t1) {t1.show();}
+      } else {
+         t.show();
+         showhidebtn.textContent = "Hide";
 
-           if (t1) {t1.hide();}
-        }
-    } catch (error) { }// ignore
+         if (t1) {t1.hide();}
+      }
+   } catch (error) { }// ignore
 })
+
 clearbtn.addEventListener("click", () => {
-    try {
-        t.clear();
-    } catch (error) {}
-    try {
-        t1.clear();
-    } catch (error) {}
+   try {
+      t.clear();
+   } catch (error) {}
+   try {
+      t1.clear();
+   } catch (error) {}
 });
+
 homebtn.addEventListener("click", () => {
-    try {
-       t.home();
-       //camera.setTarget(t.getPos());
-    } catch (error) {}
-    try {
-       t1.home();
-       //camera.setTarget(t1.getPos());
-    } catch (e) {}
+   try {
+      t.home();
+      //camera.setTarget(t.getPos());
+   } catch (error) {}
+   try {
+      t1.home();
+      //camera.setTarget(t1.getPos());
+   } catch (e) {}
 });
 
 resetbtn.addEventListener("click", () => {
@@ -276,52 +277,8 @@ resetbtn.addEventListener("click", () => {
 });
 
 cameraTargetbtn.addEventListener("click", () => {
-   // puts('trying to reset camera');
-   //       camera.detachControl(canvas);
-   //       camera.position(new BABYLON.Vector3(2,5, -10));
-   //       camera.cameraDirection(new BABYLON.Vector3(0,0,0));
-   //       camera.attachControl(canvas,true);
    camera.setTarget(t.getPos());
 });
-
-// var walking = false;
-// selectbtn.addEventListener("click", () => {
-//    if (! walking ) {
-//       let count=0;
-//       let tt = new Turtle3d();
-//       turtleInfo[1][0].textContent = tt.getTurtle();
-//       tt.setColor([0,.6,.8]);
-//       function randomWalk() {
-//          for (let n=0; n<10; n++) {
-//             let choice  = Math.random() * 3;
-//             if (choice < 1) {
-//                tt.yaw(Math.random()*360);
-//             } else if(choice < 2) {
-//                tt.pitch(Math.random()*360);
-//             } else {
-//                tt.roll(Math.random()*360);
-//             }
-//             tt.fd((Math.random() - 0.5) * 10);
-//             count++;
-//          }
-//          let p = tt.getPos();
-//          if (p.length() > 50) {
-//             tt.penUp();
-//             tt.goto([0,0,0]);
-//             tt.penDown();
-//             tt.setColor([Math.random(),Math.random(),Math.random()]);
-//             turtleInfo[1][1].textContent = count;
-            
-//          }
-//       }
-//       scene.registerAfterRender(randomWalk);
-//       walking = true;
-//    } else {
-//       scene.unregisterAfterRender(randomWalk);
-//       walking =  false;
-//    }
-// });
-
 
 const lsSrc = document.getElementById('lsSrc');
 const lsFile = document.getElementById('lsFile');
@@ -335,14 +292,15 @@ const lsCode = document.getElementById('lsCode');
 lsSrc.placeholder = 'Paste/enter/edit your L-system here';
 lsResult.placeholder = 'Empty';
 
-btnParse = document.getElementById('btnParse');
-btnRewrite = document.getElementById('btnRewrite');
-btnDraw = document.getElementById('btnDraw');
-btnRPRD = document.getElementById('btnRPRD');
-btnAllTracks = document.getElementById('btnAllTracks');
+const btnParse = document.getElementById('btnParse');
+const btnRewrite = document.getElementById('btnRewrite');
+const btnDraw = document.getElementById('btnDraw');
+const btnRPRD = document.getElementById('btnRPRD');
+//const btnAllTracks = document.getElementById('btnAllTracks');
+const btnMSave = document.getElementById('btnMSave');
 
-lblNumNodes = document.getElementById('numNodes');
-lblNumDrawn = document.getElementById('numDrawn');
+const lblNumNodes = document.getElementById('numNodes');
+const lblNumDrawn = document.getElementById('numDrawn');
 
 
 var lsState = 'Start';
@@ -350,28 +308,24 @@ var lsys; // = new Lsystem();
 
 btnParse.onclick = function() {
    let spec = lsSrc.value;
-   lsys = Lsystem.Parse(spec);
-   lsResult.value = lsys.serialize();
-   lsState = 'Parsed';          // unused
+   try {
+      lsys = Lsystem.Parse(spec);
+      lsResult.value = lsys.serialize();
+      lsState = 'Parsed';          // unused
+   } catch(error) {
+      puts(`Parse failed: ${error}`);
+   }
 }
 
-// btnCpp.onclick = function() {
-//    if (lsState != 'Start') {
-//       if (btnCpp.textContent == 'Show CPP') {
-//          lsResult.value = lsys.spec;
-//          btnCpp.textContent = 'Show Parse';
-//       } else {
-//          lsResult.value = lsys.serialize();
-//          btnCpp.textContent = 'Show CPP';
-//       }
-//    }
-// }
-
 btnRewrite.onclick = function() {
-    if (lsys && lsResult.textContent != 'Empty') {
-       lsResult.value =listtostr(lsys.Rewrite()); //.toString();
-       lsState = 'Rewritten';
-    }
+   if (lsys && lsResult.textContent != 'Empty') {
+      try {
+         lsResult.value =listtostr(lsys.Rewrite()); //.toString();
+         lsState = 'Rewritten';
+      } catch (error) {
+         puts(`Rewrite failed: ${error}`);
+      }
+   }
 }
 
 function loadLSfile(event) {
@@ -436,12 +390,36 @@ var rwresult=null;
 var interpOpts=null;
 var tracksAlways = false;
 
-btnAllTracks.textContent = 'Tracks Off';
-
 btnDraw.addEventListener("click", () => {
     try {
-       turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
-    } catch (error) {puts(error);}
+       btnMSave.disabled = true;
+       btnDraw.disabled = true;
+       btnRPRD.disabled = true;
+       //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
+       turtleInterp(t, lsys, {gencode: codegenOn})
+          .then(value => {
+             camera.setTarget(newV(0,10,0));
+             if (t.getTrackMeshes().length == 0) {
+                btnMSave.disabled = true;
+             } else {
+                btnMSave.disabled = false;
+                btnDraw.disabled = false;
+                btnRPRD.disabled = false;
+             }
+          }).catch(error => {
+             puts(error);
+             btnMSave.disabled = true;
+             btnDraw.disabled = false;
+             btnRPRD.disabled = false;
+          })
+    } catch (error) {
+       puts(error);
+       if (t.getTrackMeshes().length == 0) {
+          btnMSave.disabled = true;
+          btnRPRD.disabled = false;
+          btnDraw.disabled = false;
+       }
+    }
 });
 
 btnRPRD.addEventListener("click", () => {
@@ -460,24 +438,76 @@ btnRPRD.addEventListener("click", () => {
           //camera.setTarget(t.getPos());
           /* --------- draw ---------*/
           // t.setHeading([0,1,0]);
-          turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
+          btnMSave.disabled = true;
+          btnDraw.disabled = true;
+          btnRPRD.disabled = true;
+          //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
+          turtleInterp(t, lsys, {gencode: codegenOn})
+             .then(value => {
+                camera.setTarget(newV(0,10,0));
+                if (t.getTrackMeshes().length == 0) {
+                   btnMSave.disabled = true;
+                   btnDraw.disabled = false;
+                   btnRPRD.disabled = false;
+                } else {
+                   btnMSave.disabled = false;
+                   btnDraw.disabled = false;
+                   btnRPRD.disabled = false;
+                }
+             }).catch(error => {
+                puts(error);
+                btnMSave.disabled = true;
+                btnDraw.disabled = false;
+                btnRPRD.disabled = false;
+             })
        }
     } catch (error) {puts(error);}
 });
 
-btnAllTracks.addEventListener("click", () => {
-   try {
-      if (tracksAlways) {
-         btnAllTracks.textContent = 'Tracks Off';
-      } else {
-         btnAllTracks.textContent = 'Tracks On';
-      }
-      tracksAlways = !tracksAlways;
-   } catch (error) {puts(error);}
+btnMSave.toggleAttribute('disabled');
+btnMSave.addEventListener("click", () => {
+    let meshes = t.getTrackMeshes();
+    if (meshes.length) {
+       let fname = "lsys";
+       saveLsystemMeshes(fname, meshes);
+    } else {
+       puts('No meshes to save');
+    }
 });
 
+/* --------------------------------------------------------------------------------
+   Save mesh to file
+   -------------------------------------------------------------------------------- */
+
+function saveLsystemMeshes(filename, meshes) {
+   
+   let mlist = meshes;
+   let options = {
+      shouldExportNode: function (node) {
+         return mlist.includes(node);
+      },
+   };
+
+   //BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
+   BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
+     gltf.downloadFiles();
+   });
+}
+
+// btnAllTracks.textContent = 'Tracks Off';
+// btnAllTracks.addEventListener("click", () => {
+//    try {
+//       if (tracksAlways) {
+//          btnAllTracks.textContent = 'Tracks Off';
+//       } else {
+//          btnAllTracks.textContent = 'Tracks On';
+//       }
+//       tracksAlways = !tracksAlways;
+//    } catch (error) {puts(error);}
+// });
+
 // load an example file
-fetch('./tests/3d-a.ls')
+fetch('./tests/3d-a1.ls')
    .then( response => {
       if (! response.ok) {
          throw new Error(`${response.status}`);
@@ -498,12 +528,17 @@ fetch('./tests/3d-a.ls')
          //camera.setTarget(t.getPos());
          /* --------- draw ---------*/
          // t.setHeading([0,1,0]);
-         turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
-         camera.setTarget(newV(0,10,0));
-   }
+         turtleInterp(t, lsys, {gencode: codegenOn})
+            .then(value => {
+               camera.setTarget(newV(0,10,0));
+               btnMSave.disabled = false;
+            }).catch(error => {
+               puts(error);
+               btnMSave.disabled = true;
+            })
+      }
    })
    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
-
 
 // ------------------------------------------------------------
 //  end of UI
@@ -620,28 +655,12 @@ function createMesh(poly) {
    return {vdata: vertexData, mat: amat, mesh: amesh};
 }
 
-/* --------------------------------------------------------------------------------
-   Save mesh to file
-   -------------------------------------------------------------------------------- */
-var objectUrl;
 
-function downloadMesh(filename, mesh) {
-   if (objectUrl) {
-      window.URL.revokeObjectURL(objectUrl);
-   }
+   // var objectUrl;
 
-   let options = {
-      shouldExportNode: function (node) {
-         return node == mesh;
-      },
-   };
-
-//    BABYLON.GLTF2Export.GLBAsync(scene, "test1", options).then((glb) => {
-   BABYLON.GLTF2Export.GLTFAsync(scene, "test1.gltf", options).then((gltf) => {
-      gltf.downloadFiles();
-   });
-   return mesh;
-
+   // if (objectUrl) {
+   //    window.URL.revokeObjectURL(objectUrl);
+   // }
    // var serializedMesh = BABYLON.SceneSerializer.SerializeMesh(mesh);
 
    // var strMesh = JSON.stringify(serializedMesh);
@@ -661,7 +680,7 @@ function downloadMesh(filename, mesh) {
    // var click = document.createEvent("MouseEvents");
    // click.initEvent("click", true, false);
    // link.dispatchEvent(click);
-}
+
 
 
 /* --------------------------------------------------------------------------------

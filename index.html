@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -11,12 +12,13 @@
                 width: 100%;
                 height: 100%;
                 margin: 0;
-                padding: 2px;
+                padding: 1px;
+                font-size: 10px;
             }
 	    .mbox {
 		display: flex;
 		width: 100%;
-		height: 80%;
+		height: 100%;
 	    }
 
             #renderCanvas {
@@ -29,16 +31,26 @@
 	        overflow: auto;
 		width:38%;
 		height:100%;
+                font-size: 1.5rem;
 	    }
             .lsystem {
                 width: 95%;
             }
             .section-info {
-                width: 95%;
+                width: 100%;
                 display: flex;
                 flex: auto;
                 column-gap: 2em;
-              
+            }
+
+            .section-details {
+                width: 95%;
+                display: flex;
+                flex: auto;
+                font-size: 1rem;
+            }
+            .buttonbar, button {
+                font-size: 1.2rem;
             }
 	    .tbl {
 		width: 95%;
@@ -63,6 +75,7 @@
                 padding: 0;
                 width: 100%;
             }
+            
             .styled:disabled {
                 background-color: rgba(160,160,160,1);
             }
@@ -72,6 +85,7 @@
 	<script src="https://cdn.babylonjs.com/babylon.js"></script>
         <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
         <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
         <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/earcut@2.2.3/dist/earcut.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/earcut@2.2.3/dist/earcut.min.js"></script>
@@ -130,7 +144,7 @@
 	   <div class="section-info">
 	     <div>L-System Controls</div>
              <div> <a href="./content/quick-guide.html">Quick Guide</a> </div>
-           </div class="section-info">
+           </div class="section-details">
 	   <!--- <label for="lsFile">Load: </label> -->
 	     <input id="lsFile" name="lsFile" type="file" accept=".ls,.txt,text/plain">
              <button id="lsSave" name="lsSave">Save</button>
@@ -144,7 +158,9 @@
 	       <button class="abutton"  id="btnRewrite">Rewrite</button>
 	       <button class="abutton"  id="btnDraw">Draw</button>
 	       <button class="abutton"  id="btnRPRD">Reset-and-Draw</button>
-	       <button class="abutton"  id="btnAllTracks">Tracks On</button>
+	       <button class="abutton"  id="btnMSave">Save Mesh</button>
+
+	       <!-- <button class="abutton"  id="btnAllTracks">Tracks On</button> -->
 
                <button class="lsprogress" id="numNodes">0</button>
                <button class="lsprogress" id="numDrawn">0</button>
