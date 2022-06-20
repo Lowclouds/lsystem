@@ -6,6 +6,7 @@ This implemention supports fully parameterized modules, as well as context-sensi
 
     A(x) < B(y) > C(z) : x+y+z > 10 --> E((x+y)/2)F((y+z)/2)
 
+Babylonjs, (https://www.babylonjs.com/), is a primary reason this exists at all, since all of the underlying geometry is built on top of it. The 3D turtle extrudes configurable shapes as it moves around, and uses the underlying scene, camera, lighting, materials, textures. You can save generated meshes to disk and open them in Blender, and someday, maybe able to import gltf meshes as turtle shapes or as surfaces. Thank you, Babylonjs team. 
 It uses mathjs for interpreting parameter values and expressions, so pretty much anything the mathjs expression evaluator can do is possible in expressions and parameters.
 
    It does not implement stochastic L-systems, but that can be closely approximated by parametric expressions and could be made essentially equivalent.
@@ -19,7 +20,7 @@ Features in the  works:
    - Array specified contours and surfaces
    - L-system surface generation
    - Textures - currently just standard materials
-   - Help and a quick reference guide
+   - Help references
    - A set of examples/tests, many taken from the book, 'The Algorithmic Beauty of Plants'
    
    
