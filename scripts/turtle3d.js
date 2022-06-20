@@ -188,7 +188,7 @@ class Turtle3d {
 
 
    getTrackMeshes() {
-      return this.scene.getMeshesByTags('track'+this.getTurtle());
+      return this.scene.getMeshesByTags('track'+this.getTurtle() + ' !colortable' );
    }
 
    // setters
@@ -1605,6 +1605,7 @@ function generateMint(r=1, d=0.2, q=8) {
 }
 
 function showColorTable(tu) {
+   let tstate = tu.getState();
    tu.penUp();
    tu.home();
    tu.goto(0,1,0);
@@ -1612,6 +1613,7 @@ function showColorTable(tu) {
    let rows = Math.round(Math.sqrt(size) + 0.5);
    puts (`ct size: ${size}, rows: ${rows}`);
    let m = 0;
+   tu.setTag('colortable')
    tu.setSize(0.025, true);
    tu.penDown();
    for (let r = 0; r < rows; r++) {
@@ -1633,6 +1635,8 @@ function showColorTable(tu) {
       tu.fd(1);                 // goto next row
       tu.yaw(-90);
    }
+   tu.setTag('');
+   tu.setState(tstate);
 }
 // some helper functions
 //var puts =console.log;          // nod to TCL

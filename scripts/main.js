@@ -40,6 +40,317 @@ function updateTurtleInfo(t,idx) {
    turtleInfo[idx][4].textContent = vround(t.getU(),2);
 }
 
+turtleCtrlBtn.addEventListener("click", () => {
+   try {
+      let tcshown = turtleCtrlBtn.textContent;
+      let tall = document.getElementById("turtleall");
+      if (tcshown == '>') {
+         tall.style.display = '';
+         turtleCtrlBtn.textContent = 'v';
+      } else {
+         tall.style.display = 'none';
+         turtleCtrlBtn.textContent = '>';
+      }
+   } catch (error) {}
+});
+
+turtleInfoBtn.addEventListener("click", () => {
+   try {
+      let tcshown = turtleInfoBtn.textContent;
+      let tctrls = document.getElementById("turtleinfo");
+      if (tcshown == '>') {
+         tctrls.style.display = '';
+         turtleInfoBtn.textContent = 'v';
+      } else {
+         tctrls.style.display = 'none';
+         turtleInfoBtn.textContent = '>';
+      }
+   } catch (error) {}
+});
+
+showhidebtn.addEventListener("click", () => {
+   try {
+      if (t.isShown()) {
+         t.hide();
+         showhidebtn.textContent = "Show";
+
+         if (t1) {t1.show();}
+      } else {
+         t.show();
+         showhidebtn.textContent = "Hide";
+
+         if (t1) {t1.hide();}
+      }
+   } catch (error) { }// ignore
+})
+
+clearbtn.addEventListener("click", () => {
+   try {
+      t.clear();
+   } catch (error) {}
+   try {
+      t1.clear();
+   } catch (error) {}
+});
+
+homebtn.addEventListener("click", () => {
+   try {
+      t.home();
+      //camera.setTarget(t.getPos());
+   } catch (error) {}
+   try {
+      t1.home();
+      //camera.setTarget(t1.getPos());
+   } catch (e) {}
+});
+
+resetbtn.addEventListener("click", () => {
+   try {
+      t.reset();
+      // initCTable(t);
+      camera.position.subtractInPlace(camera.position.subtract(cameraHomePosition));
+      camera.setTarget(t.getPos());
+   } catch (error) {}
+});
+
+
+var showColorTablebtn= document.getElementById('btn6');
+showColorTablebtn.textContent = 'Show Color Table';
+
+cameraTargetbtn.addEventListener("click", () => {
+   camera.setTarget(t.getPos());
+});
+
+showColorTablebtn.addEventListener("click", () => {
+   let tracks = scene.getMeshesByTags('track'+t.getTurtle() + '&& colortable'); 
+   if (tracks.length == 0) {
+      showColorTable(t);
+      showColorTablebtn.textContent = 'Hide Color Table';
+   } else {
+      let toggle = ! tracks[0].isVisible;
+      tracks.forEach(m => m.isVisible = toggle);
+      if (toggle) {
+         showColorTablebtn.textContent = 'Hide Color Table';
+      } else {
+         showColorTablebtn.textContent = 'Show Color Table';
+      }
+   }
+});
+
+
+/* -------------- end of turtle controls ----------------------- */
+/* --------------start of lsystem controls --------------------- */
+const lsSrc = document.getElementById('lsSrc');
+const lsFile = document.getElementById('lsFile');
+const lsSave = document.getElementById('lsSave');
+const lsResult = document.getElementById('lsResult');
+const lsSaveCode = document.getElementById('lsSaveCode');
+const lsSaveCodeEnable = document.getElementById('lsSaveCodeEnable');
+
+const lsCode = document.getElementById('lsCode');
+
+lsSrc.placeholder = 'Paste/enter/edit your L-system here';
+lsResult.placeholder = 'Empty';
+
+const btnParse = document.getElementById('btnParse');
+const btnRewrite = document.getElementById('btnRewrite');
+const btnDraw = document.getElementById('btnDraw');
+const btnRPRD = document.getElementById('btnRPRD');
+//const btnAllTracks = document.getElementById('btnAllTracks');
+const btnMSave = document.getElementById('btnMSave');
+
+const lblNumNodes = document.getElementById('numNodes');
+const lblNumDrawn = document.getElementById('numDrawn');
+
+btnParse.onclick = function() {
+   let spec = lsSrc.value;
+   try {
+      lsys = Lsystem.Parse(spec);
+      lsResult.value = lsys.serialize();
+      lsState = 'Parsed';          // unused
+   } catch(error) {
+      puts(`Parse failed: ${error}`);
+   }
+}
+
+btnRewrite.onclick = function() {
+   if (lsys && lsResult.textContent != 'Empty') {
+      try {
+         lsResult.value =listtostr(lsys.Rewrite()); //.toString();
+         lsState = 'Rewritten';
+      } catch (error) {
+         puts(`Rewrite failed: ${error}`);
+      }
+   }
+}
+
+function loadLSfile(event) {
+   let file = lsFile.files.item(0);
+   if (file != null) {
+      let reader = new FileReader();
+      
+      reader.onload = function() {
+         lsSrc.value = reader.result;
+         //lsResult.value = '';
+         lsState='Start';
+         // btnCpp.textContent = 'Show CPP';
+      }
+      reader.readAsText(file);
+    }
+}
+
+lsFile.onchange = loadLSfile;
+
+function saveasLSfile(event) {
+   let file;
+   if (lsFile.files.item(0) === null) {
+      file = 'tmp.ls';
+   } else {
+      file = lsFile.files.item(0).name;
+   }
+   if (lsSrc.value != '') {
+      puts(`Saving to file: ${file}`);
+      var blob = new Blob( [lsSrc.value], {type: "text/plain;charset=utf-8"});
+      saveAs.saveAs(blob, file);
+   } else {
+      puts(`failed saving: ${lsSrce.value} to ${file}`);
+   }
+}
+
+lsSave.addEventListener("click", saveasLSfile);
+
+lsSaveCode.addEventListener("click", () => {
+   let file = 'gencode.js';
+   if (lsCode.value != "") {
+      var blob = new Blob( [lsCode.value], {type: "text/plain;charset=utf-8"});
+      saveAs.saveAs(blob, file);
+   };
+});
+
+lsSaveCodeEnable.addEventListener("click", () => {
+   let cv = lsSaveCodeEnable.textContent;
+   if (cv == 'Gen Code') {
+      codegenOn = true;
+      lsSaveCodeEnable.textContent = 'No Code';
+   } else {
+      codegenOn = false;
+      lsSaveCodeEnable.textContent = 'Gen Code';
+   }
+   lsSaveCode.toggleAttribute('disabled');
+
+});
+
+
+btnDraw.addEventListener("click", () => {
+    try {
+       btnMSave.disabled = true;
+       btnDraw.disabled = true;
+       btnRPRD.disabled = true;
+       //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
+       turtleInterp(t, lsys, {gencode: codegenOn})
+          .then(value => {
+             camera.setTarget(newV(0,10,0));
+             if (t.getTrackMeshes().length == 0) {
+                btnMSave.disabled = true;
+             } else {
+                btnMSave.disabled = false;
+                btnDraw.disabled = false;
+                btnRPRD.disabled = false;
+                t.show();
+             }
+          }).catch(error => {
+             puts(error);
+             btnMSave.disabled = true;
+             btnDraw.disabled = false;
+             btnRPRD.disabled = false;
+             t.show();
+          })
+    } catch (error) {
+       puts(error);
+       if (t.getTrackMeshes().length == 0) {
+          btnMSave.disabled = true;
+          btnRPRD.disabled = false;
+          btnDraw.disabled = false;
+          t.show();
+       }
+    }
+});
+
+btnRPRD.addEventListener("click", () => {
+    try {
+       /* --------- reparse ---------*/
+       lsys = Lsystem.Parse(lsSrc.value);
+       lsResult.value = lsys.serialize();
+       lsState = 'Parsed';
+       /* --------- rewrite ---------*/
+       if (lsResult.textContent != 'Empty') {
+          lsResult.value = lsys.Rewrite(); //.toString();
+          lsState = 'Rewritten';
+          /* --------- reset ---------*/
+          t.reset();
+          //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
+          //camera.setTarget(t.getPos());
+          /* --------- draw ---------*/
+          // t.setHeading([0,1,0]);
+          btnMSave.disabled = true;
+          btnDraw.disabled = true;
+          btnRPRD.disabled = true;
+          //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
+          turtleInterp(t, lsys, {gencode: codegenOn})
+             .then(value => {
+                camera.setTarget(newV(0,10,0));
+                if (t.getTrackMeshes().length == 0) {
+                   btnMSave.disabled = true;
+                   btnDraw.disabled = false;
+                   btnRPRD.disabled = false;
+                   t.show();
+                } else {
+                   btnMSave.disabled = false;
+                   btnDraw.disabled = false;
+                   btnRPRD.disabled = false;
+                   t.show();
+                }
+             }).catch(error => {
+                puts(error);
+                btnMSave.disabled = true;
+                btnDraw.disabled = false;
+                btnRPRD.disabled = false;
+                t.show();
+             })
+       }
+    } catch (error) {puts(error);}
+});
+
+btnMSave.toggleAttribute('disabled');
+btnMSave.addEventListener("click", () => {
+    let meshes = t.getTrackMeshes();
+    if (meshes.length) {
+       let fname = "lsys";
+       saveLsystemMeshes(fname, meshes);
+    } else {
+       puts('No meshes to save');
+    }
+});
+
+/* --------------------------------------------------------------------------------
+   Save mesh to file
+   -------------------------------------------------------------------------------- */
+
+function saveLsystemMeshes(filename, meshes) {
+   
+   let mlist = meshes;
+   let options = {
+      shouldExportNode: function (node) {
+         return mlist.includes(node);
+      },
+   };
+
+   //BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
+   BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
+     gltf.downloadFiles();
+   });
+}
+
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
@@ -144,34 +455,6 @@ function markSky(t,axis='x', r=skysize/2) {
 }
       
 
-// function makeAxes (t, size=10) {
-//    var axes_displayed = true;
-//    var savedState = t.getState();
-//    var axis = [0, 0,size];;
-//    t.setTrack('line');
-//    t.setTag('axes');
-
-//    function makeAxis (color) {
-//       t.setColor(color);
-//       axis = roll(axis);
-//       t.penUp();
-//       t.home();
-//       t.setHeading(axis);
-//       t.goto(smult(-1,BABYLON.Vector3.FromArray(axis)));
-//       t.penDown();
-//       t.fd(2*size);
-//       t.pitch(150);
-//       t.fd(1); t.fd(-1);
-//       t.pitch(60);
-//       t.fd(1);
-//    }
-//    makeAxis('red');
-//    makeAxis([0,0.7,0]);
-//    makeAxis('blue');
-
-//    t.setState(savedState);
-// }
-
 function makeAxes (size=10) {
    var xaxis = BABYLON.Mesh.CreateLines('xaxis',[
       new BABYLON.Vector3(-20,0,0), 
@@ -203,296 +486,16 @@ updateTurtleInfo(t,0);
 makeAxes();
 //markSky(t);
 
-turtleCtrlBtn.addEventListener("click", () => {
-   try {
-      let tcshown = turtleCtrlBtn.textContent;
-      let tall = document.getElementById("turtleall");
-      if (tcshown == '>') {
-         tall.style.display = '';
-         turtleCtrlBtn.textContent = 'v';
-      } else {
-         tall.style.display = 'none';
-         turtleCtrlBtn.textContent = '>';
-      }
-   } catch (error) {}
-});
-
-turtleInfoBtn.addEventListener("click", () => {
-   try {
-      let tcshown = turtleInfoBtn.textContent;
-      let tctrls = document.getElementById("turtleinfo");
-      if (tcshown == '>') {
-         tctrls.style.display = '';
-         turtleInfoBtn.textContent = 'v';
-      } else {
-         tctrls.style.display = 'none';
-         turtleInfoBtn.textContent = '>';
-      }
-   } catch (error) {}
-});
-
-showhidebtn.addEventListener("click", () => {
-   try {
-      if (t.isShown()) {
-         t.hide();
-         showhidebtn.textContent = "Show";
-
-         if (t1) {t1.show();}
-      } else {
-         t.show();
-         showhidebtn.textContent = "Hide";
-
-         if (t1) {t1.hide();}
-      }
-   } catch (error) { }// ignore
-})
-
-clearbtn.addEventListener("click", () => {
-   try {
-      t.clear();
-   } catch (error) {}
-   try {
-      t1.clear();
-   } catch (error) {}
-});
-
-homebtn.addEventListener("click", () => {
-   try {
-      t.home();
-      //camera.setTarget(t.getPos());
-   } catch (error) {}
-   try {
-      t1.home();
-      //camera.setTarget(t1.getPos());
-   } catch (e) {}
-});
-
-resetbtn.addEventListener("click", () => {
-   try {
-      t.reset();
-      // initCTable(t);
-      camera.position.subtractInPlace(camera.position.subtract(cameraHomePosition));
-      camera.setTarget(t.getPos());
-   } catch (error) {}
-});
-
-cameraTargetbtn.addEventListener("click", () => {
-   camera.setTarget(t.getPos());
-});
-
-const lsSrc = document.getElementById('lsSrc');
-const lsFile = document.getElementById('lsFile');
-const lsSave = document.getElementById('lsSave');
-const lsResult = document.getElementById('lsResult');
-const lsSaveCode = document.getElementById('lsSaveCode');
-const lsSaveCodeEnable = document.getElementById('lsSaveCodeEnable');
-
-const lsCode = document.getElementById('lsCode');
-
-lsSrc.placeholder = 'Paste/enter/edit your L-system here';
-lsResult.placeholder = 'Empty';
-
-const btnParse = document.getElementById('btnParse');
-const btnRewrite = document.getElementById('btnRewrite');
-const btnDraw = document.getElementById('btnDraw');
-const btnRPRD = document.getElementById('btnRPRD');
-//const btnAllTracks = document.getElementById('btnAllTracks');
-const btnMSave = document.getElementById('btnMSave');
-
-const lblNumNodes = document.getElementById('numNodes');
-const lblNumDrawn = document.getElementById('numDrawn');
 
 
 var lsState = 'Start';
 var lsys; // = new Lsystem();
-
-btnParse.onclick = function() {
-   let spec = lsSrc.value;
-   try {
-      lsys = Lsystem.Parse(spec);
-      lsResult.value = lsys.serialize();
-      lsState = 'Parsed';          // unused
-   } catch(error) {
-      puts(`Parse failed: ${error}`);
-   }
-}
-
-btnRewrite.onclick = function() {
-   if (lsys && lsResult.textContent != 'Empty') {
-      try {
-         lsResult.value =listtostr(lsys.Rewrite()); //.toString();
-         lsState = 'Rewritten';
-      } catch (error) {
-         puts(`Rewrite failed: ${error}`);
-      }
-   }
-}
-
-function loadLSfile(event) {
-   let file = lsFile.files.item(0);
-   if (file != null) {
-      let reader = new FileReader();
-      
-      reader.onload = function() {
-         lsSrc.value = reader.result;
-         //lsResult.value = '';
-         lsState='Start';
-         // btnCpp.textContent = 'Show CPP';
-      }
-      reader.readAsText(file);
-    }
-}
-
-lsFile.onchange = loadLSfile;
-
-function saveasLSfile(event) {
-   let file;
-   if (lsFile.files.item(0) === null) {
-      file = 'tmp.ls';
-   } else {
-      file = lsFile.files.item(0).name;
-   }
-   if (lsSrc.value != '') {
-      puts(`Saving to file: ${file}`);
-      var blob = new Blob( [lsSrc.value], {type: "text/plain;charset=utf-8"});
-      saveAs.saveAs(blob, file);
-   } else {
-      puts(`failed saving: ${lsSrce.value} to ${file}`);
-   }
-}
-
-lsSave.addEventListener("click", saveasLSfile);
-
-lsSaveCode.addEventListener("click", () => {
-   let file = 'gencode.js';
-   if (lsCode.value != "") {
-      var blob = new Blob( [lsCode.value], {type: "text/plain;charset=utf-8"});
-      saveAs.saveAs(blob, file);
-   };
-});
-
-lsSaveCodeEnable.addEventListener("click", () => {
-   let cv = lsSaveCodeEnable.textContent;
-   if (cv == 'Gen Code') {
-      codegenOn = true;
-      lsSaveCodeEnable.textContent = 'No Code';
-   } else {
-      codegenOn = false;
-      lsSaveCodeEnable.textContent = 'Gen Code';
-   }
-   lsSaveCode.toggleAttribute('disabled');
-
-});
 
 var codegenOn = false;
 
 var rwresult=null;
 var interpOpts=null;
 var tracksAlways = false;
-
-btnDraw.addEventListener("click", () => {
-    try {
-       btnMSave.disabled = true;
-       btnDraw.disabled = true;
-       btnRPRD.disabled = true;
-       //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
-       turtleInterp(t, lsys, {gencode: codegenOn})
-          .then(value => {
-             camera.setTarget(newV(0,10,0));
-             if (t.getTrackMeshes().length == 0) {
-                btnMSave.disabled = true;
-             } else {
-                btnMSave.disabled = false;
-                btnDraw.disabled = false;
-                btnRPRD.disabled = false;
-             }
-          }).catch(error => {
-             puts(error);
-             btnMSave.disabled = true;
-             btnDraw.disabled = false;
-             btnRPRD.disabled = false;
-          })
-    } catch (error) {
-       puts(error);
-       if (t.getTrackMeshes().length == 0) {
-          btnMSave.disabled = true;
-          btnRPRD.disabled = false;
-          btnDraw.disabled = false;
-       }
-    }
-});
-
-btnRPRD.addEventListener("click", () => {
-    try {
-       /* --------- reparse ---------*/
-       lsys = Lsystem.Parse(lsSrc.value);
-       lsResult.value = lsys.serialize();
-       lsState = 'Parsed';
-       /* --------- rewrite ---------*/
-       if (lsResult.textContent != 'Empty') {
-          lsResult.value = lsys.Rewrite(); //.toString();
-          lsState = 'Rewritten';
-          /* --------- reset ---------*/
-          t.reset();
-          //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-          //camera.setTarget(t.getPos());
-          /* --------- draw ---------*/
-          // t.setHeading([0,1,0]);
-          btnMSave.disabled = true;
-          btnDraw.disabled = true;
-          btnRPRD.disabled = true;
-          //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
-          turtleInterp(t, lsys, {gencode: codegenOn})
-             .then(value => {
-                camera.setTarget(newV(0,10,0));
-                if (t.getTrackMeshes().length == 0) {
-                   btnMSave.disabled = true;
-                   btnDraw.disabled = false;
-                   btnRPRD.disabled = false;
-                } else {
-                   btnMSave.disabled = false;
-                   btnDraw.disabled = false;
-                   btnRPRD.disabled = false;
-                }
-             }).catch(error => {
-                puts(error);
-                btnMSave.disabled = true;
-                btnDraw.disabled = false;
-                btnRPRD.disabled = false;
-             })
-       }
-    } catch (error) {puts(error);}
-});
-
-btnMSave.toggleAttribute('disabled');
-btnMSave.addEventListener("click", () => {
-    let meshes = t.getTrackMeshes();
-    if (meshes.length) {
-       let fname = "lsys";
-       saveLsystemMeshes(fname, meshes);
-    } else {
-       puts('No meshes to save');
-    }
-});
-
-/* --------------------------------------------------------------------------------
-   Save mesh to file
-   -------------------------------------------------------------------------------- */
-
-function saveLsystemMeshes(filename, meshes) {
-   
-   let mlist = meshes;
-   let options = {
-      shouldExportNode: function (node) {
-         return mlist.includes(node);
-      },
-   };
-
-   //BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
-   BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
-     gltf.downloadFiles();
-   });
-}
 
 // btnAllTracks.textContent = 'Tracks Off';
 // btnAllTracks.addEventListener("click", () => {
@@ -532,9 +535,11 @@ fetch('./tests/3d-a1.ls')
             .then(value => {
                camera.setTarget(newV(0,10,0));
                btnMSave.disabled = false;
+               t.show();
             }).catch(error => {
                puts(error);
                btnMSave.disabled = true;
+               t.show();
             })
       }
    })
@@ -703,3 +708,31 @@ function loadTpack(pack, mat) {
     getJson.open("GET", './images/TestPack_texurePackage.json');
     getJson.send();
 }
+// function makeAxes (t, size=10) {
+//    var axes_displayed = true;
+//    var savedState = t.getState();
+//    var axis = [0, 0,size];;
+//    t.setTrack('line');
+//    t.setTag('axes');
+
+//    function makeAxis (color) {
+//       t.setColor(color);
+//       axis = roll(axis);
+//       t.penUp();
+//       t.home();
+//       t.setHeading(axis);
+//       t.goto(smult(-1,BABYLON.Vector3.FromArray(axis)));
+//       t.penDown();
+//       t.fd(2*size);
+//       t.pitch(150);
+//       t.fd(1); t.fd(-1);
+//       t.pitch(60);
+//       t.fd(1);
+//    }
+//    makeAxis('red');
+//    makeAxis([0,0.7,0]);
+//    makeAxis('blue');
+
+//    t.setState(savedState);
+// }
+
