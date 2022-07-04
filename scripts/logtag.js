@@ -124,3 +124,4 @@ const NTRP_PROGRESS      = 2n**30n;
 const NTRP_TRACKS        = 2n**31n;
 const NTRP_CONTOUR       = 2n**32n;
 const TRTL_HERMITE       = 2n**33n;
+const LSYS_REWRITE_VERB  = 2n**34n;

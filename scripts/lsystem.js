@@ -878,7 +878,8 @@ class Lsystem {
       puts(`Number of iterations is ${niter}`, LSYS_REWRITE);
       // parallelize this later?
       let clength;
-      for (let i=0; i < niter; i++) {
+      for (let i=1; i <= niter; i++) {
+         puts(`iteration ${i}\n${mstring}`, LSYS_REWRITE);
          clength = mstring.length;
 	 lsnext = mstring.slice();     // default production is to copy
          for (let n=0; n < clength; n++) {
@@ -888,17 +889,17 @@ class Lsystem {
             if (node == '%') {
                let on = n;
                n = this.cut(lsnext, n);
-               //puts(`cut lsnext from ${on} to ${n}:\n${lsnext}`);
+               puts(`cut lsnext from ${on} to ${n}:\n${lsnext}`, LSYS_REWRITE);
                continue;
             }
             // 
             let doExpand = false;
 	    for (const rule of rules) {
-               puts(`matching against rule: ${rule}`, LSYS_REWRITE);
+               puts(`matching against rule: ${rule}`, LSYS_REWRITE_VERB);
                let pred = rule[0]; // == [[lctxt] strictp [rctxt]]
                let scope = rule[3];
                let strictp = pred[1];
-               puts(`comparing  ${node} to strictp: ${strictp}`, LSYS_REWRITE);
+               puts(`comparing  ${node} to strictp: ${strictp}`, LSYS_REWRITE_VERB);
                if (this.formalMatch(strictp, node, scope)) {
 		  let lctxt = pred[0];
 		  let rctxt = pred[2];
@@ -923,7 +924,7 @@ class Lsystem {
                      if (doExpand) {
  // todo: evaluate post-condition expression 
                         lsnext[n] = this.expand(rule);
-                        puts(`this expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_EXPAND);
+                        puts(`this expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
                         break;  // stop looking through rules
                      }
 		  }
@@ -962,7 +963,7 @@ class Lsystem {
             }
          }
          mstring = flatten(lsnext);
-         puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
+         //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
       }
       ls.current = mstring;
       // this.next = null;
@@ -978,15 +979,15 @@ class Lsystem {
       let scope=rule[3];
       if (scope.hasOwnProperty('_expand_')) {
          successor = rule[2].slice();
-         puts(`successor after slice: ${successor}`, LSYS_EXPAND)
+         puts(`nominal rule: ${rule[0]} : ${rule[1]} --> : ${successor}`, LSYS_EXPAND)
          successor.forEach((mod,ndx) => {if (typeof mod == 'object') {
             let nmod = mod.clone();
             scope._expand_(nmod);
             puts(`expanded module: ${nmod}`, LSYS_EXPAND);
             successor[ndx] = nmod;
          }});
-         puts(`successor expanded: ${successor}`, LSYS_EXPAND);
-         puts(`rule successor: ${rule[2]}`, LSYS_EXPAND);
+         //puts(`successor: ${successor}`, LSYS_EXPAND);
+         puts(`actual successor: ${rule[2]}`, LSYS_EXPAND);
       } else {
          successor = rule[2];
       }

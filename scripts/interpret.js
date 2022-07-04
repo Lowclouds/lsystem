@@ -1,3 +1,4 @@
+
 // 
 // connect lsystem with turtle, implementing interpretation steps
 // 
@@ -8,6 +9,7 @@ function turtleInterp (ti, ls, opts=null) {
    idata = {
       step:  1,
       stemsize: 0.1,
+      stemstep: 0.1,
       delta: 90,
       ndelta: -90,
 
@@ -63,6 +65,23 @@ function turtleInterp (ti, ls, opts=null) {
       for (const p in opts) {
          idata[p] = opts[p];
          puts(`set idata[${p}] to ${opts[p]}`);
+      }
+   }
+   let view = ls.locals.get('view');
+   puts(`view is ${view}`);
+   if (view) {
+      if (view.position) {
+        // let vp = BABYLON.Vector3.FromArray(view.position);
+         //camera.position.fromArray(view.position);
+         camera.position.x = view.position.toArray()[0];
+         camera.position.y = view.position.toArray()[1];
+         camera.position.z = view.position.toArray()[2];
+         puts(`camera  position: ${camera.position} from ${view.position}`);
+      }
+      if (view.target) {
+         camera.setTarget( BABYLON.Vector3.FromArray(view.target.toArray()));
+         puts(`camera target: ${camera.target} from ${view.target}`);
+
       }
    }
    idata.ndelta= -1*idata.delta;
@@ -347,7 +366,7 @@ function turtleInterp (ti, ls, opts=null) {
                gencode(`ti.setSize(${idata.stemsize});\n`);
                break;
             }
-            case ",": {            // increment color table index
+            case ',': {            // increment color table index
                if (isPM) {
                   mi = p0;
                } else {
