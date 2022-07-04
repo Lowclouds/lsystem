@@ -16,12 +16,26 @@ easy, the last really appealing from a usability pov
 ** L-system generated
 Extrusions go a long way toward this already, maybe enhance this or look at ribbons.
 Alternatively, directly create meshes from turtle positions
-Not sure about cpfg bspline design
+Not sure about cpgf bspline design
 ** Supported Babylonjs types, glb, gltf, ..
 ** Export meshes
 <2022-06-20 Mon> gltf export done
 * Homomorphism productions
 Nice to have
-* Decomposition productions* UI
+* Decomposition productions
+Back burner
+* Animations
+<2022-06-11 Sat> start working on this
+ Perhaps, after splines
+** need layer to step through Lsystem.Rewrite and interp
+** screen capture to 'movie'? what does babylon offer
+* Multiple turtle implementation
+Attractive from a visualization standpoint, and maybe a cleaner encapsulation
+* Bugs
+** extrusion orientation of straight paths
+ <2022-05-21 Sat> The orientation is fixed, i think, but something is broken with lighting
+<2022-06-11 Sat>  ok, fixed now using added adjustFrame parameter to ExtrudeShapeXXX
+** reference to string parameters in productions is broken
+* UI
 ** <2022-06-20 Mon> show color table and save mesh implemented
 ** To React or not to React????
