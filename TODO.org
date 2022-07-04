@@ -1,0 +1,27 @@
+* Splines for paths
+  Maybe rework end path, }, to take parameter specifying 
+  what to do with path, i.e. create path or create contour, 
+  since overlapping paths seems unlikely to be of use
+** Hermite
+<2022-06-11 Sat> open Hermite spline done, including setting radii with spline
+  still need to implement segments/pair of control point - currently #segments
+  applies to entire spline
+** B-spline
+  on back burner
+* Surfaces/meshes
+Two different TABOP notions, pre-defined by arrays, and L-system generated, 
+in addition to loading pref-defined BABYLON meshes. The first is relatively
+easy, the last really appealing from a usability pov
+** Pre-defined Arrays
+** L-system generated
+Extrusions go a long way toward this already, maybe enhance this or look at ribbons.
+Alternatively, directly create meshes from turtle positions
+Not sure about cpfg bspline design
+** Supported Babylonjs types, glb, gltf, ..
+** Export meshes
+<2022-06-20 Mon> gltf export done
+* Homomorphism productions
+Nice to have
+* Decomposition productions* UI
+** <2022-06-20 Mon> show color table and save mesh implemented
+** To React or not to React????
