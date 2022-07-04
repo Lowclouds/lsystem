@@ -41,7 +41,7 @@ Modules marked *p* are *partially implemented*
 
 * Turtle Geometry
 | @o(d)    | circle of diameter d                              |
-| @C(d)*u* | circle of diameter d in HL plane                  |
+| @C(d) *u* | circle of diameter d in HL plane                  |
 | @O(d)    | sphere of diameter d                              |
 | ~S *u*   | insert predefined surface, Sym                    |
 | @Ds(id)  | start a contour with tag id                       |
@@ -51,19 +51,47 @@ Modules marked *p* are *partially implemented*
 | }        | end polygon                                       |
 | {(0)     | start path with stepwise control pts              |
 | {(1)     | start open path with Hermite spline control pts   |
-| {(2)     | start closed path with Hermite spline control pts |
-| {(3)     | start open path with B-spline control pts         |
-| {(4)     | start closed path with B-spline control pts       |
-| }(i)     | end path with type i and extrude contour          |
+| {(2) *u* | start closed path with Hermite spline control pts |
+| {(3) *u* | start open path with B-spline control pts         |
+| {(4) *u* | start closed path with B-spline control pts       |
+| } *p*    | end current path of any type and extrude contour   |
 | .        | add current position to path, polygon, or contour |
 
 * L-system Geometry
 | [               | start branch, pushing state onto stack    |
 | ]               | end branch, popping branch state stack    |
-| % *u*           | cut modules to end of branch              |
+| % *p*           | cut modules to end of branch              |
 | ?(id,scale) *p* | push current L-system and use L-system id |
 | $               | end current L-system, return to previous  |
   
+* L-System Syntax
+** Comments
+C-style comments, '/​* stuff, including newline */​' are supported.
+Single-line '//' style comments are not - they conflict with L-system syntax.
+** Defines
+Lines that start with '#define macro value', macro being some word create
+standard C-style macros where 'macro' is replaced with 'value' in 
+the L-system before parsing starts.
+** Settings
+Before the axiom is specified, variables can be set for the L-system. 
+The following variables can be set to control default/initial L-system values, 
+using standard syntax, i.e. var = value. Multiple settings on the same line must be
+separated by a semi-colon.
+| stemsize | width of extrusion. default: 0.1 |
+| delta  | angle in degrees of yaw, pitch, and roll. default: 90 |
+| step | distance traveled by F,f,G,g modules. default: 1 |
+| viewpoint *u* | 3D position of viewer/camera. default: (35,10, -5) |
+| viewtarget *u* | 3D position of view/camera target. default: (0,0,0) |
 
+In addition, variables used in the L-system can be set and used in the L-system; they 
+shouldn't conflict with any module parameters.
+** Expressions
+Expressions occur in tests, parameters, and pre/post test *u*. They 
+follow mathjs syntax: [[https://mathjs.org/docs/expressions/syntax.html][Expression syntax for mathjs]].
 
+Of particular note, are the logical operators which must be written explicitly as
+| and | not using '&&'|
+| or | not using '\vert\vert' |
+| not | not using '!' |
+e.g. (t > 0) and not u
 
