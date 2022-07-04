@@ -295,21 +295,17 @@ btnRPRD.addEventListener("click", () => {
           btnMSave.disabled = true;
           btnDraw.disabled = true;
           btnRPRD.disabled = true;
-          //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
           turtleInterp(t, lsys, {gencode: codegenOn})
              .then(value => {
-                camera.setTarget(newV(0,10,0));
+                //camera.setTarget(newV(0,10,0));
                 if (t.getTrackMeshes().length == 0) {
                    btnMSave.disabled = true;
-                   btnDraw.disabled = false;
-                   btnRPRD.disabled = false;
-                   t.show();
                 } else {
                    btnMSave.disabled = false;
-                   btnDraw.disabled = false;
-                   btnRPRD.disabled = false;
-                   t.show();
                 }
+                btnDraw.disabled = false;
+                btnRPRD.disabled = false;
+                t.show();
              }).catch(error => {
                 puts(error);
                 btnMSave.disabled = true;
@@ -385,6 +381,7 @@ const createScene = function () {
    // scene.ambientColor = new BABYLON.Color3(1, 1, 1);
 
    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
+   ground.position.y = -1;
    var gmaterial = new BABYLON.StandardMaterial("gmaterial", scene);
    var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.57,0.46,0.30)});
    gmaterial.ambientTexture = gtexture;
