@@ -4,7 +4,7 @@
 derivation length:30
 stemsize=0.25         
 
-axiom: CF(10)F(-1)#(STEPW)&(30)@v[@#(leaf)A(1)]
+axiom: CF(10)F(-1)#(STEPW)&(30)@v[@#('leaf')A(1)]
 A(t) : t<=5 ->  #(t*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) : t>=DLength-5 ->  #((DLength-t)*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) --> F(STEPL)&(STEPA)A(t+1)

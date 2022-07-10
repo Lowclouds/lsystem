@@ -11,7 +11,7 @@ axiom: C;(85)[F(5)B(1)]
 A(t) : t<=5 ->  #(t*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) : (t>=LEAFL-5) and (t <= LEAFL) -->  #((LEAFL-t)*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) --> F(STEPL)&(STEPA)A(t+1)
-B(u) : u < 4 --> F(5)\60)[-(30)@v;(2)@#('leaf'){(0)A(1)}(0)]#(STEM - u*ISTEM))B(u+1)
+B(u) : u < 4 --> F(5)\60)[-(30)@v;(16)@#('leaf'){(0)A(1)}(0)]#(STEM - u*ISTEM))B(u+1)
 B(u) : u == 4 --> F(1)#(0.1)F(1)#(0.25)
 C --> @Ds('leaf')D@De('leaf')@m(0,0,0)
 D --> @m(-3,-1,0).@m(-2.7,-0.3,0).@m(-2,0,0).@m(2,0,0).@m(2.7,-0.3,0).@m(3,-1,0).

@@ -1,9 +1,12 @@
+/* lamina. demonstrate branching siblings to the side of a 'cell' */
+view = {position: [15, 6, -2], target: [0,5,0]};
+
 #define offset stemsize/2
 stemsize = 1
 pitch = 12.5
-derivation length: 6
+derivation length: 9
 ignore: &^
-axiom: C@#(a)^(45)A(5)
+axiom: C@#('a')^(45)A(9)
 C --> @m(0.5,0,0)@Ds('a').f(0.5)^f(1)^f(0.25)^f(1)@De('a')
 A(n) : n > 0 --> F&(pitch)A(n-1)
 R(n) : n > 0 --> F&(pitch)R(n-1)

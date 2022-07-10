@@ -1,4 +1,5 @@
 #TABOP Sec 1.10.3, Fig 1.37a
+view = {position: [42,10,-16], target: [0,10, -15]};
 
 #define c 1
 #define p 0.3

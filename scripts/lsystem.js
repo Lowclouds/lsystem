@@ -165,8 +165,21 @@ class Lsystem {
       this.decomprules = [];      // unimplemented
       this.homorules = [];      // unimplemented
       this.Dlength = 0;	// number of iterations
-      this.globals = new Map(); // from define statements
+
       this.locals = new Map(); // from variable assignment statements
+      this.locals._expand_ = function(module) {
+         for (let a= 0; a< module.p.length; a++) {
+            module.p[a] = math.evaluate(module.p[a], lsys.locals);
+         }
+      }
+      // need to rethink globals - s.b. a singleton
+      this.globals = new Map();
+      this.globals._expand_ = function(module) {
+         for (let a= 0; a< module.p.length; a++) {
+            module.p[a] = math.evaluate(module.p[a], lsys.globals);
+         }
+      }
+
       this.functions = new Map();
       this.current = [];
       this.next = [];
@@ -344,17 +357,17 @@ class Lsystem {
                lstart = eol_ + 1; // peek past end of line
                r +=`, peek: pos: ${lstart} = '${s[lstart]}'`;
                if(lstart >= s.length) {
-                  puts(r);
+                  puts(r, LSYS_PARSE);
                   return s.length;
                } else if (s[lstart] == ' ' || s[lstart] == '\t') { // whitespace at BOL
                   if (s.slice(lstart,s.length-1).match(/[ \\t]+\\n/)) {
-                     puts(r);
+                     puts(r, LSYS_PARSE);
                      return eol_;
                   } else {
                      continue;
                   }
                } else {
-                  puts(r);
+                  puts(r, LSYS_PARSE);
                   return eol_;
                }
             }
@@ -693,7 +706,7 @@ class Lsystem {
          //puts("scope after funcs: " + Object.entries(scope));
 
          var rule = [predecessor, condition, successor, scope];
-         puts(`rule: ${rule}`);
+         puts(`rule: ${rule}`, LSYS_PARSE_PROD);
          return rule;
       }
 
@@ -748,7 +761,7 @@ class Lsystem {
 	          l[i] = new ParameterizedModule(m[1], parms);
                   // reset s
                   re.lastIndex = j;
-                  puts(`starting from: ${s.substring}`, LSYS_PARSE_SUCC);
+                  puts(`parms: ${parms}`, LSYS_PARSE_SUCC);
                } else {
                   let ss = s.substring(m.indices[2][0], s.substring(m.indices[2][1]));
                   throw new Error(`Error: end of input while parsing: ${ss}`);
@@ -867,15 +880,16 @@ class Lsystem {
       } else {
          ls.current = axiom;
       }
+      ls.current = this.expand([null,null,ls.current, ls.locals]);
+      let niter = (ls.Dlength ? ls.Dlength : 1);
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
+      puts(`Number of iterations is ${niter}`, LSYS_REWRITE);
       let mstring = ls.current;
       let lsnext;
       let lsLabel = ls.label;
       let rules = this.rules;
       let lsStack = [];
       let restrict = ls.restrict;
-      let niter = (ls.Dlength ? ls.Dlength : 1);
-      puts(`Number of iterations is ${niter}`, LSYS_REWRITE);
       // parallelize this later?
       let clength;
       for (let i=1; i <= niter; i++) {

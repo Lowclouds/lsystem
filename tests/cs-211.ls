@@ -1,4 +1,5 @@
-n=30,delta=22.5,stemsize=0.1
+view = {position: [120,80,-2], target: [0,50,0]};
+n=30;delta=22.5;stemsize=0.1
 ignore: +-F
 axiom: F1F1F1
 p1: 0 < 0 > 0 -> 0

@@ -1,3 +1,4 @@
+view = {position: [90,45,0], target: [0,30,0]};
 derivation length: 30
 n=30;delta=22.5
 ignore: +-F

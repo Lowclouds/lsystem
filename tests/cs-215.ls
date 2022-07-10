@@ -1,3 +1,6 @@
+/* TABOP pg. 34 fig. e */ 
+view = {position: [80,25,0], target: [0,25,0]};
+
 derivation length: 26
 delta=22.5;stemsize=0.1
 ignore: +-F

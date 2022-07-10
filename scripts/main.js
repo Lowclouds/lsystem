@@ -96,11 +96,9 @@ clearbtn.addEventListener("click", () => {
 homebtn.addEventListener("click", () => {
    try {
       t.home();
-      //camera.setTarget(t.getPos());
    } catch (error) {}
    try {
       t1.home();
-      //camera.setTarget(t1.getPos());
    } catch (e) {}
 });
 
@@ -288,16 +286,12 @@ btnRPRD.addEventListener("click", () => {
           lsState = 'Rewritten';
           /* --------- reset ---------*/
           t.reset();
-          //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-          //camera.setTarget(t.getPos());
           /* --------- draw ---------*/
-          // t.setHeading([0,1,0]);
           btnMSave.disabled = true;
           btnDraw.disabled = true;
           btnRPRD.disabled = true;
           turtleInterp(t, lsys, {gencode: codegenOn})
              .then(value => {
-                //camera.setTarget(newV(0,10,0));
                 if (t.getTrackMeshes().length == 0) {
                    btnMSave.disabled = true;
                 } else {
@@ -351,7 +345,6 @@ const canvas = document.getElementById("renderCanvas"); // Get the canvas elemen
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
 const cameraHomePosition = new BABYLON.Vector3(35, 10 ,-5);
-//const cameraHomeDirection = new BABYLON.Vector3(-2, -5, 10);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
 
@@ -362,10 +355,6 @@ const createScene = function () {
    
    const scene = new BABYLON.Scene(engine);  
    
-   // const camera = new BABYLON.ArcRotateCamera("Camera",0,0,20, BABYLON.Vector3.Zero(), scene);
-   //  camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-   //  camera.wheelDeltaPercentage = 0.001;
-   //  camera.zoomToMouseLocation = true;
    camera = new BABYLON.UniversalCamera("camera", cameraHomePosition.clone(), scene);
    camera.setTarget(cameraHomeTarget.clone());
    camera.inputs.addMouseWheel();
@@ -524,13 +513,9 @@ fetch('./tests/3d-a1.ls')
          lsState = 'Rewritten';
          /* --------- reset ---------*/
          t.reset();
-         //camera.setPosition(new BABYLON.Vector3(2, 5,-10));
-         //camera.setTarget(t.getPos());
          /* --------- draw ---------*/
-         // t.setHeading([0,1,0]);
-         turtleInterp(t, lsys, {gencode: codegenOn})
+           turtleInterp(t, lsys, {gencode: codegenOn})
             .then(value => {
-               camera.setTarget(newV(0,10,0));
                btnMSave.disabled = false;
                t.show();
             }).catch(error => {
