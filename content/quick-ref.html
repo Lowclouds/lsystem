@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>L-System Modules Quick Guide</title>
-<!-- 2022-07-10 Sun 18:29 -->
+<!-- 2022-07-10 Sun 19:59 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <style type="text/css">
@@ -170,6 +170,9 @@ Modules marked <b>p</b> are <b>partially implemented</b><br  />
 <div id="outline-container-sec-1" class="outline-2">
 <h2 id="sec-1"><span class="section-number-2">1</span> Turtle Motion</h2>
 <div class="outline-text-2" id="text-1">
+<p>
+Without a parameter move 'step' amount
+</p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -211,6 +214,9 @@ Modules marked <b>p</b> are <b>partially implemented</b><br  />
 <div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> Turtle Orientation</h2>
 <div class="outline-text-2" id="text-2">
+<p>
+Without a parameter turn 'delta' degrees
+</p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -272,6 +278,9 @@ Modules marked <b>p</b> are <b>partially implemented</b><br  />
 <div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> Turtle Settings</h2>
 <div class="outline-text-2" id="text-3">
+<p>
+Defaults without a parameter to one
+</p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -474,8 +483,8 @@ Modules marked <b>p</b> are <b>partially implemented</b><br  />
 <h3 id="sec-6-1"><span class="section-number-3">6.1</span> Comments</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
-C-style comments, '<i>​* stuff, including newline */​' are supported.
-Single-line '/</i>' style comments are not - they conflict with L-system syntax.
+C-style comments, '<i>​* stuff, including newline */​' are supported.<br  />
+   Single-line '/</i>' style comments are not - they conflict with L-system syntax.
 </p>
 </div>
 </div>
@@ -483,7 +492,7 @@ Single-line '/</i>' style comments are not - they conflict with L-system syntax.
 <h3 id="sec-6-2"><span class="section-number-3">6.2</span> Defines</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
-Lines that start with '#define macro value', macro being some word create
+   Lines that start with '#define macro value', 'macro' being some word, create
 standard C-style macros where 'macro' is replaced with 'value' in 
 the L-system before parsing starts.
 </p>
@@ -493,10 +502,11 @@ the L-system before parsing starts.
 <h3 id="sec-6-3"><span class="section-number-3">6.3</span> Settings</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
-Before the axiom is specified, variables can be set for the L-system. 
+   Before the axiom is specified, variables can be set for the L-system. 
 The following variables can be set to control default/initial L-system values, 
 using standard syntax, i.e. var = value. Multiple settings on the same line must be
-separated by a semi-colon. Note that the view setting is a JS object with the properties
+separated by a semi-colon.<br  />
+   Note that the view setting is a JS object with the properties
 'position' and 'target', whose values are JS arrays of X,Y,Z coordinates.
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -541,7 +551,7 @@ separated by a semi-colon. Note that the view setting is a JS object with the pr
 </table>
 
 <p>
-In addition, variables used in the L-system can be set and used in the L-system; they 
+   In addition, variables used in the L-system can be set and used in the L-system; they 
 shouldn't conflict with any module parameters.
 </p>
 </div>
@@ -550,7 +560,7 @@ shouldn't conflict with any module parameters.
 <h3 id="sec-6-4"><span class="section-number-3">6.4</span> Expressions</h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
-Expressions occur in tests, parameters, and pre/post test <b>u</b>. They 
+   Expressions occur in tests, parameters, and pre/post test <b>u</b>. They 
 follow mathjs syntax: <a href="https://mathjs.org/docs/expressions/syntax.html">Expression syntax for mathjs</a>.
 </p>
 
@@ -568,29 +578,30 @@ Of particular note, are the logical operators which must be written explicitly a
 <tbody>
 <tr>
 <td class="left">and</td>
-<td class="left">not using '&amp;&amp;'</td>
+<td class="left">instead of '&amp;&amp;'</td>
 </tr>
 
 <tr>
 <td class="left">or</td>
-<td class="left">not using '&vert;&vert;'</td>
+<td class="left">instead of '&vert;&vert;'</td>
 </tr>
 
 <tr>
 <td class="left">not</td>
-<td class="left">not using '!'</td>
+<td class="left">instead of '!'</td>
 </tr>
 </tbody>
 </table>
 <p>
 e.g. (t &gt; 0) and not u
 </p>
+<hr  />
 </div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2022-07-10 Sun 18:29</p>
+<p class="date">Created: 2022-07-10 Sun 19:59</p>
 <p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.1.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10)</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>

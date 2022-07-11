@@ -11,6 +11,7 @@ Modules marked *p* are *partially implemented*
 #+END_VERSE
 
 * Turtle Motion
+   Without a parameter move 'step' amount
 |F(d) | move d units w/pen down, records track point
 |f(d) | move d units w/pen up, records track point
 |G(d) | ==== F(d), but does not record track points
@@ -18,26 +19,28 @@ Modules marked *p* are *partially implemented*
 |@M(x,y,z) | goto position, draw or not|
 
 * Turtle Orientation
+  Without a parameter turn 'delta' degrees
 | +(a)                    | yaw left a degrees                       |
 | &(a)                    | pitch down a degrees                     |
 | ^(a)                    | pitch up a degrees                       |
 | \(a)                    | roll left a degrees                      |
 | /(a)                    | roll right a degrees                     |
-| \vert                   | yaw 180 degrees |
+| \vert                   | yaw 180 degrees                          |
 | @v                      | roll so U is parallel to up [y]          |
 | @R(hx,hy,hz[,ux,uy,uz]) | set heading to [hx,hy,hz]                |
 |                         | set U parallel to [ux,uy,z], if supplied |
 
 * Turtle Settings
-|;(i)   |increase or set color/material index|
-|,(i)   |decrease or set color/material index|
-|@;(n)  |increase or set back face color/material index|
-|@,(n)  |decrease or set back face color/material index|
-|#(n)   |increase or set line width|
-|!(n)   |decrease or set line width|
-|@Tx(n) *u* |set texture index|
-|@D(s) *u* |set scale factor of subsequent geometry|
-|@Di(f) *u* |multiply scale factor by f|
+  Defaults without a parameter to one
+| ;(i)       | increase or set color/material index           |
+| ,(i)       | decrease or set color/material index           |
+| @;(n)      | increase or set back face color/material index |
+| @,(n)      | decrease or set back face color/material index |
+| #(n)       | increase or set line width                     |
+| !(n)       | decrease or set line width                     |
+| @Tx(n) *u* | set texture index                              |
+| @D(s) *u*  | set scale factor of subsequent geometry        |
+| @Di(f) *u* | multiply scale factor by f                     |
 
 * Turtle Geometry
 | @o(d)    | circle of diameter d                              |
@@ -66,17 +69,18 @@ Modules marked *p* are *partially implemented*
   
 * L-System Syntax
 ** Comments
-C-style comments, '/​* stuff, including newline */​' are supported.
-Single-line '//' style comments are not - they conflict with L-system syntax.
+   C-style comments, '/​* stuff, including newline */​' are supported.\\
+   Single-line '//' style comments are not - they conflict with L-system syntax.
 ** Defines
-Lines that start with '#define macro value', macro being some word create
+   Lines that start with '#define macro value', 'macro' being some word, create
 standard C-style macros where 'macro' is replaced with 'value' in 
 the L-system before parsing starts.
 ** Settings
-Before the axiom is specified, variables can be set for the L-system. 
+   Before the axiom is specified, variables can be set for the L-system. 
 The following variables can be set to control default/initial L-system values, 
 using standard syntax, i.e. var = value. Multiple settings on the same line must be
-separated by a semi-colon. Note that the view setting is a JS object with the properties
+separated by a semi-colon.\\
+   Note that the view setting is a JS object with the properties
 'position' and 'target', whose values are JS arrays of X,Y,Z coordinates.
 | stemsize | width of extrusion. default: 0.1                             |
 | delta    | angle in degrees of yaw, pitch, and roll. default: 90        |
@@ -85,16 +89,16 @@ separated by a semi-colon. Note that the view setting is a JS object with the pr
 |          | target: 3D position of view/camera target. default: [0,0,0]  |
 |          | e.g. view = {position: [20,20,5], target: [0,8,0]}           |
 
-In addition, variables used in the L-system can be set and used in the L-system; they 
+   In addition, variables used in the L-system can be set and used in the L-system; they 
 shouldn't conflict with any module parameters.
 ** Expressions
-Expressions occur in tests, parameters, and pre/post test *u*. They 
+   Expressions occur in tests, parameters, and pre/post test *u*. They 
 follow mathjs syntax: [[https://mathjs.org/docs/expressions/syntax.html][Expression syntax for mathjs]].
 
-Of particular note, are the logical operators which must be written explicitly as
-| and | not using '&&'|
-| or | not using '\vert\vert' |
-| not | not using '!' |
-e.g. (t > 0) and not u
-
+  Of particular note, are the logical operators which must be written explicitly as
+| and | instead of '&&'|
+| or | instead of '\vert\vert' |
+| not | instead of '!' |
+   e.g. (t > 0) and not u
+-----
 
