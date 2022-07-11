@@ -76,12 +76,14 @@ the L-system before parsing starts.
 Before the axiom is specified, variables can be set for the L-system. 
 The following variables can be set to control default/initial L-system values, 
 using standard syntax, i.e. var = value. Multiple settings on the same line must be
-separated by a semi-colon.
-| stemsize | width of extrusion. default: 0.1 |
-| delta  | angle in degrees of yaw, pitch, and roll. default: 90 |
-| step | distance traveled by F,f,G,g modules. default: 1 |
-| viewpoint *u* | 3D position of viewer/camera. default: (35,10, -5) |
-| viewtarget *u* | 3D position of view/camera target. default: (0,0,0) |
+separated by a semi-colon. Note that the view setting is a JS object with the properties
+'position' and 'target', whose values are JS arrays of X,Y,Z coordinates.
+| stemsize | width of extrusion. default: 0.1                             |
+| delta    | angle in degrees of yaw, pitch, and roll. default: 90        |
+| step     | distance traveled by F,f,G,g modules. default: 1             |
+| view     | position: 3D position of viewer/camera. default: [35,10, -5] |
+|          | target: 3D position of view/camera target. default: [0,0,0]  |
+|          | e.g. view = {position: [20,20,5], target: [0,8,0]}           |
 
 In addition, variables used in the L-system can be set and used in the L-system; they 
 shouldn't conflict with any module parameters.
