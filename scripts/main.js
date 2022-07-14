@@ -155,31 +155,94 @@ const btnRewrite = document.getElementById('btnRewrite');
 const btnDraw = document.getElementById('btnDraw');
 const btnRPRD = document.getElementById('btnRPRD');
 //const btnAllTracks = document.getElementById('btnAllTracks');
+const btnSingleStep =  document.getElementById('btnSingleStep');
+const btnAnimate =  document.getElementById('btnAnimate');
 const btnMSave = document.getElementById('btnMSave');
 
+const lblNumIterations = document.getElementById('numIterations');
 const lblNumNodes = document.getElementById('numNodes');
 const lblNumDrawn = document.getElementById('numDrawn');
 
-btnParse.onclick = function() {
-   let spec = lsSrc.value;
-   try {
-      lsys = Lsystem.Parse(spec);
-      lsResult.value = lsys.serialize();
-      lsState = 'Parsed';          // unused
-   } catch(error) {
-      puts(`Parse failed: ${error}`);
-   }
+function uiDoParse () {
+   let ipromise = new Promise((resolve, reject) => {
+      let spec = lsSrc.value;
+      lblNumIterations.textContent = 0;
+      lblNumNodes.textContent = 0;
+      lblNumDrawn.textContent = 0;
+      lblNumDrawn.style.backgroundColor = 'lightgray';
+      try {
+	 lsys = Lsystem.Parse(spec);
+	 lsResult.value = lsys.serialize();
+	 resolve(true)
+      } catch(error) {
+	 lsResult.value = `Parse failed: ${error}`;
+	 reject(error);
+      }
+   });
+   return ipromise;
 }
 
-btnRewrite.onclick = function() {
-   if (lsys && lsResult.textContent != 'Empty') {
-      try {
-         lsResult.value =listtostr(lsys.Rewrite()); //.toString();
-         lsState = 'Rewritten';
-      } catch (error) {
-         puts(`Rewrite failed: ${error}`);
+function uiDoRewrite() {
+   let ipromise = new Promise((resolve,reject) => {
+      if (lsys && lsResult.textContent != 'Empty') {
+	 try {
+            lsResult.value =listtostr(lsys.Rewrite()); //.toString();
+	    lblNumIterations.textContent = lsys.dDone;
+	    lblNumNodes.textContent=lsys.current.length;
+	    lblNumDrawn.textContent=0;
+	    resolve(true);
+	 } catch (error) {
+	    lsResult.value = `Rewrite failed: ${error}`;
+	    reject(`Rewrite failed: ${error}`);
+	 }
+      } else {
+	 resolve(true);
       }
-   }
+      lblNumIterations.textContent = lsys.dDone;
+      lblNumNodes.textContent=lsys.current.length;
+      lblNumDrawn.textContent=0;
+   });
+   return ipromise;
+}
+
+function uiDoDraw () {
+   let ipromise = new Promise((resolve,reject) => {
+      try {
+	 btnMSave.disabled = true;
+	 btnDraw.disabled = true;
+	 btnRPRD.disabled = true;
+
+	 turtleInterp(t, lsys, {gencode: codegenOn})
+            .then(value => {
+               if (t.getTrackMeshes().length == 0) {
+		  btnMSave.disabled = true;
+               } else {
+		  btnMSave.disabled = false;
+	       }
+               btnDraw.disabled = false;
+               btnRPRD.disabled = false;
+               t.show();
+	       resolve(true);
+            }).catch(error => {
+               puts(error);
+               btnMSave.disabled = true;
+               btnDraw.disabled = false;
+               btnRPRD.disabled = false;
+               t.show();
+	       reject(error);
+     })
+      } catch (error) {
+	 puts(error);
+	 if (t.getTrackMeshes().length == 0) {
+            btnMSave.disabled = true;
+            btnRPRD.disabled = false;
+            btnDraw.disabled = false;
+            t.show();
+	    reject(error);
+	 }
+      }
+   });
+   return ipromise;
 }
 
 function loadLSfile(event) {
@@ -239,76 +302,52 @@ lsSaveCodeEnable.addEventListener("click", () => {
 });
 
 
-btnDraw.addEventListener("click", () => {
-    try {
-       btnMSave.disabled = true;
-       btnDraw.disabled = true;
-       btnRPRD.disabled = true;
-       //turtleInterp(t, lsys, {useTracksAlways: tracksAlways, gencode: codegenOn});
-       turtleInterp(t, lsys, {gencode: codegenOn})
-          .then(value => {
-             camera.setTarget(newV(0,10,0));
-             if (t.getTrackMeshes().length == 0) {
-                btnMSave.disabled = true;
-             } else {
-                btnMSave.disabled = false;
-                btnDraw.disabled = false;
-                btnRPRD.disabled = false;
-                t.show();
-             }
-          }).catch(error => {
-             puts(error);
-             btnMSave.disabled = true;
-             btnDraw.disabled = false;
-             btnRPRD.disabled = false;
-             t.show();
-          })
-    } catch (error) {
-       puts(error);
-       if (t.getTrackMeshes().length == 0) {
-          btnMSave.disabled = true;
-          btnRPRD.disabled = false;
-          btnDraw.disabled = false;
-          t.show();
-       }
-    }
+btnParse.onclick = function() {
+   uiDoParse();
+}
+
+btnRewrite.onclick = function() {
+   uiDoRewrite();
+}
+
+btnDraw.addEventListener("click", function () {
+   uiDoDraw();
 });
 
 btnRPRD.addEventListener("click", () => {
-    try {
-       /* --------- reparse ---------*/
-       lsys = Lsystem.Parse(lsSrc.value);
-       lsResult.value = lsys.serialize();
-       lsState = 'Parsed';
-       /* --------- rewrite ---------*/
-       if (lsResult.textContent != 'Empty') {
-          lsResult.value = lsys.Rewrite(); //.toString();
-          lsState = 'Rewritten';
-          /* --------- reset ---------*/
-          t.reset();
-          /* --------- draw ---------*/
-          btnMSave.disabled = true;
-          btnDraw.disabled = true;
-          btnRPRD.disabled = true;
-          turtleInterp(t, lsys, {gencode: codegenOn})
-             .then(value => {
-                if (t.getTrackMeshes().length == 0) {
-                   btnMSave.disabled = true;
-                } else {
-                   btnMSave.disabled = false;
-                }
-                btnDraw.disabled = false;
-                btnRPRD.disabled = false;
-                t.show();
-             }).catch(error => {
-                puts(error);
-                btnMSave.disabled = true;
-                btnDraw.disabled = false;
-                btnRPRD.disabled = false;
-                t.show();
-             })
-       }
-    } catch (error) {puts(error);}
+   /* --------- reparse ---------*/
+   uiDoParse()
+      .then(value => {
+	 /* --------- rewrite ---------*/
+	 uiDoRewrite()
+	    .then (value => {
+	       /* --------- reset ---------*/
+               t.reset();
+               /* --------- draw ---------*/
+	       uiDoDraw();
+	    });
+      }).catch (error => {puts(error);});
+});
+
+btnSingleStep.addEventListener('click', ()=> {
+   if (lsys && lsys.axiom != []) {
+      try {
+	 let str = lsys.current;
+	 if (lsys.dDone == 0) {
+	    str = lsys.axiom;
+	 }
+         lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
+	 lblNumIterations.textContent = lsys.dDone;
+	 lblNumNodes.textContent=lsys.current.length;
+	 lblNumDrawn.textContent=0;
+	 t.reset();
+	 uiDoDraw();
+//	 resolve(true);
+      } catch (error) {
+	 lsResult.value = `Rewrite failed: ${error}`;
+//	 reject(`Rewrite failed: ${error}`);
+      }
+   }
 });
 
 btnMSave.toggleAttribute('disabled');
@@ -509,20 +548,22 @@ fetch('./tests/3d-a1.ls')
       lsResult.value = lsys.serialize();
       lsState = 'Parsed';
       if (lsResult.textContent != 'Empty') {
-         lsResult.value = lsys.Rewrite(); //.toString();
-         lsState = 'Rewritten';
-         /* --------- reset ---------*/
-         t.reset();
-         /* --------- draw ---------*/
-           turtleInterp(t, lsys, {gencode: codegenOn})
-            .then(value => {
-               btnMSave.disabled = false;
-               t.show();
-            }).catch(error => {
-               puts(error);
-               btnMSave.disabled = true;
-               t.show();
-            })
+	 uiDoRewrite()
+	    .then(value => {
+	       //lsResult.value = lsys.Rewrite(); //.toString();
+               /* --------- reset ---------*/
+               t.reset();
+               /* --------- draw ---------*/
+               turtleInterp(t, lsys, {gencode: codegenOn})
+		  .then(value => {
+		     btnMSave.disabled = false;
+		     t.show();
+		  }).catch(error => {
+		     puts(error);
+		     btnMSave.disabled = true;
+		     t.show();
+		  })
+	    });
       }
    })
    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);

@@ -165,7 +165,7 @@ class Lsystem {
       this.decomprules = [];      // unimplemented
       this.homorules = [];      // unimplemented
       this.Dlength = 0;	// number of iterations
-
+      this.dDone = 0;	// number of iterations done;
       this.locals = new Map(); // from variable assignment statements
       this.locals._expand_ = function(module) {
          for (let a= 0; a< module.p.length; a++) {
@@ -291,6 +291,7 @@ class Lsystem {
       this.rules = [];
       this.homorules = [];
       this.Dlength = 0;
+      this.dDone = 0;
       this.globals.clear();
       this.locals.clear();
       //this.stemsize = 0.1;
@@ -492,8 +493,8 @@ class Lsystem {
             }
          } else if (null != ( m = line.match(RE.dlength))) {
             puts(`matched "derivation length: " got: ${m[1]}`, LSYS_IN_ITEMS);
-            ls.Dlength = m[1];
-            ls.locals.set('DLength', m[1])
+            ls.Dlength = Number(m[1]);
+            ls.locals.set('Dlength', ls.Dlength)
             ls.show('Dlength');
          } else if (null != (m = line.match(RE.ignore))) {
             ls.ignore = Lsystem.strtolist(m[1]) 
@@ -874,16 +875,16 @@ class Lsystem {
  
    // rewrite string derivation length times
    // generate step per cpfg docs
-   Rewrite (ls = this, axiom = null) {
-      if (axiom === null) {
+   Rewrite (ls = this, it = 0, string = null) {
+      if (string === null) {
          ls.current = ls.axiom.slice();
       } else {
-         ls.current = axiom;
+         ls.current = string;
       }
       ls.current = this.expand([null,null,ls.current, ls.locals]);
-      let niter = (ls.Dlength ? ls.Dlength : 1);
+      let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
-      puts(`Number of iterations is ${niter}`, LSYS_REWRITE);
+      puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
       let mstring = ls.current;
       let lsnext;
       let lsLabel = ls.label;
@@ -980,11 +981,9 @@ class Lsystem {
          //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
       }
       ls.current = mstring;
+      ls.dDone += niter;
       // this.next = null;
-      puts(`Expanded tree has ${this.current.length} nodes`);
-      lblNumNodes.textContent=this.current.length;
-      lblNumDrawn.textContent=0;
-
+      puts(`Expanded tree has ${this.current.length} nodes after ${ls.dDone} interations`);
       return this.current;
    }
 

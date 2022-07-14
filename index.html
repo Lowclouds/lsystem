@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 
-    <head>
+  <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <title>L-System Explorer</title>
 
@@ -29,7 +29,7 @@
 	    
 	    .right-side {
 	        overflow: auto;
-		width:35%;
+		width:40%;
 		height:100%;
                 font-size: 1.25rem;
 	    }
@@ -120,8 +120,8 @@
        <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
        
        <div class="right-side">
-              <label for="btns1" id="btnlbl">Turtle Control</label>
-              <button id="tcbtn">v</button>
+         <label for="btns1" id="btnlbl">Turtle Controls </label>
+         <button id="tcbtn">v</button>
          <div id="turtleall">
 	   <p>
              <menu class="buttonbar" id="turtlectrls">
@@ -134,7 +134,7 @@
 
                <li><button id="tinfoctrlbtn">></button></li>
              </menu>
-
+	     </p>
 	     <table class="tbl" id="turtleinfo">
 	       <tr><td></td><td id="t1">Turtle 1</td><td id="t2">Turtle 2</td></tr>
 	       <tr><td>Pos</td><td id="t1P"></td><td id="t2P"></td></tr>
@@ -154,7 +154,6 @@
              <button id="lsSave" name="lsSave">Save</button>
              <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Gen Code</button>
              <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
-	   </p>
 	   <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
 	   <p>
 	     <menu class="buttonbar" id="lsctrls"> 
@@ -162,16 +161,25 @@
 	       <button class="abutton"  id="btnRewrite">Rewrite</button>
 	       <button class="abutton"  id="btnDraw">Draw</button>
 	       <button class="abutton"  id="btnRPRD">Reset-and-Draw</button>
+	       <button class="abutton"  id="btnSingleStep">Step</button>
+	       <button class="abutton"  id="btnAnimate">Animate</button>
 	       <button class="abutton"  id="btnMSave">Save Mesh</button>
-
 	       <!-- <button class="abutton"  id="btnAllTracks">Tracks On</button> -->
-
-               <button class="lsprogress" id="numNodes">0</button>
-               <button class="lsprogress" id="numDrawn">0</button>
              </menu>
 	   </p>
-	   <textarea class="tio" id="lsResult" name="lsResult" rows="15" cols="45"></textarea>
-           <textarea class="tio" id="lsCode" name="lsCode" rows="1" cols="45"></textarea>
+	   <p>
+	     <div> L-system status </div>
+	     <menu class="buttonbar" id="lsstatus">
+               <button class="lsprogress" id="numIterations">0</button>
+               <button class="lsprogress" id="numNodes">0</button>
+               <button class="lsprogress" id="numDrawn">0</button>
+	     </menu>
+	   </p>
+	   <p>
+	     <div>L-System Expansion</div>
+	     <textarea class="tio" id="lsResult" name="lsResult" rows="15" cols="45"></textarea>
+             <textarea class="tio" id="lsCode" name="lsCode" rows="1" cols="45"></textarea>
+	   </p>
 	 </div>
        </div>
      </div>

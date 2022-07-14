@@ -71,11 +71,8 @@ function turtleInterp (ti, ls, opts=null) {
    puts(`view is ${view}`);
    if (view) {
       if (view.position) {
-        // let vp = BABYLON.Vector3.FromArray(view.position);
-         //camera.position.fromArray(view.position);
-         camera.position.x = view.position.toArray()[0];
-         camera.position.y = view.position.toArray()[1];
-         camera.position.z = view.position.toArray()[2];
+         let vp = BABYLON.Vector3.FromArray(view.position.toArray());
+         camera.position.copyFrom(vp)
          puts(`camera  position: ${camera.position} from ${view.position}`);
       }
       if (view.target) {
@@ -84,6 +81,7 @@ function turtleInterp (ti, ls, opts=null) {
 
       }
    }
+
    idata.ndelta= -1*idata.delta;
    ti.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
    ti.setHeading([0,1,0]);
@@ -99,7 +97,7 @@ function turtleInterp (ti, ls, opts=null) {
       ti.setMaterial(1);
       puts(`set ${ti.getTurtle()} material to idx ${numMat}, color ${ti.getColor()}`, NTRP_INIT);
    }
-   lblNumDrawn.textContent = 0;
+
    ti.hide();
    ti.penDown();
    gencode('ti.hide().pd();\n');
@@ -109,6 +107,9 @@ function turtleInterp (ti, ls, opts=null) {
    let tree = ls.current;
    puts(`lsystem has ${tree.length} modules`, NTRP_INIT);
    puts(`using settings: ` + idata.show(), NTRP_INIT);
+
+   lblNumDrawn.style.backgroundColor = 'lightgray';
+   lblNumNodes.textContent = tree.length;
 
    if (idata.useTrackAlways) {
       ti.newTrack();
@@ -158,7 +159,8 @@ function turtleInterp (ti, ls, opts=null) {
                puts('done with tree and ti.branchStack.length == 0', NTRP_PROGRESS);
             }
             updateTurtleInfo(ti,0);
-            lblNumDrawn.backgroundColor = "green";
+            lblNumDrawn.style.backgroundColor = 'lightgreen';
+            //lblNumNodes.style.backgroundColor = 'lightgreen';
             lsCode.value = code;
             resolve(true);
          }
@@ -573,6 +575,7 @@ function turtleInterp (ti, ls, opts=null) {
          }
          idata.mi = i;
          lblNumDrawn.textContent=i;
+	 //lblNumNodes.textContent= tree.length - i;
       }
       doModule();
    })
