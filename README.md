@@ -8,7 +8,7 @@
   It uses mathjs for interpreting parameter values and expressions, so pretty much anything the mathjs expression evaluator can do is possible in expressions and parameters.
 
 ## What is an L-System?
-   This is best explained by referring you to the source, [AlgorithmicBotany](http://algorithmicbotany.org/papers/#abop), but, in a nutshell, it is a system for modeling branchnging structures, like plants. It turns out that many interesting real and theoretical objects can be modeled using the notion of an L-System. L-System Explorer is broken into three parts: the parsing and rewriting of the L-System description/model, an underlying 3D turtle that can draw the geometry, and an interpreter that reads the expanded model and executes the appropriate turtle commands. 
+   This is best explained by referring you to the source, [AlgorithmicBotany](http://algorithmicbotany.org/papers/#abop), but, in a nutshell, it is a system for modeling branching structures, like plants. It turns out that many interesting real and theoretical objects can be modeled using the notion of an L-System. L-System Explorer is broken into three parts: the parsing and rewriting of the L-System description/model, an underlying 3D turtle that can draw the geometry, and an interpreter that reads the expanded model and executes the appropriate turtle commands. 
    The model is a string (implemented here as an array) of modules, where a module is a single or multi-character word. A number of modules are reserved for the underlying geometry operations, while all remaining characters are available for writing model productions (see above.) 
    
 ## Features
