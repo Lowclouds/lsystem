@@ -386,7 +386,7 @@ const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engi
 const cameraHomePosition = new BABYLON.Vector3(35, 10 ,-5);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
-
+var light;
 const skysize = 5000;
 
 // Add your code here matching the playground format
@@ -402,18 +402,21 @@ const createScene = function () {
 
    camera.attachControl(canvas, true);
 
-   const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(5, 10, 0));
-   // light.intensity = 1.25
+   const light0 = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0));
+   light0.intensity = 1.5;
+   const light1 = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0));
+   light1.intensity = 0.7;
+
    // light.diffuse = new BABYLON.Color3(206/255, 227/255, 240/255);
    // light.groundColor = new BABYLON.Color3(1, 1, 1);
    // scene.ambientColor = new BABYLON.Color3(1, 1, 1);
 
    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
-   ground.position.y = -1;
+   //ground.position.y = -1;
    var gmaterial = new BABYLON.StandardMaterial("gmaterial", scene);
-   var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.57,0.46,0.30)});
+   var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.8,0.6,0.50), grassColor: newV(.9,.4,.3)});
    gmaterial.ambientTexture = gtexture;
-   //gmaterial.diffuseColor = new BABYLON.Color3(.58, .58, .58);
+   gmaterial.diffuseColor = new BABYLON.Color3(.8, .7, .6);
    ground.material = gmaterial;
 
    // var  pack = new BABYLON.TexturePacker('TestPack', [], {}, scene);
