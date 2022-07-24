@@ -1,3 +1,4 @@
+view = {position: [5.5, 4, -5], target: [1, 1, 2]};
 n=4
 stemsize=0.4
 axiom: P(5)
