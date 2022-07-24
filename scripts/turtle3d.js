@@ -190,6 +190,8 @@ class Turtle3d {
    getTrackMeshes() {
       return this.scene.getMeshesByTags('track'+this.getTurtle() + ' !colortable' );
    }
+   getTrackBoundingInfo() {
+   }
 
    // setters
 
@@ -301,27 +303,25 @@ class Turtle3d {
    }
    getState () {
       let s = Object.assign({}, this.TurtleState);
-      s.P = s.P.clone();
-      s.H = s.H.clone();
-      s.L = s.L.clone();
-      s.U = s.U.clone();
-      if (s.trackMesh != null) { s.trackMesh = s.trackMesh.clone();}
-      if (s.trackPath != null) { s.trackPath = s.trackPath.clone();}
+      s.P = this.TurtleState.P.clone();
+      s.H = this.TurtleState.H.clone();
+      s.L = this.TurtleState.L.clone();
+      s.U = this.TurtleState.U.clone();
+      if (this.TurtleState.trackMesh != null) { s.trackMesh = this.TurtleState.trackMesh.clone();}
+      if (this.TurtleState.trackPath != null) { s.trackPath = this.TurtleState.trackPath.clone();}
       return s;
    }
 
    setState (savedstate) {
       let ts = this.TurtleState;
       Object.assign(ts, savedstate);
-      ts.P = savedstate.P.clone();  // the user may expect to re-use the saved state
-      ts.H = savedstate.H.clone();
-      ts.L = savedstate.L.clone();
-      ts.U = savedstate.U.clone();
+      // ts.P = savedstate.P.clone();  // the user may expect to re-use the saved state
+      // ts.H = savedstate.H.clone();
+      // ts.L = savedstate.L.clone();
+      // ts.U = savedstate.U.clone();
       ts.trackShape = this.trackContours.get(ts.trackShapeID);
       if (savedstate.trackMesh != null) { ts.trackMesh = savedstate.trackMesh;}
       if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
-
-      //this.materialList[ts.trackMaterial];
 
       let s = this.getTurtleShape();
       if (s != '') {
@@ -539,6 +539,10 @@ class Turtle3d {
       if (addpathpt) {
          switch ( ts.drawMode ) {
          case Turtle3d.CAPTURE_PATH:
+            if (ts.trackPath.type == Turtle3d.PATH_POINTS &&
+               ts.trackPath.points.length == 0) {
+               ts.trackPath.addPathPt(ts, oldP);
+            }
             ts.trackPath.addPathPt(ts, newP);
             break;
             // case Turtle3d.CAPTURE_POLYGON:
@@ -751,10 +755,9 @@ class Turtle3d {
 
    drawImmediate(ts, oldPos, newPos) {
       let t = ts.Turtle;
-      let ttag = ts.trackTag;
       let type = ts.trackType;
-      let tag = `track${t} ${ttag}`;
       let segment;
+      let doSetMaterial = true;
 
       switch (type ) {
       case Turtle3d.TRACK_LINE:
@@ -762,8 +765,7 @@ class Turtle3d {
                                                    {points: [oldPos, newPos],
                                                     tessellation: 32}, this.scene);
          segment.color = this.toColorVector();
-         BABYLON.Tags.AddTagsTo(segment, tag , this.scene);
-         segment.isVisible = true;
+	 doSetMaterial = false;
          break;
       case Turtle3d.TRACK_TUBE:
          let radiusFunc = (i,distance) => {
@@ -777,9 +779,6 @@ class Turtle3d {
                                                    cap: BABYLON.Mesh.CAP_ALL},
                                                   this.scene);
          this.meshCount[0]++;
-         segment.isVisible = true;
-         segment.material = this.materialList[ts.trackMaterial];
-         BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
          break;
       case Turtle3d.TRACK_EXT:
          let pathpts = [oldPos, newPos];
@@ -804,26 +803,29 @@ class Turtle3d {
                                           sideOrientation: BABYLON.Mesh.DOUBLESIDE,
                                           firstNormal: ts.lastNormal
                                          });
-         segment.isVisible=true;
-         segment.material = this.materialList[ts.trackMaterial];
-         BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
+         // segment.isVisible=true;
+         // segment.material = this.materialList[ts.trackMaterial];
+         // BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
          ts.accumRoll = 0;
          ts.lastSize = ts.size;
          break;
       }
+     puts(`drawImmediate: mesh type: ${type}, position: ${segment.position}`, TRTL_DRAW);
+     this.meshCommonSetup(segment, false, doSetMaterial, BABYLON.Vector3.Zero());
    }
 
    drawTrack() {
-      let ts = this.TurtleState;
-      let t = ts.Turtle;
-      let tp = ts.trackPath;
+      let t = this.TurtleState.Turtle;
+      let tp = this.TurtleState.trackPath;
       if (tp === null || tp.points.length < 2) {
          return;
       }
-      var pathpts = tp.points;
+      let pathpts = tp.points;
+      let doSetMaterial = true;
+
       puts(`trackPath.length: ${pathpts.length}`, TRTL_TRACK);
       //puts(`pathpts: ${pathpts}`);
-      var srm = tp.srm;         // scale, rotation, material at each [control] point
+      let srm = tp.srm;         // scale, rotation, material at each [control] point
       puts(`srm: ${srm}`, TRTL_TRACK);
 
       function getscale(i,distance) {
@@ -907,7 +909,7 @@ class Turtle3d {
          extrusion.material = this.materialList[srm[1].m];
       }
       extrusion.id= t + this.trackPaths.length;
-      BABYLON.Tags.AddTagsTo(extrusion, `track${t} path`, this.scene);
+     this.meshCommonSetup(extrusion, false, doSetMaterial, BABYLON.Vector3.Zero());
       this.trackPaths.push(extrusion); //
 
       // position the turtle at end of path
@@ -920,6 +922,9 @@ class Turtle3d {
       return this;
    }
    endBranch() {
+      if (this.TurtleState.trackPath != null) {
+         this.endTrack();
+      }
       const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
       if (last) {
          this.setState(last.tstate);
@@ -977,6 +982,7 @@ class Turtle3d {
    endTrack() {
       let ts = this.TurtleState;
       let tp = ts.trackPath;
+      puts(`endTrack, type: ${tp.type}`, TRTL_TRACK);
       if (tp) {
          switch (tp.type) {
          case Turtle3d.PATH_POINTS:
@@ -1069,14 +1075,15 @@ class Turtle3d {
    //    this.meshCommonSetup(mesh, scaling);
    // }
 
-   meshCommonSetup (mesh, scaling, rotate=true, pos = null) {
+   meshCommonSetup (mesh, scaling, setmaterial = true, pos = null, rotate=true) {
       let ts = this.TurtleState;
       let t = ts.Turtle;
       let ttag = ts.trackTag;
       let tag = `track${t} ${ttag}`;
 
-      mesh.material = this.materialList[ts.trackMaterial];
-
+      if (setmaterial) {
+	     mesh.material = this.materialList[ts.trackMaterial];
+      }
 
       if (scaling) {
          mesh.scaling.x = scaling.x;
@@ -1085,16 +1092,17 @@ class Turtle3d {
       }
 
       //mesh.rotation = BABYLON.Vector3.RotationFromAxis(ts.H, ts.L.scale(1), ts.U.scale(-1));
-      let p;
-      if (pos) {
-         p = pos;
-      } else {
-         p = ts.P;
-      }
-      mesh.position.x = p.x;
-      mesh.position.y = p.y;
-      mesh.position.z = p.z;
-      // puts(`placed mesh at: ${p}`)
+      // let p;
+      // if (pos) {
+      //    p = pos.clone();
+      // } else {
+      //    p = ts.P;
+      // }
+      // mesh.position.x = p.x;
+      // mesh.position.y = p.y;
+      // mesh.position.z = p.z;
+      // puts(`placed mesh at: ${p}`, TRTL_DRAW)
+      mesh.isVisible = true;
       BABYLON.Tags.AddTagsTo(mesh, tag, this.scene);
    }
 
@@ -1159,7 +1167,7 @@ class Turtle3d {
 
          // set position to first captured polygon point - well, no
          // leave it in place.
-         this.meshCommonSetup(pmesh, false, false, newV(0,0,0));
+         this.meshCommonSetup(pmesh, false, true, newV(0,0,0));
          //BABYLON.Vector3.FromArray(this.polygonVerts[0]));
 
          // make sure the material has backFaceCulling set to false
@@ -1780,3 +1788,18 @@ function fanTriangulate(verts) {
    }
    return indices;
 }
+
+function getbi (meshes) {
+   let min = meshes[0].getBoundingInfo().boundingBox.minimumWorld;
+   let max = meshes[0].getBoundingInfo().boundingBox.maximumWorld;
+
+   for(let i=1; i<meshes.length; i++){
+      let meshMin = meshes[i].getBoundingInfo().boundingBox.minimumWorld;
+      let meshMax = meshes[i].getBoundingInfo().boundingBox.maximumWorld;
+
+      min = BABYLON.Vector3.Minimize(min, meshMin);
+      max = BABYLON.Vector3.Maximize(max, meshMax);
+   }
+   return new BABYLON.BoundingInfo(min, max);
+}
+

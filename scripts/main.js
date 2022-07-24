@@ -414,9 +414,10 @@ const createScene = function () {
    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
    //ground.position.y = -1;
    var gmaterial = new BABYLON.StandardMaterial("gmaterial", scene);
-   var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.8,0.6,0.50), grassColor: newV(.9,.4,.3)});
+   var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.8,0.6,0.50), grassColor: newV(.9,.0,.0)});
+   gtexture.grassColor = newV(.8,.0,.0);
    gmaterial.ambientTexture = gtexture;
-   gmaterial.diffuseColor = new BABYLON.Color3(.8, .7, .6);
+   gmaterial.diffuseColor = new BABYLON.Color3(.8, .6, .5);
    ground.material = gmaterial;
 
    // var  pack = new BABYLON.TexturePacker('TestPack', [], {}, scene);
