@@ -188,9 +188,25 @@ class Turtle3d {
 
 
    getTrackMeshes() {
-      return this.scene.getMeshesByTags('track'+this.getTurtle() + ' !colortable' );
+      return this.scene.getMeshesByTags('track'+this.getTurtle() + '&& !colortable' );
    }
+
    getTrackBoundingInfo() {
+      function getbi (meshes) {
+         let min = meshes[0].getBoundingInfo().boundingBox.minimumWorld;
+         let max = meshes[0].getBoundingInfo().boundingBox.maximumWorld;
+
+         for(let i=1; i<meshes.length; i++){
+            let meshMin = meshes[i].getBoundingInfo().boundingBox.minimumWorld;
+            let meshMax = meshes[i].getBoundingInfo().boundingBox.maximumWorld;
+
+            min = BABYLON.Vector3.Minimize(min, meshMin);
+            max = BABYLON.Vector3.Maximize(max, meshMax);
+         }
+         return new BABYLON.BoundingInfo(min, max);
+      }
+      
+      return getbi(this.getTrackMeshes());
    }
 
    // setters
@@ -1787,19 +1803,5 @@ function fanTriangulate(verts) {
       v++;
    }
    return indices;
-}
-
-function getbi (meshes) {
-   let min = meshes[0].getBoundingInfo().boundingBox.minimumWorld;
-   let max = meshes[0].getBoundingInfo().boundingBox.maximumWorld;
-
-   for(let i=1; i<meshes.length; i++){
-      let meshMin = meshes[i].getBoundingInfo().boundingBox.minimumWorld;
-      let meshMax = meshes[i].getBoundingInfo().boundingBox.maximumWorld;
-
-      min = BABYLON.Vector3.Minimize(min, meshMin);
-      max = BABYLON.Vector3.Maximize(max, meshMax);
-   }
-   return new BABYLON.BoundingInfo(min, max);
 }
 

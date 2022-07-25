@@ -73,14 +73,17 @@ function turtleInterp (ti, ls, opts=null) {
       if (view.position) {
          let vp = BABYLON.Vector3.FromArray(view.position.toArray());
          camera.position.copyFrom(vp)
-         puts(`camera  position: ${camera.position} from ${view.position}`);
+         puts(`camera  position: ${camera.position} from ${view.position}`,NTRP_SETTING);
       }
       if (view.target) {
          camera.setTarget( BABYLON.Vector3.FromArray(view.target.toArray()));
-         puts(`camera target: ${camera.target} from ${view.target}`);
+         puts(`camera target: ${camera.target} from ${view.target}`,NTRP_SETTING);
 
       }
+   } else {
+      view = {auto: 'X'};
    }
+   idata.view = view;
 
    idata.ndelta= -1*idata.delta;
    ti.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
@@ -157,6 +160,47 @@ function turtleInterp (ti, ls, opts=null) {
                   gencode('ti.endTrack();\n');
                }
                puts('done with tree and ti.branchStack.length == 0', NTRP_PROGRESS);
+            }
+            if (idata.view.hasOwnProperty('auto')) {
+               let bi = ti.getTrackBoundingInfo();
+               let fPlanes = BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix());               
+               let target = bi.boundingSphere.center;
+               let bx = target.x;
+               let by = target.y;
+               let bz = target.z;
+               let distance = 2 * bi.boundingSphere.radius;
+               let campos = newV(bx + distance, by, bz);
+               if ('object' == typeof idata.view.auto ) {
+                  campos = BABYLON.Vector3.FromArray(idata.view.auto.toArray());
+                  campos.normalize().scaleInPlace(distance).addInPlace(target);
+               } else {         // assume string
+                  switch (idata.view.auto.toUpperCase()) {
+                  case 'Y':
+                     campos.x = bx;
+                     campos.y = by + distance;
+                     break;
+                  case '-Y':
+                     campos.x = bx;
+                     campos.y = by - distance;
+                     break;
+                  case 'Z':
+                     campos.x = bx;
+                     campos.z = bz + distance;
+                     break;
+                  case '-Z':
+                     campos.x = bx;
+                     campos.z = bz - distance;
+                     break;
+                  case '-X':
+                     campos.x= bx - distance;
+                     break;
+                  case 'X':
+                  default:
+                  }
+               }
+               camera.position.copyFrom(campos);
+               camera.setTarget(target);
+               puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
             }
             updateTurtleInfo(ti,0);
             lblNumDrawn.style.backgroundColor = 'lightgreen';

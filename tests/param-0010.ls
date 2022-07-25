@@ -6,8 +6,10 @@
 #define CT 0.4                  /* concentration threshold */
 #define ST 3.9                  /* segment size threshold */
 #define COLOR 56 + round(c/CH * 96)
-
+/*
 view = { position: [85,15,-100], target: [100,1,0]};
+*/
+view = {auto: [1,.1,0]};
 
 stemsize = 0.8
 ignore: f@O;,
