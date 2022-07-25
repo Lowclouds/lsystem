@@ -82,12 +82,25 @@ using standard syntax, i.e. var = value. Multiple settings on the same line must
 separated by a semi-colon.\\
    Note that the view setting is a JS object with the properties
 'position' and 'target', whose values are JS arrays of X,Y,Z coordinates.
-| stemsize | width of extrusion. default: 0.1                             |
-| delta    | angle in degrees of yaw, pitch, and roll. default: 90        |
-| step     | distance traveled by F,f,G,g modules. default: 1             |
-| view     | position: 3D position of viewer/camera. default: [35,10, -5] |
-|          | target: 3D position of view/camera target. default: [0,0,0]  |
-|          | e.g. view = {position: [20,20,5], target: [0,8,0]}           |
+| stemsize | width of extrusion. default: 0.1                               |
+| delta    | angle in degrees of yaw, pitch, and roll. default: 90          |
+| step     | distance traveled by F,f,G,g modules. default: 1               |
+| view     | position: 3D position of viewer/camera.                        |
+|          | target: 3D position of view/camera target.                     |
+|          | e.g. view = {position: [20,20,5], target: [0,8,0]}             |
+|          | --- or ---                                                     |
+|          | auto: direction                                                |
+|          | where direction is one of X, -X, Y, -Y, Z, -Z, or              |
+|          | a direction array defining where the camera position should    |
+|          | be. The target is always the center of the bounding sphere     |
+|          | of the drawn geometry and the distance from the target is      |
+|          | twice the radius of the bounding sphere.                       |
+|          | e.g. view = {auto: y} will look down on the XY plane. Note,    |
+|          | case-insensitivity. Or,                                        |
+|          | view = {auto: [1,1,1]} will place the camera on a line through |
+|          | the target center parallel to the vector 1,1,1, looking at the |
+|          | target                                                         |
+|          | The default view is {auto: X}                                  |
 
    In addition, variables used in the L-system can be set and used in the L-system; they 
 shouldn't conflict with any module parameters.

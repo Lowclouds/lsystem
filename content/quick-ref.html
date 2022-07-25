@@ -3,22 +3,29 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
+<!-- 2022-07-25 Mon 15:36 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>L-System Modules Quick Guide</title>
-<!-- 2022-07-10 Sun 19:59 -->
-<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
-<meta  name="generator" content="Org-mode" />
+<meta name="generator" content="Org mode" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
-  .title  { text-align: center; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
   .todo   { font-family: monospace; color: red; }
-  .done   { color: green; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
   .tag    { background-color: #eee; font-family: monospace;
             padding: 2px; font-size: 80%; font-weight: normal; }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
-  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
-  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
-  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
   .underline { text-decoration: underline; }
   #postamble p, #preamble p { font-size: 90%; margin: .2em; }
   p.verse { margin-left: 3%; }
@@ -45,30 +52,127 @@
     border: 1px solid black;
   }
   pre.src:hover:before { display: inline;}
-  pre.src-sh:before    { content: 'sh'; }
-  pre.src-bash:before  { content: 'sh'; }
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
   pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
-  pre.src-R:before     { content: 'R'; }
-  pre.src-perl:before  { content: 'Perl'; }
-  pre.src-java:before  { content: 'Java'; }
-  pre.src-sql:before   { content: 'SQL'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
 
   table { border-collapse:collapse; }
   caption.t-above { caption-side: top; }
   caption.t-bottom { caption-side: bottom; }
   td, th { vertical-align:top;  }
-  th.right  { text-align: center;  }
-  th.left   { text-align: center;   }
-  th.center { text-align: center; }
-  td.right  { text-align: right;  }
-  td.left   { text-align: left;   }
-  td.center { text-align: center; }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
   dt { font-weight: bold; }
-  .footpara:nth-child(2) { display: inline; }
-  .footpara { display: block; }
+  .footpara { display: inline; }
   .footdef  { margin-bottom: 1em; }
   .figure { padding: 1em; }
   .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
   .inlinetask {
     padding: 10px;
     border: 2px solid gray;
@@ -85,6 +189,7 @@
     { font-size: 10px; font-weight: bold; white-space: nowrap; }
   .org-info-js_search-highlight
     { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
   /*]]>*/-->
 </style>
 <script type="text/javascript">
@@ -92,7 +197,7 @@
 @licstart  The following is the entire license notice for the
 JavaScript code in this tag.
 
-Copyright (C) 2012-2013 Free Software Foundation, Inc.
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
 
 The JavaScript code in this tag is free software: you can
 redistribute it and/or modify it under the terms of the GNU
@@ -141,34 +246,34 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1. Turtle Motion</a></li>
-<li><a href="#sec-2">2. Turtle Orientation</a></li>
-<li><a href="#sec-3">3. Turtle Settings</a></li>
-<li><a href="#sec-4">4. Turtle Geometry</a></li>
-<li><a href="#sec-5">5. L-system Geometry</a></li>
-<li><a href="#sec-6">6. L-System Syntax</a>
+<li><a href="#org518a81a">1. Turtle Motion</a></li>
+<li><a href="#org0f8ef06">2. Turtle Orientation</a></li>
+<li><a href="#orgabd0b9a">3. Turtle Settings</a></li>
+<li><a href="#org594d517">4. Turtle Geometry</a></li>
+<li><a href="#orgfe7146d">5. L-system Geometry</a></li>
+<li><a href="#org5d31c16">6. L-System Syntax</a>
 <ul>
-<li><a href="#sec-6-1">6.1. Comments</a></li>
-<li><a href="#sec-6-2">6.2. Defines</a></li>
-<li><a href="#sec-6-3">6.3. Settings</a></li>
-<li><a href="#sec-6-4">6.4. Expressions</a></li>
+<li><a href="#org23b084f">6.1. Comments</a></li>
+<li><a href="#org325ba88">6.2. Defines</a></li>
+<li><a href="#orge6baa30">6.3. Settings</a></li>
+<li><a href="#orgd082c84">6.4. Expressions</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <p class="verse">
-Why are they called modules and not commands or something else?<br  />
-Because module is an old term used by botanists for a unit of<br  />
-growth (article in French from the Latin for branch and<br  />
-translated to module in English.)<br  />
-<br  />
-Modules marked <b>u</b> are <b>unimplemented</b><br  />
-Modules marked <b>p</b> are <b>partially implemented</b><br  />
+Why are they called modules and not commands or something else?<br />
+Because module is an old term used by botanists for a unit of<br />
+growth (article in French from the Latin for branch and<br />
+translated to module in English.)<br />
+<br />
+Modules marked <b>u</b> are <b>unimplemented</b><br />
+Modules marked <b>p</b> are <b>partially implemented</b><br />
 </p>
 
-<div id="outline-container-sec-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> Turtle Motion</h2>
+<div id="outline-container-org518a81a" class="outline-2">
+<h2 id="org518a81a"><span class="section-number-2">1</span> Turtle Motion</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Without a parameter move 'step' amount
@@ -177,42 +282,42 @@ Without a parameter move 'step' amount
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">F(d)</td>
-<td class="left">move d units w/pen down, records track point</td>
+<td class="org-left">F(d)</td>
+<td class="org-left">move d units w/pen down, records track point</td>
 </tr>
 
 <tr>
-<td class="left">f(d)</td>
-<td class="left">move d units w/pen up, records track point</td>
+<td class="org-left">f(d)</td>
+<td class="org-left">move d units w/pen up, records track point</td>
 </tr>
 
 <tr>
-<td class="left">G(d)</td>
-<td class="left"><code>==</code> F(d), but does not record track points</td>
+<td class="org-left">G(d)</td>
+<td class="org-left"><code>==</code> F(d), but does not record track points</td>
 </tr>
 
 <tr>
-<td class="left">g(d)</td>
-<td class="left"><code>==</code> f(d), w/o recording track points</td>
+<td class="org-left">g(d)</td>
+<td class="org-left"><code>==</code> f(d), w/o recording track points</td>
 </tr>
 
 <tr>
-<td class="left">@M(x,y,z)</td>
-<td class="left">goto position, draw or not</td>
+<td class="org-left">@M(x,y,z)</td>
+<td class="org-left">goto position, draw or not</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-sec-2" class="outline-2">
-<h2 id="sec-2"><span class="section-number-2">2</span> Turtle Orientation</h2>
+<div id="outline-container-org0f8ef06" class="outline-2">
+<h2 id="org0f8ef06"><span class="section-number-2">2</span> Turtle Orientation</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Without a parameter turn 'delta' degrees
@@ -221,62 +326,62 @@ Without a parameter turn 'delta' degrees
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">+(a)</td>
-<td class="left">yaw left a degrees</td>
+<td class="org-left">+(a)</td>
+<td class="org-left">yaw left a degrees</td>
 </tr>
 
 <tr>
-<td class="left">&amp;(a)</td>
-<td class="left">pitch down a degrees</td>
+<td class="org-left">&amp;(a)</td>
+<td class="org-left">pitch down a degrees</td>
 </tr>
 
 <tr>
-<td class="left">^(a)</td>
-<td class="left">pitch up a degrees</td>
+<td class="org-left">^(a)</td>
+<td class="org-left">pitch up a degrees</td>
 </tr>
 
 <tr>
-<td class="left">\(a)</td>
-<td class="left">roll left a degrees</td>
+<td class="org-left">\(a)</td>
+<td class="org-left">roll left a degrees</td>
 </tr>
 
 <tr>
-<td class="left">/(a)</td>
-<td class="left">roll right a degrees</td>
+<td class="org-left">/(a)</td>
+<td class="org-left">roll right a degrees</td>
 </tr>
 
 <tr>
-<td class="left">&vert;</td>
-<td class="left">yaw 180 degrees</td>
+<td class="org-left">&vert;</td>
+<td class="org-left">yaw 180 degrees</td>
 </tr>
 
 <tr>
-<td class="left">@v</td>
-<td class="left">roll so U is parallel to up [y]</td>
+<td class="org-left">@v</td>
+<td class="org-left">roll so U is parallel to up [y]</td>
 </tr>
 
 <tr>
-<td class="left">@R(hx,hy,hz[,ux,uy,uz])</td>
-<td class="left">set heading to [hx,hy,hz]</td>
+<td class="org-left">@R(hx,hy,hz[,ux,uy,uz])</td>
+<td class="org-left">set heading to [hx,hy,hz]</td>
 </tr>
 
 <tr>
-<td class="left">&#xa0;</td>
-<td class="left">set U parallel to [ux,uy,z], if supplied</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">set U parallel to [ux,uy,z], if supplied</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-sec-3" class="outline-2">
-<h2 id="sec-3"><span class="section-number-2">3</span> Turtle Settings</h2>
+<div id="outline-container-orgabd0b9a" class="outline-2">
+<h2 id="orgabd0b9a"><span class="section-number-2">3</span> Turtle Settings</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Defaults without a parameter to one
@@ -285,211 +390,212 @@ Defaults without a parameter to one
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">;(i)</td>
-<td class="left">increase or set color/material index</td>
+<td class="org-left">;(i)</td>
+<td class="org-left">increase or set color/material index</td>
 </tr>
 
 <tr>
-<td class="left">,(i)</td>
-<td class="left">decrease or set color/material index</td>
+<td class="org-left">,(i)</td>
+<td class="org-left">decrease or set color/material index</td>
 </tr>
 
 <tr>
-<td class="left">@;(n)</td>
-<td class="left">increase or set back face color/material index</td>
+<td class="org-left">@;(n)</td>
+<td class="org-left">increase or set back face color/material index</td>
 </tr>
 
 <tr>
-<td class="left">@,(n)</td>
-<td class="left">decrease or set back face color/material index</td>
+<td class="org-left">@,(n)</td>
+<td class="org-left">decrease or set back face color/material index</td>
 </tr>
 
 <tr>
-<td class="left">#(n)</td>
-<td class="left">increase or set line width</td>
+<td class="org-left">#(n)</td>
+<td class="org-left">increase or set line width</td>
 </tr>
 
 <tr>
-<td class="left">!(n)</td>
-<td class="left">decrease or set line width</td>
+<td class="org-left">!(n)</td>
+<td class="org-left">decrease or set line width</td>
 </tr>
 
 <tr>
-<td class="left">@Tx(n) <b>u</b></td>
-<td class="left">set texture index</td>
+<td class="org-left">@Tx(n) <b>u</b></td>
+<td class="org-left">set texture index</td>
 </tr>
 
 <tr>
-<td class="left">@D(s) <b>u</b></td>
-<td class="left">set scale factor of subsequent geometry</td>
+<td class="org-left">@D(s) <b>u</b></td>
+<td class="org-left">set scale factor of subsequent geometry</td>
 </tr>
 
 <tr>
-<td class="left">@Di(f) <b>u</b></td>
-<td class="left">multiply scale factor by f</td>
+<td class="org-left">@Di(f) <b>u</b></td>
+<td class="org-left">multiply scale factor by f</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-sec-4" class="outline-2">
-<h2 id="sec-4"><span class="section-number-2">4</span> Turtle Geometry</h2>
+<div id="outline-container-org594d517" class="outline-2">
+<h2 id="org594d517"><span class="section-number-2">4</span> Turtle Geometry</h2>
 <div class="outline-text-2" id="text-4">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">@o(d)</td>
-<td class="left">circle of diameter d</td>
+<td class="org-left">@o(d)</td>
+<td class="org-left">circle of diameter d</td>
 </tr>
 
 <tr>
-<td class="left">@C(d) <b>u</b></td>
-<td class="left">circle of diameter d in HL plane</td>
+<td class="org-left">@C(d) <b>u</b></td>
+<td class="org-left">circle of diameter d in HL plane</td>
 </tr>
 
 <tr>
-<td class="left">@O(d)</td>
-<td class="left">sphere of diameter d</td>
+<td class="org-left">@O(d)</td>
+<td class="org-left">sphere of diameter d</td>
 </tr>
 
 <tr>
-<td class="left">~S <b>u</b></td>
-<td class="left">insert predefined surface, Sym</td>
+<td class="org-left">~S <b>u</b></td>
+<td class="org-left">insert predefined surface, Sym</td>
 </tr>
 
 <tr>
-<td class="left">@Ds(id)</td>
-<td class="left">start a contour with tag id</td>
+<td class="org-left">@Ds(id)</td>
+<td class="org-left">start a contour with tag id</td>
 </tr>
 
 <tr>
-<td class="left">@De(id)</td>
-<td class="left">end contour id</td>
+<td class="org-left">@De(id)</td>
+<td class="org-left">end contour id</td>
 </tr>
 
 <tr>
-<td class="left">@#(id)</td>
-<td class="left">set contour(id) as current track shape</td>
+<td class="org-left">@#(id)</td>
+<td class="org-left">set contour(id) as current track shape</td>
 </tr>
 
 <tr>
-<td class="left">{</td>
-<td class="left">start polygon</td>
+<td class="org-left">{</td>
+<td class="org-left">start polygon</td>
 </tr>
 
 <tr>
-<td class="left">}</td>
-<td class="left">end polygon</td>
+<td class="org-left">}</td>
+<td class="org-left">end polygon</td>
 </tr>
 
 <tr>
-<td class="left">{(0)</td>
-<td class="left">start path with stepwise control pts</td>
+<td class="org-left">{(0)</td>
+<td class="org-left">start path with stepwise control pts</td>
 </tr>
 
 <tr>
-<td class="left">{(1)</td>
-<td class="left">start open path with Hermite spline control pts</td>
+<td class="org-left">{(1)</td>
+<td class="org-left">start open path with Hermite spline control pts</td>
 </tr>
 
 <tr>
-<td class="left">{(2) <b>u</b></td>
-<td class="left">start closed path with Hermite spline control pts</td>
+<td class="org-left">{(2) <b>u</b></td>
+<td class="org-left">start closed path with Hermite spline control pts</td>
 </tr>
 
 <tr>
-<td class="left">{(3) <b>u</b></td>
-<td class="left">start open path with B-spline control pts</td>
+<td class="org-left">{(3) <b>u</b></td>
+<td class="org-left">start open path with B-spline control pts</td>
 </tr>
 
 <tr>
-<td class="left">{(4) <b>u</b></td>
-<td class="left">start closed path with B-spline control pts</td>
+<td class="org-left">{(4) <b>u</b></td>
+<td class="org-left">start closed path with B-spline control pts</td>
 </tr>
 
 <tr>
-<td class="left">} <b>p</b></td>
-<td class="left">end current path of any type and extrude contour</td>
+<td class="org-left">} <b>p</b></td>
+<td class="org-left">end current path of any type and extrude contour</td>
 </tr>
 
 <tr>
-<td class="left">.</td>
-<td class="left">add current position to path, polygon, or contour</td>
+<td class="org-left">.</td>
+<td class="org-left">add current position to path, polygon, or contour</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-sec-5" class="outline-2">
-<h2 id="sec-5"><span class="section-number-2">5</span> L-system Geometry</h2>
+<div id="outline-container-orgfe7146d" class="outline-2">
+<h2 id="orgfe7146d"><span class="section-number-2">5</span> L-system Geometry</h2>
 <div class="outline-text-2" id="text-5">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">[</td>
-<td class="left">start branch, pushing state onto stack</td>
+<td class="org-left">[</td>
+<td class="org-left">start branch, pushing state onto stack</td>
 </tr>
 
 <tr>
-<td class="left">]</td>
-<td class="left">end branch, popping branch state stack</td>
+<td class="org-left">]</td>
+<td class="org-left">end branch, popping branch state stack</td>
 </tr>
 
 <tr>
-<td class="left">% <b>p</b></td>
-<td class="left">cut modules to end of branch</td>
+<td class="org-left">% <b>p</b></td>
+<td class="org-left">cut modules to end of branch</td>
 </tr>
 
 <tr>
-<td class="left">?(id,scale) <b>p</b></td>
-<td class="left">push current L-system and use L-system id</td>
+<td class="org-left">?(id,scale) <b>p</b></td>
+<td class="org-left">push current L-system and use L-system id</td>
 </tr>
 
 <tr>
-<td class="left">$</td>
-<td class="left">end current L-system, return to previous</td>
+<td class="org-left">$</td>
+<td class="org-left">end current L-system, return to previous</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-sec-6" class="outline-2">
-<h2 id="sec-6"><span class="section-number-2">6</span> L-System Syntax</h2>
+<div id="outline-container-org5d31c16" class="outline-2">
+<h2 id="org5d31c16"><span class="section-number-2">6</span> L-System Syntax</h2>
 <div class="outline-text-2" id="text-6">
-</div><div id="outline-container-sec-6-1" class="outline-3">
-<h3 id="sec-6-1"><span class="section-number-3">6.1</span> Comments</h3>
+</div>
+<div id="outline-container-org23b084f" class="outline-3">
+<h3 id="org23b084f"><span class="section-number-3">6.1</span> Comments</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
-C-style comments, '<i>​* stuff, including newline */​' are supported.<br  />
-   Single-line '/</i>' style comments are not - they conflict with L-system syntax.
+C-style comments, '/​* stuff, including newline */​' are supported.<br />
+Single-line '//' style comments are not - they conflict with L-system syntax.
 </p>
 </div>
 </div>
-<div id="outline-container-sec-6-2" class="outline-3">
-<h3 id="sec-6-2"><span class="section-number-3">6.2</span> Defines</h3>
+<div id="outline-container-org325ba88" class="outline-3">
+<h3 id="org325ba88"><span class="section-number-3">6.2</span> Defines</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
    Lines that start with '#define macro value', 'macro' being some word, create
@@ -498,14 +604,14 @@ the L-system before parsing starts.
 </p>
 </div>
 </div>
-<div id="outline-container-sec-6-3" class="outline-3">
-<h3 id="sec-6-3"><span class="section-number-3">6.3</span> Settings</h3>
+<div id="outline-container-orge6baa30" class="outline-3">
+<h3 id="orge6baa30"><span class="section-number-3">6.3</span> Settings</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
    Before the axiom is specified, variables can be set for the L-system. 
 The following variables can be set to control default/initial L-system values, 
 using standard syntax, i.e. var = value. Multiple settings on the same line must be
-separated by a semi-colon.<br  />
+separated by a semi-colon.<br />
    Note that the view setting is a JS object with the properties
 'position' and 'target', whose values are JS arrays of X,Y,Z coordinates.
 </p>
@@ -513,39 +619,104 @@ separated by a semi-colon.<br  />
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">stemsize</td>
-<td class="left">width of extrusion. default: 0.1</td>
+<td class="org-left">stemsize</td>
+<td class="org-left">width of extrusion. default: 0.1</td>
 </tr>
 
 <tr>
-<td class="left">delta</td>
-<td class="left">angle in degrees of yaw, pitch, and roll. default: 90</td>
+<td class="org-left">delta</td>
+<td class="org-left">angle in degrees of yaw, pitch, and roll. default: 90</td>
 </tr>
 
 <tr>
-<td class="left">step</td>
-<td class="left">distance traveled by F,f,G,g modules. default: 1</td>
+<td class="org-left">step</td>
+<td class="org-left">distance traveled by F,f,G,g modules. default: 1</td>
 </tr>
 
 <tr>
-<td class="left">view</td>
-<td class="left">position: 3D position of viewer/camera. default: [35,10, -5]</td>
+<td class="org-left">view</td>
+<td class="org-left">position: 3D position of viewer/camera.</td>
 </tr>
 
 <tr>
-<td class="left">&#xa0;</td>
-<td class="left">target: 3D position of view/camera target. default: [0,0,0]</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">target: 3D position of view/camera target.</td>
 </tr>
 
 <tr>
-<td class="left">&#xa0;</td>
-<td class="left">e.g. view = {position: [20,20,5], target: [0,8,0]}</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">e.g. view = {position: [20,20,5], target: [0,8,0]}</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#x2014; or ---</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">auto: direction</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">where direction is one of X, -X, Y, -Y, Z, -Z, or</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">a direction array defining where the camera position should</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">be. The target is always the center of the bounding sphere</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">of the drawn geometry and the distance from the target is</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">twice the radius of the bounding sphere.</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">e.g. view = {auto: y} will look down on the XY plane. Note,</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">case-insensitivity. Or,</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">view = {auto: [1,1,1]} will place the camera on a line through</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">the target center parallel to the vector 1,1,1, looking at the</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">target</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">The default view is {auto: X}</td>
 </tr>
 </tbody>
 </table>
@@ -556,8 +727,8 @@ shouldn't conflict with any module parameters.
 </p>
 </div>
 </div>
-<div id="outline-container-sec-6-4" class="outline-3">
-<h3 id="sec-6-4"><span class="section-number-3">6.4</span> Expressions</h3>
+<div id="outline-container-orgd082c84" class="outline-3">
+<h3 id="orgd082c84"><span class="section-number-3">6.4</span> Expressions</h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
    Expressions occur in tests, parameters, and pre/post test <b>u</b>. They 
@@ -571,38 +742,37 @@ Of particular note, are the logical operators which must be written explicitly a
 
 
 <colgroup>
-<col  class="left" />
+<col  class="org-left" />
 
-<col  class="left" />
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
-<td class="left">and</td>
-<td class="left">instead of '&amp;&amp;'</td>
+<td class="org-left">and</td>
+<td class="org-left">instead of '&amp;&amp;'</td>
 </tr>
 
 <tr>
-<td class="left">or</td>
-<td class="left">instead of '&vert;&vert;'</td>
+<td class="org-left">or</td>
+<td class="org-left">instead of '&vert;&vert;'</td>
 </tr>
 
 <tr>
-<td class="left">not</td>
-<td class="left">instead of '!'</td>
+<td class="org-left">not</td>
+<td class="org-left">instead of '!'</td>
 </tr>
 </tbody>
 </table>
 <p>
 e.g. (t &gt; 0) and not u
 </p>
-<hr  />
+<hr />
 </div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2022-07-10 Sun 19:59</p>
-<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.1.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10)</p>
+<p class="date">Created: 2022-07-25 Mon 15:36</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
