@@ -1,9 +1,15 @@
+/*
+  The goal is to handle most L-systems defined in The Algorithmic Beauty of Plants,
+  referred to here as TABOP, or by the Lsystems programs developed by Przemyslaw 
+  Prusinkiewicz' group at the University of Calgary, available here: 
+  http://algorithmicbotany.org
+*/
 /* required packages
    supplied here
    turtle3d.js for actually drawing
    interpret.js unites this file and turtle3d.js
    colortables.js
-   logtag.js for tagged logging
+   logtag.js for tagged logging and class global variables
    
    external packages
    cpp.js to remove comments and expand #defines.
@@ -15,42 +21,23 @@
       libtess is winning, so far
 */
 
-// var testls = `n=30,delta=22.5
-// #ignore +-F
-// axiom: F1F1F1
-// p1: 0 < 0 > 0 -> 0
-// p2: 0 < 0 > 1 -> 1[+F1F1]
-// p3: 0 < 1 > 0 -> 1
-// p4: 0 < 1 > 1 -> 1
-// p4: 1 < 0 > 0 -> 0
-// p4: 1 < 0 > 1 -> 1F1
-// p4: 1 < 1 > 0 -> 0
-// p4: 1 < 1 > 1 -> 0
-// p5: + -> -
-// p5: - -> +
-//`
-
 'use strict';
 
-var testls =`
-#define P sin(PI)
-delta = 2
-derivation length: 2
-axiom: ---/\FA(0)F+++
-A(t) : t<10 -> A(t+1)FFF
-A(t)>F : t==10 -> -FFFA(0)
-`
-
-/* test for module RE string
-   'AB F(n)fGg@M(1,2,3)+-&^\\(1)/(3)|$% @v@c(x,y,z)?P(x,y,z)~S~S12'.matchAll(RE.module)
+/*
+  regular expressions used in parsing L-systems
+  variables ending in ReStr are plain strings used to compose REs
+  Regular expressions are always defined as RE.<re name>
 */
 
-// RE is the container for all regular expressions
+// RE is the container for all regular expressions. this s.b. in LSystem class
 const RE = {};
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
 var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
+/* test for module RE string
+   'AB F(n)fGg@M(1,2,3)+-&^\\(1)/(3)|$% @v@c(x,y,z)?P(x,y,z)~S~S12'.matchAll(RE.module)
+*/
 
 var numReStr = '\\d+(?:\\.\\d+)?';
 var varnameReStr = '\\w[\\w\\d]*';
@@ -59,19 +46,16 @@ var enddReStr = '\)[ \\t]+([^ \\t].*)';
 var startiReStr = '^(?:#?[iI]gnore:) *\(';
 var endiReStr = '\+\)';
 var startcReStr = '^(?:#?[cC]onsider:?) +\(';
-
 var param1ReStr=`${numReStr}|${varnameReStr}`;
-
 var expReStr = '(.*(?=->))';
 var prodNameStr = '(?:^[pP]\\d+:)';
-//RE.prod = new RegExp(`${prodNameStr}? *(?:(?:${moduleReStr})+<)?${moduleReStr}(?:>(?:${moduleReStr})+)?(?::${expReStr})?--?>(.+)`);
 
 RE.defineStart = new RegExp('^(?:[\\s]*define:\\s+){[\\s]*(.*)','d');
 
-RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
-RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`); // do I need moduleReStr???
+RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`);
+RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`);
 RE.dlength = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
-RE.axiom = /^[aA]xiom:\s*(\S.*)/;       // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
+RE.axiom = /^[aA]xiom:\s*(\S.*)/;  // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
 RE.lsystem = /^[lL][sS]ystem: *([^ \\t]+)/;
 RE.modules = new RegExp(`${moduleReStr} *`,'g');
 RE.successorModule = new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
@@ -82,24 +66,33 @@ RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
 RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
 
 RE.assignAny = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*([^;]+);?`,'g');
-
 RE.assignNum = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*(${numReStr}),?`,'g');
-
 RE.anyGlobal = new RegExp(`(${varnameReStr}):[ \t]*([\\S]+)`,'i');
 
 // this accepts function expressions only, not function declarations, not arrow functions
 RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)`, 'g');
-//RE.preRe = /(?:([^< ]+) *< *)?([^> ]+)(?: *> *([^ ]+))?/;
 
-//var pfindReStr=`(${param1ReStr}),?`
-//var pfindRe = new RegExp(pfindReStr, "g"); //use in loop to find parameters
-
-// ParameterizedModule class
-// {m: <modulename>, p: <parameter array> }
+/* ParameterizedModule class
+   {m: <modulename>, p: <parameter array> }
+   A module in an L-system is either a bare string of one or more characters, or 
+   a parameterized module, which, carries parameters along with it enclosed in outer
+   parentheses. The constructor takes the bare string name of the module and the
+   string parameter(s) inside the parentheses. The individual parameters are then
+   parsed into an array. Since a parameter can be an arbitrarily complex numeric
+   function, containing embedded commas, such as, e.g., (x,atan(y,x)), we need
+   to parse the string.
+   This accepts modules like A(1), @C(x*rand()), ...
+   Note that parameter expressions are not validated or evaluated here.
+*/ 
 var ParameterizedModule = function(name, parms) {
    this.m = name;
-   //this.p = parms.split(','); doesn't work for expressions like (x,atan(y,x))
-   // need to recognize nested commas
+   this.p = parseParens(parms);
+   this.toString = function() {return this.m + '(' + this.p.toString() + ')';}
+   this.clone = function() {
+      let pm =  new ParameterizedModule(this.m, '');
+      pm.p = Array.from(this.p);
+      return pm;
+   }
    function parseParens(s) {
       let p=[];
       let pi = 0; // p array index
@@ -108,7 +101,7 @@ var ParameterizedModule = function(name, parms) {
          //puts(`i: ${i}, pi: ${pi},${s[i]}, nested: ${nested}`)
          if (s[i] == ',' && nested == 0) {
             pi++;
-           // puts("onto next param");
+            // puts("onto next param");
             continue;
          } else if (s[i] == '(') {
             nested++;
@@ -123,28 +116,22 @@ var ParameterizedModule = function(name, parms) {
       }
       return p;
    }
-   this.p = parseParens(parms);
-   this.toString = function() {return this.m + '(' + this.p.toString() + ')';}
-   this.clone = function() {
-      let pm =  new ParameterizedModule(this.m, '');
-      pm.p = Array.from(this.p);
-      return pm;
-   }
 }
-//var formalparmsReStr=`(${varnameReStr})(,\[^)]+)?`;
-//var mRe=`(${symbolReStr})(?:\\((${param1ReStr})(?:,(\[^)]+))*\\))?`;
-//var fmRe=`(${symbolReStr})(?:\\((${formalparmsre})\\))?`;
 
-// the goal is to handle most Lsystems defined in TABOP, The Algorithmic Beauty of Plants,
-// or by the Lsystems programs developed Przemyslaw Prusinkiewicz' group at the University
-// of Calgary, available here: http://algorithmicbotany.org
+/*
+  The constructor takes a plain-text L-System specification, typically from a file,
+  and parses it. The Rewrite method will then expand the system into Lsystem.current.
+  The syntax and semantics is as close to cpfg syntax as I could get it with a few 
+  exceptions, among them:
+   - stochastic models are not supported
+   - '{(0)', the parameterized form of '{', is not a polygon, but a stepwise path.
+   - @Ds() and @De() start user defined contours
+   - stemsize is the variable for setting the diameter/size of a drawn line
+   - it accepts all of 'n=<number>, 'derivation length: <number>' and 
+     'dlength: <number>' are all acceptable ways to define iteration length
+   - view and 
+ */
 class Lsystem {
-   about() {
-      puts('the goal is to handle most Lsystems defined in TABOP, The Algorithmic Beauty of Plants,');
-      puts("or by the Lsystems programs developed by Przemyslaw Prusinkiewicz' group at the University");
-      puts("of Calgary, available here: http://algorithmicbotany.org");
-   }
-
    // single map for all l-systems in a spec
    // we want the first entry to be the main lsystem
    static lsystems = new Map();
@@ -464,7 +451,8 @@ class Lsystem {
             if (m) {
                try {
                   for (let parts of m) {
-                     math.evaluate(parts[1]+'='+parts[2], ls.locals);
+                     let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or').replaceAll('!', ' not ');
+                     math.evaluate(parts[1]+'='+ parts2, ls.locals);
                      //ls.locals.set(parts[1], parts[2]);
                   }
                } catch (error) {
@@ -680,6 +668,7 @@ class Lsystem {
             
          }
          if (condition) {
+            condition = condition.replaceAll('&&',' and ').replaceAll('||', 'or').replaceAll('!', ' not ');
             needScope=true;
          } else {
             condition = true; // default of no condition
@@ -1420,3 +1409,28 @@ const loadScript = src => {
 //   link.remove()
 // }
 // ------------------------------------------------------------
+// var testls = `n=30,delta=22.5
+// #ignore +-F
+// axiom: F1F1F1
+// p1: 0 < 0 > 0 -> 0
+// p2: 0 < 0 > 1 -> 1[+F1F1]
+// p3: 0 < 1 > 0 -> 1
+// p4: 0 < 1 > 1 -> 1
+// p4: 1 < 0 > 0 -> 0
+// p4: 1 < 0 > 1 -> 1F1
+// p4: 1 < 1 > 0 -> 0
+// p4: 1 < 1 > 1 -> 0
+// p5: + -> -
+// p5: - -> +
+//`
+
+// unused REs
+//RE.preRe = /(?:([^< ]+) *< *)?([^> ]+)(?: *> *([^ ]+))?/;
+
+//var pfindReStr=`(${param1ReStr}),?`
+//var pfindRe = new RegExp(pfindReStr, "g"); //use in loop to find parameters
+//var formalparmsReStr=`(${varnameReStr})(,\[^)]+)?`;
+//var mRe=`(${symbolReStr})(?:\\((${param1ReStr})(?:,(\[^)]+))*\\))?`;
+//var fmRe=`(${symbolReStr})(?:\\((${formalparmsre})\\))?`;
+
+//RE.prod = new RegExp(`${prodNameStr}? *(?:(?:${moduleReStr})+<)?${moduleReStr}(?:>(?:${moduleReStr})+)?(?::${expReStr})?--?>(.+)`);
