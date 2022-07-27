@@ -200,7 +200,8 @@ function turtleInterp (ti, ls, opts=null) {
                }
                camera.position.copyFrom(campos);
                camera.setTarget(target);
-               puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
+               puts(`camera position: ${camera.position}, target: ${camera.target}`, NTRP_SETTING)
+               //puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
             }
             updateTurtleInfo(ti,0);
             lblNumDrawn.style.backgroundColor = 'lightgreen';
