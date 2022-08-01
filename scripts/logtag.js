@@ -17,35 +17,39 @@ class LogTag {
          LogTag.mode = LogTag.LOG_ANYOF;
       }
    }
-   static isSet(tag) {
-      return (tag & LogTag.tagSet) != 0n;
-   }
    static clear(...tags) {
       for (const tag of tags) {
          LogTag.tagSet ^= tag;  // clear bit
       }
    }
 
+   static isSet(tag) {
+      return (tag & LogTag.tagSet) != 0n;
+   }
+
+   static areSet(tags) {
+      if (LogTag.mode == LogTag.LOG_ANYOF) {
+         for (const tag of tags) {
+            if (tag & LogTag.tagSet ) {
+               return true;
+            }
+         }
+         return false;
+      } else {
+         let alltags=0n;
+         for (const tag of tags) {
+            alltags |= tag;
+         }
+         return (alltags == (alltags & LogTag.tagSet));
+      }
+   }
+
+   // doesn't seem to be a way to avoid evaluating o. oh well
    static log(o, ...tags) {
       if (tags.length == 0) {
          console.log(o);
       } else {
-         if (LogTag.mode == LogTag.LOG_ANYOF) {
-            for (const tag of tags) {
-               if (tag & LogTag.tagSet ) {
-                  console.log(o);
-                  return;
-               }
-            }
-         } else {
-            let alltags=0n;
-            for (const tag of tags) {
-               alltags |= tag;
-            }
-            if (alltags == (alltags & LogTag.tagSet)) {
-               console.log(o);
-            }
-         }
+         if (LogTag.areSet(tags)) { console.log(o);}
       }
    }
    // pass an array of key names and this will define a bunch of constants
