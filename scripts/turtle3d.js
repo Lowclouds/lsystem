@@ -11,6 +11,9 @@ class Turtle3d {
    static basename  = '_t3d';   // tid = basename+counter
    static counter   = 0;       //  a counter for constructing unique tags
    static t3dScene  = null;    //  default scene, once set
+   static trackContours = new Map(); // for trackShapes, default to circle, radius size
+   static meshes = new Map();        // no defaults
+
    static getFirstTurtle(id=null) {
       let t;
       if (Turtle3d.Turtles.size == 0) {
@@ -54,8 +57,6 @@ class Turtle3d {
 
       this.materialList = [];
       this.trackPaths = [];
-      this.trackContours = new Map(); // for trackShapes, default to circle, radius size
-      this.meshes = new Map();        // no defaults
       this.branchStack = [];    // stack of turtle state created when lsystem branches
       this.polygonStack = [];   // per TABOP usage, stores state of polygon creation
       this.polygonVerts = [];   // array of vertices on edge of polygon, in order
@@ -73,8 +74,8 @@ class Turtle3d {
          this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
          this.materialList[0].diffuseColor = this.toColorVector();
          this.materialList[0].ambientColor = this.toColorVector();
-         this.trackContours.set('default', generateCircle(0.5,0.5));
-         this.TurtleState.trackShape = this.trackContours.get('default');
+         Turtle3d.trackContours.set('default', generateCircle(0.5,0.5));
+         this.TurtleState.trackShape = Turtle3d.trackContours.get('default');
          Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
          return true;
       }
@@ -155,17 +156,14 @@ class Turtle3d {
    } // end constructor
 
    // a destructor sort of. primarily keeps the global list of turtles up to date
-   dispose () {
-      this.clear();
+   dispose (doClear = true) {
+      if (doClear) {this.clear();}
       Turtle3d.Turtles.delete(this.TurtleState.Turtle);
       // make this turtle useless
       if (this.TurtleState.turtleShape != null) { this.TurtleState.turtleShape.dispose(true, true);}
       if (this.TurtleState.trackMesh != null) { this.TurtleState.trackMesh.dispose(true, true);}
-      delete this.TurtleState.P;
-      delete this.TurtleState.H;
-      delete this.TurtleState.L;
-      delete this.TurtleState.U;
    }
+
    // getters and setters
    getPos() { return this.TurtleState.P;}
    getH() { return this.TurtleState.H;}
@@ -186,26 +184,28 @@ class Turtle3d {
    isPenUp() {return ! this.TurtleState.penIsDown;}
    isShown() {return this.TurtleState.isShown;}
 
+   /* 
+      a few static functions to select tracks/meshes across turtles
+    */ 
+   static getTracksByTag(tag, scene=Turtle3d.t3dScene) {
+      return scene.getMeshesByTags(tag);
+   }
+   static clearTracksByTag(tag, scene=Turtle3d.t3dScene) {
+      let tracks = scene.getMeshesByTags(tag);
+      for (var index = 0; index < tracks.length; index++) {
+         tracks[index].dispose();
+      }
+      // turtle mesh lists will not be happy after this.
+   }
+   static getBoundingInfoByTag(tag, scene=Turtle3d.t3dScene) {
+      return getbi(Turtle3d.getTracksByTag(tag, scene));
+   }
 
    getTrackMeshes() {
       return this.scene.getMeshesByTags('track'+this.getTurtle() + '&& !colortable' );
    }
 
    getTrackBoundingInfo() {
-      function getbi (meshes) {
-         let min = meshes[0].getBoundingInfo().boundingBox.minimumWorld;
-         let max = meshes[0].getBoundingInfo().boundingBox.maximumWorld;
-
-         for(let i=1; i<meshes.length; i++){
-            let meshMin = meshes[i].getBoundingInfo().boundingBox.minimumWorld;
-            let meshMax = meshes[i].getBoundingInfo().boundingBox.maximumWorld;
-
-            min = BABYLON.Vector3.Minimize(min, meshMin);
-            max = BABYLON.Vector3.Maximize(max, meshMax);
-         }
-         return new BABYLON.BoundingInfo(min, max);
-      }
-      
       return getbi(this.getTrackMeshes());
    }
 
@@ -307,7 +307,7 @@ class Turtle3d {
          } else {
             this.TurtleState.trackShapeID = id;
          }
-         this.TurtleState.trackShape = this.trackContours.get(this.TurtleState.trackShapeID);
+         this.TurtleState.trackShape = Turtle3d.trackContours.get(this.TurtleState.trackShapeID);
          break;
       default: {
          console.warn(`track type of ${v} not supported`);
@@ -335,7 +335,7 @@ class Turtle3d {
       // ts.H = savedstate.H.clone();
       // ts.L = savedstate.L.clone();
       // ts.U = savedstate.U.clone();
-      ts.trackShape = this.trackContours.get(ts.trackShapeID);
+      ts.trackShape = Turtle3d.trackContours.get(ts.trackShapeID);
       if (savedstate.trackMesh != null) { ts.trackMesh = savedstate.trackMesh;}
       if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
 
@@ -410,7 +410,7 @@ class Turtle3d {
 
    setTrackShape (id)  {
       puts(`set track shape to: ${id}, size == ${this.getSize()}`);
-      let c = this.trackContours.get(id);
+      let c = Turtle3d.trackContours.get(id);
       if (c) {
          this.TurtleState.trackShapeID = id;
          this.TurtleState.trackShape = c;
@@ -439,13 +439,22 @@ class Turtle3d {
             pts = [];
             val.forEach((e) => {pts.push(newV(e[0],e[1]));});
          }
-         this.trackContours.set(id, pts);
+         Turtle3d.trackContours.set(id, pts);
       } else {
          console.warn(`contour: ${id} not added, not enough points.`);
       }
    }
 
+   /*
+     add your own tags to turtle tracks
+    */
    setTag(val) {this.TurtleState.trackTag = val;}
+   getTag() {return this.TurtleState.trackTag;}
+   addTag(tag) {this.TurtleState.trackTag += ` ${tag}`;}
+   removeTag(tag) {
+      this.TurtleState.trackTag.replace(tag,'');
+   }
+                
 
    penUp() {
       this.TurtleState.penIsDown = false;
@@ -526,7 +535,7 @@ class Turtle3d {
          ts.size = 0.1;
          ts.lastSize = ts.size;
          ts.trackShapeID = 'default';
-         ts.trackShape = this.trackContours.get('default');
+         ts.trackShape = Turtle3d.trackContours.get('default');
          ts.trackMaterial = 0;
          ts.color = '0,0,0';
          ts.accumRoll = 0;
@@ -956,7 +965,7 @@ class Turtle3d {
       let ptype;
       let tp;
       if (this.TurtleState.trackShape == null) {
-         this.TurtleState.trackShape = this.trackContours.get(this.TurtleState.trackShapeID);
+         this.TurtleState.trackShape = Turtle3d.trackContours.get(this.TurtleState.trackShapeID);
       }
 
       switch (ctype) {
@@ -1805,3 +1814,16 @@ function fanTriangulate(verts) {
    return indices;
 }
 
+function  getbi (meshes) {
+   let min = meshes[0].getBoundingInfo().boundingBox.minimumWorld;
+   let max = meshes[0].getBoundingInfo().boundingBox.maximumWorld;
+
+   for(let i=1; i<meshes.length; i++){
+      let meshMin = meshes[i].getBoundingInfo().boundingBox.minimumWorld;
+      let meshMax = meshes[i].getBoundingInfo().boundingBox.maximumWorld;
+
+      min = BABYLON.Vector3.Minimize(min, meshMin);
+      max = BABYLON.Vector3.Maximize(max, meshMax);
+   }
+   return new BABYLON.BoundingInfo(min, max);
+}
