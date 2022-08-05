@@ -32,6 +32,8 @@ class Turtle3d {
 
    constructor (scene=null, noturtle = false, shape = null ) {
       this.Turtle = `${Turtle3d.basename}${Turtle3d.counter++}`;
+      this.turtleShape =  null,
+
       this.TurtleState = {
          P: new BABYLON.Vector3.Zero(),
          H: new BABYLON.Vector3(1,0,0),
@@ -42,7 +44,6 @@ class Turtle3d {
          color: '0,0,0',
          size: 0.1,
          lastSize: 0.1,
-         turtleShape: null,
          drawMode: Turtle3d.DRAW_IMMEDIATE,
          trackType: Turtle3d.TRACK_TUBE, // line is really slow
          trackPath: null,
@@ -70,7 +71,7 @@ class Turtle3d {
 
       function initAll(s, nt, shape) {
          this.scene = getScene.call(this, s);
-         this.TurtleState.turtleShape = turtleShape.call(this, nt, shape);
+         this.turtleShape = makeTurtleShape.call(this, nt, shape);
          this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
          this.materialList[0].diffuseColor = this.toColorVector();
          this.materialList[0].ambientColor = this.toColorVector();
@@ -80,7 +81,7 @@ class Turtle3d {
          return true;
       }
 
-      function turtleShape(noturtle, shape) {
+      function makeTurtleShape(noturtle, shape) {
          let tag = this.Turtle;
          let turtle=''
          if (noturtle) {
@@ -160,7 +161,7 @@ class Turtle3d {
       if (doClear) {this.clear();}
       Turtle3d.Turtles.delete(this.Turtle);
       // make this turtle useless
-      if (this.TurtleState.turtleShape != null) { this.TurtleState.turtleShape.dispose(true, true);}
+      if (this.turtleShape != null) { this.turtleShape.dispose(true, true);}
       if (this.TurtleState.trackMesh != null) { this.TurtleState.trackMesh.dispose(true, true);}
    }
 
@@ -171,7 +172,7 @@ class Turtle3d {
    getU() { return this.TurtleState.U;}
    getColor() { return this.TurtleState.color;}
    getSize() { return this.TurtleState.size;}
-   getTurtleShape() { return this.TurtleState.turtleShape;} // a mesh
+   getTurtleShape() { return this.turtleShape;} // a mesh
    getTrackShapeID() {return this.TurtleState.trackShapeID;} // number or string
    getTrackShape() {return this.TurtleState.trackShape;} // array of Vector3
    getTrack() { return this.TurtleState.trackType;}
@@ -341,7 +342,7 @@ class Turtle3d {
 
       let s = this.getTurtleShape();
       if (s != null) {
-         s.position = this.getPos();
+         s.position.copyFrom(this.getPos())
          let meshes = this.scene.getMeshesByTags(this.Turtle);
          for (var index = 0; index < meshes.length; index++) {
             meshes[index].isVisible = ts.isShown;
@@ -404,7 +405,7 @@ class Turtle3d {
    setTurtleShape(val) {
       let t = this.Turtle;
       BABYLON.Tags.AddTagsTo(val, t, this.scene);
-      this.TurtleState.turtleShape = val; // a mesh
+      this.turtleShape = val; // a mesh
       return this;
    }
 
@@ -508,7 +509,7 @@ class Turtle3d {
    // }
 
    home () {
-      let tshape = this.TurtleState.turtleShape;
+      let tshape = this.turtleShape;
       let newPos = newV(0, 0, 0);
 
       this.#setPos(newPos);
@@ -773,7 +774,7 @@ class Turtle3d {
          this.drawImmediate(ts, oldPos, newPos);
       }
       // update visual turtle position
-      let tmesh = ts.turtleShape;
+      let tmesh = this.turtleShape;
       if (tmesh) {tmesh.position = newPos;}
       ts.lastSize=ts.size;
    }
@@ -938,7 +939,7 @@ class Turtle3d {
       this.trackPaths.push(extrusion); //
 
       // position the turtle at end of path
-      let tmesh = this.TurtleState.turtleShape;
+      let tmesh = this.turtleShape;
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
 
