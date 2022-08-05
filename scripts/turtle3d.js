@@ -31,8 +31,8 @@ class Turtle3d {
    };
 
    constructor (scene=null, noturtle = false, shape = null ) {
+      this.Turtle = `${Turtle3d.basename}${Turtle3d.counter++}`;
       this.TurtleState = {
-         Turtle: `${Turtle3d.basename}${Turtle3d.counter++}`,
          P: new BABYLON.Vector3.Zero(),
          H: new BABYLON.Vector3(1,0,0),
          L: new BABYLON.Vector3(0,0,1),
@@ -76,12 +76,12 @@ class Turtle3d {
          this.materialList[0].ambientColor = this.toColorVector();
          Turtle3d.trackContours.set('default', generateCircle(0.5,0.5));
          this.TurtleState.trackShape = Turtle3d.trackContours.get('default');
-         Turtle3d.Turtles.set(this.TurtleState.Turtle, this);
+         Turtle3d.Turtles.set(this.Turtle, this);
          return true;
       }
 
       function turtleShape(noturtle, shape) {
-         let tag = this.TurtleState.Turtle;
+         let tag = this.Turtle;
          let turtle=''
          if (noturtle) {
             return turtle;
@@ -158,7 +158,7 @@ class Turtle3d {
    // a destructor sort of. primarily keeps the global list of turtles up to date
    dispose (doClear = true) {
       if (doClear) {this.clear();}
-      Turtle3d.Turtles.delete(this.TurtleState.Turtle);
+      Turtle3d.Turtles.delete(this.Turtle);
       // make this turtle useless
       if (this.TurtleState.turtleShape != null) { this.TurtleState.turtleShape.dispose(true, true);}
       if (this.TurtleState.trackMesh != null) { this.TurtleState.trackMesh.dispose(true, true);}
@@ -175,7 +175,7 @@ class Turtle3d {
    getTrackShapeID() {return this.TurtleState.trackShapeID;} // number or string
    getTrackShape() {return this.TurtleState.trackShape;} // array of Vector3
    getTrack() { return this.TurtleState.trackType;}
-   getTurtle() {return this.TurtleState.Turtle;}
+   getTurtle() {return this.Turtle;}
    getScene() {return this.scene;}
    getOrientation() {
       return [this.TurtleState.H, this.TurtleState.L, this.TurtleState.U];
@@ -340,9 +340,9 @@ class Turtle3d {
       if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
 
       let s = this.getTurtleShape();
-      if (s != '') {
+      if (s != null) {
          s.position = this.getPos();
-         let meshes = this.scene.getMeshesByTags(ts.Turtle);
+         let meshes = this.scene.getMeshesByTags(this.Turtle);
          for (var index = 0; index < meshes.length; index++) {
             meshes[index].isVisible = ts.isShown;
          }
@@ -402,7 +402,7 @@ class Turtle3d {
    // you can set your own shape - untested
    // this uses your shape, as is
    setTurtleShape(val) {
-      let t = this.TurtleState.Turtle;
+      let t = this.Turtle;
       BABYLON.Tags.AddTagsTo(val, t, this.scene);
       this.TurtleState.turtleShape = val; // a mesh
       return this;
@@ -466,7 +466,7 @@ class Turtle3d {
    }
 
    hide () {
-      let t = this.TurtleState.Turtle;
+      let t = this.Turtle;
       if (t && this.TurtleState.isShown) {
          let meshes = this.scene.getMeshesByTags(t);
          for (var index = 0; index < meshes.length; index++) {
@@ -477,7 +477,7 @@ class Turtle3d {
       return this;
    }
    show () {
-      let t = this.TurtleState.Turtle;
+      let t = this.Turtle;
       if (t && ! this.TurtleState.isShown) {
          let meshes = this.scene.getMeshesByTags(t);
          for (var index = 0; index < meshes.length; index++) {
@@ -779,7 +779,7 @@ class Turtle3d {
    }
 
    drawImmediate(ts, oldPos, newPos) {
-      let t = ts.Turtle;
+      //let t = this.Turtle;
       let type = ts.trackType;
       let segment;
       let doSetMaterial = true;
@@ -840,7 +840,7 @@ class Turtle3d {
    }
 
    drawTrack() {
-      let t = this.TurtleState.Turtle;
+      let t = this.Turtle;
       let tp = this.TurtleState.trackPath;
       if (tp === null || tp.points.length < 2) {
          return;
@@ -1064,7 +1064,7 @@ class Turtle3d {
 
       mesh = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
 
-      this.meshCommonSetup(mesh, scaling);
+      this.meshCommonSetup(mesh, scaling, true, this.TurtleState.P);
       return this;
    }
 
@@ -1081,7 +1081,7 @@ class Turtle3d {
 
       mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
 
-      this.meshCommonSetup(mesh, scaling);
+      this.meshCommonSetup(mesh, scaling, true, this.TurtleState.P);
       return this;
    }
 
@@ -1102,7 +1102,7 @@ class Turtle3d {
 
    meshCommonSetup (mesh, scaling, setmaterial = true, pos = null, rotate=true) {
       let ts = this.TurtleState;
-      let t = ts.Turtle;
+      let t = this.Turtle;
       let ttag = ts.trackTag;
       let tag = `track${t} ${ttag}`;
 
@@ -1116,6 +1116,9 @@ class Turtle3d {
          mesh.scaling.z = scaling.z;
       }
 
+      if (pos) {
+         mesh.position.copyFrom(pos);
+      }
       //mesh.rotation = BABYLON.Vector3.RotationFromAxis(ts.H, ts.L.scale(1), ts.U.scale(-1));
       // let p;
       // if (pos) {

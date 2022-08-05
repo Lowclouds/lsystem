@@ -17,7 +17,7 @@ function turtleInterp (ti, ls, opts=null) {
       inPolygon: 0,                // not
       ptCaptureMode: Turtle3d.CAPTURE_NONE, //
       mi: 0,                       // module index
-      miCount: 2000,               // number of modules to interpret/frame
+      miCount: 200,               // number of modules to interpret/frame
       interval: 1000 / (10 * desiredFps),
       lastTime: performance.now(),
       ctable:  null,
@@ -32,7 +32,8 @@ function turtleInterp (ti, ls, opts=null) {
          code += snippet;
       }
    }
-   
+
+   puts(`miCount: ${idata.miCount}, interval: ${idata.interval}`);
    idata.show =  function () {
       return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}, useTracksAlways: ${idata.useTracksAlways}`;
    }
@@ -120,6 +121,7 @@ function turtleInterp (ti, ls, opts=null) {
    }
    let ts = ti.getState()
    puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${ti.branchStack.length}`); // , NTRP_INIT
+   //idata.lastTime = performance.now();
 
    let ipromise = new Promise((resolve, reject) => {
       console.log('in Promise');
@@ -127,19 +129,7 @@ function turtleInterp (ti, ls, opts=null) {
          let i;
          let isPM = false;
          
-         if (idata.mi < tree.length) {
-            rAF = requestAnimationFrame(doModule);
-            
-            let now = performance.now();
-            let delta = now - idata.lastTime;
-            if (delta < idata.interval) {
-               // ease off on number of modules to interpret
-               idata.miCount *= 0.95;
-               return;
-            } else {
-               idata.miCount *=1.05;
-            }
-         } else {
+         if (idata.mi >= tree.length) {
             let ts = ti.getState()
             if (ti.branchStack.length > 0) {
                puts(' done with tree'); // , NTRP_INIT
@@ -208,6 +198,7 @@ function turtleInterp (ti, ls, opts=null) {
             //lblNumNodes.style.backgroundColor = 'lightgreen';
             lsCode.value = code;
             resolve(true);
+            return;
          }
 
          for (i=idata.mi; i < Math.min(tree.length, idata.mi+idata.miCount); i++) {
@@ -621,6 +612,7 @@ function turtleInterp (ti, ls, opts=null) {
          idata.mi = i;
          lblNumDrawn.textContent=i;
 	 //lblNumNodes.textContent= tree.length - i;
+         rAF = requestAnimationFrame(doModule);
       }
       doModule();
    })

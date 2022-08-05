@@ -1,4 +1,4 @@
-// const myHeading = document.querySelector('h1');
+
 // myHeading.textContent = 'An L-system interpreter';
 
 var turtleCtrlBtn = document.getElementById('tcbtn');
@@ -503,16 +503,19 @@ function makeAxes (size=10) {
    BABYLON.Tags.AddTagsTo(zaxis, `axes`); 
 }
 
+makeAxes();
+
 var t = new Turtle3d(scene);
 initCTable(t);
 updateTurtleInfo(t,0);
+
 //console.log(t.TurtleState);
 // console.log(Turtle3d.prototype.t3dIDTag);
 // var t1 =  new Turtle3d();
 // console.log(Turtle3d.prototype.t3dIDTag);
 // console.log(t1.TurtleState);
 
-makeAxes();
+
 //markSky(t);
 
 
@@ -538,39 +541,41 @@ var tracksAlways = false;
 //    } catch (error) {puts(error);}
 // });
 
+
+
 // load an example file
-fetch('./tests/3d-a1.ls')
-   .then( response => {
-      if (! response.ok) {
-         throw new Error(`${response.status}`);
-      }
-      return response.text();
-   })
-   .then(text => {
-      lsSrc.value = text;
-      lsys = Lsystem.Parse(lsSrc.value);
-      lsResult.value = lsys.serialize();
-      lsState = 'Parsed';
-      if (lsResult.textContent != 'Empty') {
-	 uiDoRewrite()
-	    .then(value => {
-	       //lsResult.value = lsys.Rewrite(); //.toString();
-               /* --------- reset ---------*/
-               t.reset();
-               /* --------- draw ---------*/
-               turtleInterp(t, lsys, {gencode: codegenOn})
-		  .then(value => {
-		     btnMSave.disabled = false;
-		     t.show();
-		  }).catch(error => {
-		     puts(error);
-		     btnMSave.disabled = true;
-		     t.show();
-		  })
-	    });
-      }
-   })
-   .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
+// fetch('./tests/3d-a1.ls')
+//    .then( response => {
+//       if (! response.ok) {
+//          throw new Error(`${response.status}`);
+//       }
+//       return response.text();
+//    })
+//    .then(text => {
+//       lsSrc.value = text;
+//       lsys = Lsystem.Parse(lsSrc.value);
+//       lsResult.value = lsys.serialize();
+//       lsState = 'Parsed';
+//       if (lsResult.textContent != 'Empty') {
+// 	 uiDoRewrite()
+// 	    .then(value => {
+// 	       //lsResult.value = lsys.Rewrite(); //.toString();
+//                /* --------- reset ---------*/
+//                t.reset();
+//                /* --------- draw ---------*/
+//                turtleInterp(t, lsys, {gencode: codegenOn})
+// 		  .then(value => {
+// 		     btnMSave.disabled = false;
+// 		     t.show();
+// 		  }).catch(error => {
+// 		     puts(error);
+// 		     btnMSave.disabled = true;
+// 		     t.show();
+// 		  })
+// 	    });
+//       }
+//    })
+//    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
 
 // ------------------------------------------------------------
 //  end of UI

@@ -1,8 +1,9 @@
 dlength: 10
-stemsize=0.25
-r=3
-#define X r*(random()-0.5)*y
-#define Z r*(random()-0.5)*y
+stemsize=0.01
+#define RAND (random()-0.5)
+#define X 5*RAND*y
+#define Z 5*RAND*y
+#define Y y+ 2*RAND
 
-axiom: f(2)@m(0,2,0)@O(0.5)
-@m(x,y,z) : y< 10 --> @m(x,y,z);;;@m(X,y+random(),Z);;;@O(0.5)
+axiom: @m(0,5,0)
+@m(x,y,z) : y< 10 --> @m(x,y,z);;@O(0.5)@m(X,Y,Z)
