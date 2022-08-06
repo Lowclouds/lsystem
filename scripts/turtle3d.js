@@ -158,11 +158,12 @@ class Turtle3d {
 
    // a destructor sort of. primarily keeps the global list of turtles up to date
    dispose (doClear = true) {
-      if (doClear) {this.clear();}
+      if (doClear) {this.clear();} // disposes drawn meshes
+      Turtle3d.clearTracksByTag(this.Turtle); // disposes the turtleShape
       Turtle3d.Turtles.delete(this.Turtle);
       // make this turtle useless
-      if (this.turtleShape != null) { this.turtleShape.dispose(true, true);}
-      if (this.TurtleState.trackMesh != null) { this.TurtleState.trackMesh.dispose(true, true);}
+      delete this.Turtle;
+      delete this.TurtleState;
    }
 
    // getters and setters
