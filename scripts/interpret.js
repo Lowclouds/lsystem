@@ -581,7 +581,7 @@ function turtleInterp (ti, ls, opts=null) {
                   let cid = ti.endContour(p0);
                   gencode(`ti.endContour('${p0}');\n`);
                   puts(`endContour(${cid})`, NTRP_CONTOUR);
-                  puts(`trackContours.get(${cid}) = ${ti.trackContours.get(cid)}`, NTRP_CONTOUR)
+                  puts(`getTrackShape(${cid}) = ${ti.getTrackShape(cid)}`, NTRP_CONTOUR)
                } else {
                   throw new Error('@De end Contour module requires an id parameter');
                }

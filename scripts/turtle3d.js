@@ -13,6 +13,8 @@ class Turtle3d {
    static t3dScene  = null;    //  default scene, once set
    static trackContours = new Map(); // for trackShapes, default to circle, radius size
    static meshes = new Map();        // no defaults
+   static polygonStack = [];   // per TABOP usage, stores state of polygon creation
+   static polygonVerts = null;   // array of vertices on edge of polygon, in order
 
    static getFirstTurtle(id=null) {
       let t;
@@ -30,7 +32,7 @@ class Turtle3d {
       return t;
    };
 
-   constructor (scene=null, noturtle = false, shape = null ) {
+   constructor (scene=null, opts = {noturtle: false, shape: null, globalPolygons: false}) {
       this.Turtle = `${Turtle3d.basename}${Turtle3d.counter++}`;
       this.turtleShape =  null,
 
@@ -56,13 +58,19 @@ class Turtle3d {
          accumRoll: 0,
       }
 
+      const noturtle = opts.noturtle || false;
+      const shape = opts.shape || null;
+      const globalPolygons = opts.globalPolygons || false;
+
       this.materialList = [];
       this.trackPaths = [];
       this.branchStack = [];    // stack of turtle state created when lsystem branches
-      this.polygonStack = [];   // per TABOP usage, stores state of polygon creation
-      this.polygonVerts = [];   // array of vertices on edge of polygon, in order
       this.tempContour = null;
+      this.polygonStack = [],   // per TABOP usage, stores state of polygon creation
+      this.polygonVerts = null,   // array of vertices on edge of polygon, in order
+      this.useGlobalPolygons = globalPolygons;
       this.scene = null;
+
       this.initDone = initAll.call(this, scene, noturtle, shape);
 
       // instrumentation
@@ -175,7 +183,13 @@ class Turtle3d {
    getSize() { return this.TurtleState.size;}
    getTurtleShape() { return this.turtleShape;} // a mesh
    getTrackShapeID() {return this.TurtleState.trackShapeID;} // number or string
-   getTrackShape() {return this.TurtleState.trackShape;} // array of Vector3
+   getTrackShape(id=null) {
+      if (id==null) {
+         return this.TurtleState.trackShape; // current track shape; array of Vector3 
+      } else {
+         return Turtle3d.trackContours(id);
+      }
+   }
    getTrack() { return this.TurtleState.trackType;}
    getTurtle() {return this.Turtle;}
    getScene() {return this.scene;}
@@ -542,9 +556,12 @@ class Turtle3d {
          ts.color = '0,0,0';
          ts.accumRoll = 0;
 
-         this.branchStack=[];
          this.polygonStack=[];
-         this.polygonVerts=[];
+         this.polygonVerts=null;
+         Turtle3d.polygonStack=[];
+         Turtle3d.polygonVerts=null;
+   
+         this.branchStack=[];
          this.tempContour = null;
       }
       return this;
@@ -579,10 +596,8 @@ class Turtle3d {
             this.updateContour(newP);
             break;
          }
-         if (this.polygonStack.length) {
-             puts(`storePoint adding pt ${newP} to polygon${this.polygonStack.length}`, TRTL_CAPTURE, TRTL_POLYGON);
-             this.updatePolygon(newP);
-         }
+         puts(`forward: adding pt ${newP} to polygon`, TRTL_CAPTURE, TRTL_POLYGON);
+         this.updatePolygon(newP);
       }
 
       return this;
@@ -1147,29 +1162,52 @@ class Turtle3d {
    // pretty inefficient.
    newPolygon() {
       // save state
-      this.polygonStack.push({a: Array.from(this.polygonVerts)});
-      this.polygonVerts = new Array();
-      //this.TurtleState.drawMode = Turtle3d.CAPTURE_POLYGON;
+      let pbase;
+      if (this.useGlobalPolygons) {
+         pbase = Turtle3d;
+      } else {
+         pbase = this;
+      }
+      if (pbase.polygonVerts !== null) {
+         pbase.polygonStack.push(pbase.polygonVerts);
+      }
+      pbase.polygonVerts = new Array();
+      puts(`Push polygonVerts and create new polygonVerts array`, TRTL_POLYGON);
       return this;
    }
 
    // implements the '.' module
    updatePolygon(pos=null) {
-      if (this.polygonStack.length > 0) { // i.e. capturing a polygon
+      let pbase;
+      if (this.useGlobalPolygons) {
+         pbase = Turtle3d;
+      } else {
+         pbase = this;
+      }
+      if (pbase.polygonVerts !== null) {
          if (pos === null) {
             pos = this.getPos();
          }
          puts(`adding ${pos} to polygonVerts`, TRTL_POLYGON);
-         this.polygonVerts.push(otoa(pos));
+         pbase.polygonVerts.push(otoa(pos));
+      } else {
+         puts('polygon not started!', TRTL_POLYGON);
       }
+
       return this;
    }
 
    // implements the '}' module
    endPolygon () {
+      let ts = this.TurtleState;
+      let pbase;
+      if (this.useGlobalPolygons) {
+         pbase = Turtle3d;
+      } else {
+         pbase = this;
+      }
       let pmesh;
-      // polygonVerts is same as popped array
-      if (this.polygonVerts.length > 2) {
+      if (pbase.polygonVerts && pbase.polygonVerts.length > 2) {
          let vertexData = new BABYLON.VertexData();
          // this works in the xy plane only
          // let everts = earcut.flatten([this.polygonArray]);
@@ -1180,9 +1218,9 @@ class Turtle3d {
          // vertexData.positions = everts.vertices;
          // vertexData.indices = verts;
 
-         vertexData.positions = this.polygonVerts.flat();
-         vertexData.indices = fanTriangulate(this.polygonVerts);
-         // for (let i = 0; i < this.polygonVerts.length; i++) {
+         vertexData.positions = pbase.polygonVerts.flat();
+         vertexData.indices = fanTriangulate(pbase.polygonVerts);
+         // for (let i = 0; i < pbase.polygonVerts.length; i++) {
          //    vertexData.indices[i] = i; // we assume they're in order;
          // }
          vertexData.normals = [];
@@ -1191,28 +1229,24 @@ class Turtle3d {
          // puts(`indices: ${vertexData.indices}`);
          // puts(`normals: ${vertexData.normals}`);
 
-
          pmesh = new BABYLON.Mesh("poly", this.scene);
          vertexData.applyToMesh(pmesh,true);
 
-         // set position to first captured polygon point - well, no
-         // leave it in place.
-         this.meshCommonSetup(pmesh, false, true, newV(0,0,0));
-         //BABYLON.Vector3.FromArray(this.polygonVerts[0]));
+         this.meshCommonSetup(pmesh, false);
 
          // make sure the material has backFaceCulling set to false
          this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
-         puts(`created a new polygon(${this.polygonStack.length})`, TRTL_POLYGON);
+         puts(`created a new polygon(${pbase.polygonVerts.length})`, TRTL_POLYGON);
       } else {
-         puts('polygon creation failed: polygonVerts.length = ' + this.polygonVerts.length );
+         puts('polygon creation failed: polygonVerts.length = ' + pbase.polygonVerts, TRTL_POLYGON );
       }
       // restore state
-      let pstate = this.polygonStack.pop();
-      if (this.polygonStack.length > 0) {
-         this.polygonVerts=pstate.a;
-      } else {
-         this.polygonVerts = [];
-      }
+      pbase.polygonVerts = pbase.polygonStack.pop() || null;
+      //puts(`restored polygonVerts from stack`, TRTL_POLYGON);
+      // if (pbase.polygonVerts == undefined) {
+      //    pbase.polygonVerts == null;
+      //    puts(`set polygonVerts to null`);
+      // }
       return this;
    }
 
@@ -1285,16 +1319,13 @@ class Turtle3d {
 
    storePoint(pos=null, hdg=null) {
       let pt = vclamp(pos==null? this.getPos() : pos);
-      
-      switch (this.TurtleState.drawMode) {
+      let ts = this.TurtleState;
+
+      switch (ts.drawMode) {
       case Turtle3d.CAPTURE_PATH:
          puts(`storePoint adding pt ${pt} to path`, TRTL_CAPTURE, TRTL_TRACK);
-         this.TurtleState.trackPath.addPathPt(this.TurtleState, pt.clone());
+         ts.trackPath.addPathPt(ts, pt.clone());
          break;
-         // case Turtle3d.CAPTURE_POLYGON:
-         //    puts(`storePoint adding pt ${pt} to polygon${this.polygonStack.length}`, TRTL_CAPTURE, TRTL_POLYGON);
-         //    this.updatePolygon(pt);
-         //    break;
       case Turtle3d.CAPTURE_CONTOUR:
          if ( this.tempContour ) {
             puts(`storePoint adding contour pt ${pt}`, TRTL_CAPTURE | TRTL_CONTOUR);
@@ -1304,12 +1335,8 @@ class Turtle3d {
          }
          break;
       case Turtle3d.DRAW_IMMEDIATE:
-         if (this.polygonStack.length) { // this is messed up design, I think
-            puts(`storePoint adding pt ${pt} to polygon${this.polygonStack.length}`, TRTL_CAPTURE, TRTL_POLYGON);
-            this.updatePolygon(pt);
-         } else {
-            console.warn('storePoint called when no point capture mode in progress');
-         }
+         puts(`storePoint adding pt ${pt} to polygon`, TRTL_CAPTURE, TRTL_POLYGON);
+         this.updatePolygon(pt);
          break;
       default:
          puts(`Capture type ${type} not implemented`);
@@ -1659,10 +1686,10 @@ function showColorTable(tu) {
       for (c = 0; m < size && c < rows; c++, m++) {
          tu.setMaterial(254);   // black
          tu.newPolygon();
+         tu.updatePolygon();
          for (let s=0; s<4; s++) {
             tu.fd(1);
             tu.yaw((s % 2 == 1) ?120 : 60);
-            tu.updatePolygon();
          }
          tu.setMaterial(m);
          tu.endPolygon();
