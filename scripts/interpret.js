@@ -153,45 +153,47 @@ function turtleInterp (ti, ls, opts=null) {
             }
             if (idata.view.hasOwnProperty('auto')) {
                let bi = ti.getTrackBoundingInfo();
-               let fPlanes = BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix());               
-               let target = bi.boundingSphere.center;
-               let bx = target.x;
-               let by = target.y;
-               let bz = target.z;
-               let distance = 2 * bi.boundingSphere.radius;
-               let campos = newV(bx + distance, by, bz);
-               if ('object' == typeof idata.view.auto ) {
-                  campos = BABYLON.Vector3.FromArray(idata.view.auto.toArray());
-                  campos.normalize().scaleInPlace(distance).addInPlace(target);
-               } else {         // assume string
-                  switch (idata.view.auto.toUpperCase()) {
-                  case 'Y':
-                     campos.x = bx;
-                     campos.y = by + distance;
-                     break;
-                  case '-Y':
-                     campos.x = bx;
-                     campos.y = by - distance;
-                     break;
-                  case 'Z':
-                     campos.x = bx;
-                     campos.z = bz + distance;
-                     break;
-                  case '-Z':
-                     campos.x = bx;
-                     campos.z = bz - distance;
-                     break;
-                  case '-X':
-                     campos.x= bx - distance;
-                     break;
-                  case 'X':
-                  default:
+               if (bi) {
+                  let fPlanes = BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix());               
+                  let target = bi.boundingSphere.center;
+                  let bx = target.x;
+                  let by = target.y;
+                  let bz = target.z;
+                  let distance = 2 * bi.boundingSphere.radius;
+                  let campos = newV(bx + distance, by, bz);
+                  if ('object' == typeof idata.view.auto ) {
+                     campos = BABYLON.Vector3.FromArray(idata.view.auto.toArray());
+                     campos.normalize().scaleInPlace(distance).addInPlace(target);
+                  } else {         // assume string
+                     switch (idata.view.auto.toUpperCase()) {
+                     case 'Y':
+                        campos.x = bx;
+                        campos.y = by + distance;
+                        break;
+                     case '-Y':
+                        campos.x = bx;
+                        campos.y = by - distance;
+                        break;
+                     case 'Z':
+                        campos.x = bx;
+                        campos.z = bz + distance;
+                        break;
+                     case '-Z':
+                        campos.x = bx;
+                        campos.z = bz - distance;
+                        break;
+                     case '-X':
+                        campos.x= bx - distance;
+                        break;
+                     case 'X':
+                     default:
+                     }
                   }
+                  camera.position.copyFrom(campos);
+                  camera.setTarget(target);
+                  puts(`camera position: ${camera.position}, target: ${camera.target}`, NTRP_SETTING)
+                  //puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
                }
-               camera.position.copyFrom(campos);
-               camera.setTarget(target);
-               puts(`camera position: ${camera.position}, target: ${camera.target}`, NTRP_SETTING)
-               //puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
             }
             updateTurtleInfo(ti,0);
             lblNumDrawn.style.backgroundColor = 'lightgreen';

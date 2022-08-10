@@ -1847,6 +1847,9 @@ function fanTriangulate(verts) {
 }
 
 function  getbi (meshes) {
+   if (meshes.length < 1) {
+      return null;
+   }
    let min = meshes[0].getBoundingInfo().boundingBox.minimumWorld;
    let max = meshes[0].getBoundingInfo().boundingBox.maximumWorld;
 

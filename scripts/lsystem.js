@@ -154,17 +154,29 @@ class Lsystem {
       this.Dlength = 0;	// number of iterations
       this.dDone = 0;	// number of iterations done;
       this.locals = new Map(); // from variable assignment statements
-      this.locals._expand_ = function(module) {
-         for (let a= 0; a< module.p.length; a++) {
-            module.p[a] = math.evaluate(module.p[a], lsys.locals);
-         }
+      this.locals._expand_ = (module) => {
+         module.p.forEach((arg,ndx) => {
+            if (arg[0] == "'" && arg[arg.length-1] == "'") {
+               puts('returning arg');
+               module.p[ndx] = arg; // new String(arg);
+            } else {
+               puts(`evaluating ${arg}`);
+               module.p[ndx] = math.evaluate(arg, this.locals);
+            }
+         });
       }
       // need to rethink globals - s.b. a singleton
       this.globals = new Map();
-      this.globals._expand_ = function(module) {
-         for (let a= 0; a< module.p.length; a++) {
-            module.p[a] = math.evaluate(module.p[a], lsys.globals);
-         }
+      this.globals._expand_ = (module) => {
+         module.p.forEach((arg,ndx) => {
+            if (arg[0] == "'" && arg[arg.length-1] == "'") {
+               puts('returning arg');
+               module.p[ndx] = arg; // new String(arg);
+            } else {
+               puts(`evaluating ${arg}`);
+               module.p[ndx] = math.evaluate(arg,this.globals);
+            }
+         });
       }
 
       this.functions = new Map();
@@ -451,7 +463,7 @@ class Lsystem {
             if (m) {
                try {
                   for (let parts of m) {
-                     let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or').replaceAll('!', ' not ');
+                     let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or'); //.replaceAll('!', ' not ');
                      math.evaluate(parts[1]+'='+ parts2, ls.locals);
                      //ls.locals.set(parts[1], parts[2]);
                   }
@@ -668,7 +680,7 @@ class Lsystem {
             
          }
          if (condition) {
-            condition = condition.replaceAll('&&',' and ').replaceAll('||', 'or').replaceAll('!', ' not ');
+            condition = condition.replaceAll('&&',' and ').replaceAll('||', 'or'); // .replaceAll('!', ' not ');
             needScope=true;
          } else {
             condition = true; // default of no condition
@@ -684,10 +696,16 @@ class Lsystem {
                math.evaluate(v+'='+exp, scope);}
             //puts(`test func: _test_() = ${condition}`);
             scope._test_ = function () {return math.evaluate(`${condition}`, scope);}
-            scope._expand_ = function(module) {
-               for (let a= 0; a< module.p.length; a++) {
-                  module.p[a] = math.evaluate(module.p[a], scope);
-               }
+            scope._expand_ = (module) => {
+               module.p.forEach((arg,ndx) => {
+                  if (arg[0] == "'" && arg[arg.length-1] == "'") {
+                     //puts('returning arg');
+                     module.p[ndx] = arg; // new String(arg);
+                  } else {
+                     //puts(`evaluating ${arg}`);
+                     module.p[ndx] = math.evaluate(arg,scope);
+                  }
+               });
             }
          } else {
             scope={};

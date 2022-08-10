@@ -6,7 +6,7 @@ stemsize=0.25
 
 axiom: CF(10)F(-1)#(STEPW)&(30)@v@#('leaf'){(0)A(1)}(0)
 A(t) : t<=5 ->  #(t*STEPW)F(STEPL)&(STEPA)A(t+1)
-A(t) : t>=DLength-5 ->  #((DLength-t)*STEPW)F(STEPL)&(STEPA)A(t+1)
+A(t) : t>=Dlength-5 ->  #((Dlength-t)*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) --> F(STEPL)&(STEPA)A(t+1)
 /*A(t) : t > 10 --> * */
 C --> @Ds('leaf')D@De('leaf')@m(0,0,0)

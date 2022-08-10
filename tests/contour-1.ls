@@ -1,7 +1,7 @@
 derivation length:15
 stemsize=0.25         
 
-axiom: Cf(10)-(90)/(90)[@#(leaf)A(1)]
+axiom: Cf(10)-(90)/(90)[@#('leaf')A(1)]
 A(t) : t<10 ->  F(t)^(45)A(t+1)
 /*A(t) : t > 10 --> * */
 C --> @Ds('leaf')D@De('leaf')@m(0,0,0)
