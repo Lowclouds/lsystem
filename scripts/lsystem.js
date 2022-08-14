@@ -31,6 +31,7 @@
 
 // RE is the container for all regular expressions. this s.b. in LSystem class
 const RE = {};
+
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
 var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
 // moduleReStr recognizes a module, parameterized or not
@@ -157,7 +158,7 @@ class Lsystem {
       this.locals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
             if (arg[0] == "'" && arg[arg.length-1] == "'") {
-               puts('returning arg');
+               puts('returning quoted string arg', LSYS_EXPAND);
                module.p[ndx] = arg; // new String(arg);
             } else {
                puts(`evaluating ${arg}`);
@@ -170,7 +171,7 @@ class Lsystem {
       this.globals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
             if (arg[0] == "'" && arg[arg.length-1] == "'") {
-               puts('returning arg');
+               puts('returning quoted string arg', LSYS_EXPAND);
                module.p[ndx] = arg; // new String(arg);
             } else {
                puts(`evaluating ${arg}`);
