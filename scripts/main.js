@@ -120,7 +120,7 @@ cameraTargetbtn.addEventListener("click", () => {
 });
 
 showColorTablebtn.addEventListener("click", () => {
-   let tracks = scene.getMeshesByTags('track'+t.getTurtle() + '&& colortable'); 
+   let tracks = t.getColorTableMeshes();
    if (tracks.length == 0) {
       showColorTable(t);
       showColorTablebtn.textContent = 'Hide Color Table';
@@ -355,6 +355,7 @@ btnMSave.addEventListener("click", () => {
     let meshes = t.getTrackMeshes();
     if (meshes.length) {
        let fname = "lsys";
+       puts("saving some meshes");
        saveLsystemMeshes(fname, meshes);
     } else {
        puts('No meshes to save');
@@ -370,10 +371,14 @@ function saveLsystemMeshes(filename, meshes) {
    let mlist = meshes;
    let options = {
       shouldExportNode: function (node) {
-         return mlist.includes(node);
+         let ok = mlist.includes(node);
+         if (ok) {
+            puts(`ok with ${node.id}`);
+         }
+         return ok;
       },
    };
-
+   
    //BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
    BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
      gltf.downloadFiles();

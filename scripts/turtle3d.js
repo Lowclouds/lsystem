@@ -3,10 +3,6 @@
 //
 
 class Turtle3d {
-   'use strict';
-
-   about() {puts('hello');}
-
    static Turtles   = new Map(); // set of turtles
    static basename  = '_t3d';   // tid = basename+counter
    static counter   = 0;       //  a counter for constructing unique tags
@@ -52,7 +48,7 @@ class Turtle3d {
          trackShapeID: 'default',
          trackShape: null,
          trackMesh: null,
-         trackTag: '',          // additional tag
+         trackTag: '',          // user-defined tag(s)
          trackMaterial: 0,      // index into material list
          lastNormal: newV(0,0,1),
          accumRoll: 0,
@@ -90,7 +86,7 @@ class Turtle3d {
       }
 
       function makeTurtleShape(noturtle, shape) {
-         let tag = this.Turtle;
+         let tag = `${this.Turtle} turtle`;
          let turtle=''
          if (noturtle) {
             return turtle;
@@ -99,7 +95,6 @@ class Turtle3d {
          } else {
             turtle = defaultTurtle.call(this, tag);
          }
-         BABYLON.Tags.AddTagsTo(turtle, `${tag} turtle`);
          return turtle;
       }
 
@@ -130,8 +125,9 @@ class Turtle3d {
          let mat =  new BABYLON.StandardMaterial("tMat", scene);
          mat.diffuseColor = new BABYLON.Color3(0.1,0.9,0.2);
          mat.ambientColor = new BABYLON.Color3(0.1,0.8,0.2);
-
          tMesh.material = mat;
+         BABYLON.Tags.AddTagsTo(tMesh, tag)
+
          let pts = [ newV(0,0,0), newV(0.5, 0, 0) ];
          let axis = BABYLON.MeshBuilder.CreateTube('axis', {path: pts, radius: 0.05, cap: BABYLON.Mesh.CAP_END}, scene);
          mat =  new BABYLON.StandardMaterial("tMat", scene);
@@ -168,7 +164,7 @@ class Turtle3d {
    dispose (doClear = true) {
       if (doClear) {this.clear();} // disposes drawn meshes
       Turtle3d.clearTracksByTag(this.Turtle); // disposes the turtleShape
-      Turtle3d.Turtles.delete(this.Turtle);
+      Turtle3d.Turtles.delete(this.Turtle);   // delete from global map
       // make this turtle useless
       delete this.Turtle;
       delete this.TurtleState;
@@ -218,7 +214,11 @@ class Turtle3d {
    }
 
    getTrackMeshes() {
-      return this.scene.getMeshesByTags('track'+this.getTurtle() + '&& !colortable' );
+      return this.scene.getMeshesByTags(this.getTurtle() +'&& track '+ '&& !colortable' );
+   }
+
+   getColorTableMeshes() {
+      return this.scene.getMeshesByTags(this.getTurtle() + ' && colortable'); 
    }
 
    getTrackBoundingInfo() {
@@ -357,10 +357,11 @@ class Turtle3d {
 
       let s = this.getTurtleShape();
       if (s != null) {
-         s.position.copyFrom(this.getPos())
-         let meshes = this.scene.getMeshesByTags(this.Turtle);
-         for (var index = 0; index < meshes.length; index++) {
-            meshes[index].isVisible = ts.isShown;
+         s.position.copyFrom(this.getPos());
+         if (ts.isShown) {
+            this.show();
+         } else {
+            this.hide();
          }
          this.#orientTurtle();
       }
@@ -484,7 +485,7 @@ class Turtle3d {
    hide () {
       let t = this.Turtle;
       if (t && this.TurtleState.isShown) {
-         let meshes = this.scene.getMeshesByTags(t);
+         let meshes = this.scene.getMeshesByTags(t + ' && turtle');
          for (var index = 0; index < meshes.length; index++) {
             meshes[index].isVisible = false;
          }
@@ -495,7 +496,7 @@ class Turtle3d {
    show () {
       let t = this.Turtle;
       if (t && ! this.TurtleState.isShown) {
-         let meshes = this.scene.getMeshesByTags(t);
+         let meshes = this.scene.getMeshesByTags(t + ' && turtle');
          for (var index = 0; index < meshes.length; index++) {
             meshes[index].isVisible = true;
          }
@@ -505,7 +506,7 @@ class Turtle3d {
    }
 
    clear() {
-      let tracks =this.scene.getMeshesByTags('track'+this.getTurtle());
+      let tracks =this.getTrackMeshes();
       for (var index = 0; index < tracks.length; index++) {
          tracks[index].dispose();
       }
@@ -835,7 +836,8 @@ class Turtle3d {
             return (i==0) ? 0 : ts.accumRoll;
          }
          puts(`drawImmediate: TRACK_EXT ${pathpts}, roll: ${ts.accumRoll}`, TRTL_DRAW);
-         segment = ExtrudeShapeFixCustom(t,
+         //segment = ExtrudeShapeFixCustom(t,
+         segment = BABYLON.ExtrudeShapeCustom(t,
                                          {shape: ts.trackShape,
                                           path: pathpts,
                                           updatable: true,
@@ -877,8 +879,8 @@ class Turtle3d {
          return srm[i].r;
       }
 
-      /* const extrusion = BABYLON.MeshBuilder.ExtrudeShapeCustom(t, */
-      const extrusion = ExtrudeShapeFixCustom(t,
+      const extrusion = BABYLON.MeshBuilder.ExtrudeShapeCustom(t,
+      //const extrusion = ExtrudeShapeFixCustom(t,
                                               {shape: tp.shape,
                                                path: pathpts,
                                                updatable: true,
@@ -1121,7 +1123,7 @@ class Turtle3d {
       let ts = this.TurtleState;
       let t = this.Turtle;
       let ttag = ts.trackTag;
-      let tag = `track${t} ${ttag}`;
+      let tag = `${t} track ${ttag}`;
 
       if (setmaterial) {
 	     mesh.material = this.materialList[ts.trackMaterial];
@@ -1688,7 +1690,7 @@ function showColorTable(tu) {
          tu.newPolygon();
          tu.updatePolygon();
          for (let s=0; s<4; s++) {
-            tu.fd(1);
+            tu.fd(1, s<3);
             tu.yaw((s % 2 == 1) ?120 : 60);
          }
          tu.setMaterial(m);
@@ -1700,7 +1702,7 @@ function showColorTable(tu) {
       tu.fd(1);                 // goto next row
       tu.yaw(-90);
    }
-   tu.setTag('');
+   tu.removeTag('colortable');
    tu.setState(tstate);
 }
 // some helper functions
