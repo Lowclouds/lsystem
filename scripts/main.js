@@ -89,6 +89,7 @@ clearbtn.addEventListener("click", () => {
       t.clear();
    } catch (error) {}
    try {
+      Turtle3d.clearTracksByTag('lsystem');
       t1.clear();
    } catch (error) {}
 });
@@ -104,8 +105,9 @@ homebtn.addEventListener("click", () => {
 
 resetbtn.addEventListener("click", () => {
    try {
+      Turtle3d.clearTracksByTag('lsystem');
       t.reset();
-      // initCTable(t);
+      // initCtable(t);
       camera.position.subtractInPlace(camera.position.subtract(cameraHomePosition));
       camera.setTarget(t.getPos());
    } catch (error) {}
@@ -323,6 +325,7 @@ btnRPRD.addEventListener("click", () => {
 	    .then (value => {
 	       /* --------- reset ---------*/
                t.reset();
+               Turtle3d.clearTracksByTag('lsystem');
                /* --------- draw ---------*/
 	       uiDoDraw();
 	    });
@@ -340,7 +343,8 @@ btnSingleStep.addEventListener('click', ()=> {
 	 lblNumIterations.textContent = lsys.dDone;
 	 lblNumNodes.textContent=lsys.current.length;
 	 lblNumDrawn.textContent=0;
-	 t.reset();
+	 Turtle3d.clearTracksByTag('lsystem');
+         t.reset();
 	 uiDoDraw();
 //	 resolve(true);
       } catch (error) {

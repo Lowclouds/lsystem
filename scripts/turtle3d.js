@@ -7,6 +7,7 @@ class Turtle3d {
    static basename  = '_t3d';   // tid = basename+counter
    static counter   = 0;       //  a counter for constructing unique tags
    static t3dScene  = null;    //  default scene, once set
+   static materials = [];      // global materials
    static trackContours = new Map(); // for trackShapes, default to circle, radius size
    static meshes = new Map();        // no defaults
    static polygonStack = [];   // per TABOP usage, stores state of polygon creation
@@ -87,7 +88,7 @@ class Turtle3d {
 
       function makeTurtleShape(noturtle, shape) {
          let tag = `${this.Turtle} turtle`;
-         let turtle=''
+         let turtle=null
          if (noturtle) {
             return turtle;
          } else if (shape != null) {
@@ -163,7 +164,7 @@ class Turtle3d {
    // a destructor sort of. primarily keeps the global list of turtles up to date
    dispose (doClear = true) {
       if (doClear) {this.clear();} // disposes drawn meshes
-      Turtle3d.clearTracksByTag(this.Turtle); // disposes the turtleShape
+      Turtle3d.clearTracksByTag(`${this.Turtle} && turtle`); // disposes the turtleShape
       Turtle3d.Turtles.delete(this.Turtle);   // delete from global map
       // make this turtle useless
       delete this.Turtle;
@@ -406,7 +407,7 @@ class Turtle3d {
    // not required for actual functioning
    #orientTurtle () {
       let shape = this.getTurtleShape();
-      if (shape != "") {
+      if (shape != null) {
          shape.rotation =
             BABYLON.Vector3.RotationFromAxis(this.TurtleState.H,
                                              this.TurtleState.U,

@@ -1139,7 +1139,7 @@ class Lsystem {
    }
 
    //# basically skip (\[[^]+\])* from either the left or right
-   //# dir is +/- 1
+   //# dir is +/- 1; +1 skips right, -1 skips left
    // returns a list of first char beyond bracketed group and its position
    // if group is at either end, returns empty char and -1 or list length
    // will skip braces if skiptype is 1, or parens if 2
@@ -1183,7 +1183,7 @@ class Lsystem {
       let n = start;
       let nested = 1;
       let c;
-       puts(`skipbrackets at start: l[${n}] = ${l[n]}`,LSYS_REWRITE);
+      puts(`skipbrackets at start: l[${n}] = ${l[n]}`,LSYS_REWRITE);
       while (nested > 0 && n > -1 && n < nmax) {
          n += dir;
          c = l[n];
