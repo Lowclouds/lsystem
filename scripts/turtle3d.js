@@ -12,6 +12,14 @@ class Turtle3d {
    static meshes = new Map();        // no defaults
    static polygonStack = [];   // per TABOP usage, stores state of polygon creation
    static polygonVerts = null;   // array of vertices on edge of polygon, in order
+   static initColorTable(scene) {
+      for (let i = 0; i < ColorTable.length; i++) {
+         let m = new BABYLON.StandardMaterial("trackMat",scene);
+         m.twoSidedLighting = true;
+         m.diffuseColor = BABYLON.Color3.FromArray(ColorTable[i]);
+         Turtle3d.materials[i] = m;
+      }
+   }
 
    static getFirstTurtle(id=null) {
       let t;
@@ -77,9 +85,14 @@ class Turtle3d {
       function initAll(s, nt, shape) {
          this.scene = getScene.call(this, s);
          this.turtleShape = makeTurtleShape.call(this, nt, shape);
-         this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
-         this.materialList[0].diffuseColor = this.toColorVector();
-         this.materialList[0].ambientColor = this.toColorVector();
+         if (Turtle3d.materials.length == 0) {
+            Turtle3d.initColorTable(this.scene);
+         } 
+         Turtle3d.materials.forEach((e,i) => this.materialList[i] = e);
+            // this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
+            // this.materialList[0].diffuseColor = this.toColorVector();
+            // this.materialList[0].ambientColor = this.toColorVector();
+         
          Turtle3d.trackContours.set('default', generateCircle(0.5,0.5));
          this.TurtleState.trackShape = Turtle3d.trackContours.get('default');
          Turtle3d.Turtles.set(this.Turtle, this);
@@ -226,8 +239,10 @@ class Turtle3d {
       return getbi(this.getTrackMeshes());
    }
 
+   
    // setters
 
+   // colors and materials
    // setColor sets the diffuse color of the current material
    // this is not called by turtleInterp, which uses setMaterial
    setColor(diffuse, specular=null, emissive=null, ambient=null, alpha=1) {
@@ -257,8 +272,7 @@ class Turtle3d {
             m.twoSidedLighting = true;
             this.TurtleState.trackMaterial = 0;
             this.TurtleState.color = normalizeColor('green');
-
-      } else {
+         } else {
             m = this.materialList[this.TurtleState.trackMaterial].clone();
          }
       }
@@ -1372,7 +1386,6 @@ classConst(Turtle3d, {
    PATH_HERMITE_CLOSED:  2,
    PATH_BSPLINE_OPEN: 3,
    PATH_BSPLINE_CLOSED: 4,
-
 });
 // leaving space here for different triangulation routines
 

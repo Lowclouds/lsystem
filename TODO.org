@@ -26,11 +26,18 @@ Nice to have
 Back burner
 * Animations
 <2022-06-11 Sat> start working on this
- Perhaps, after splines
+ Step was first part of this, but after implementing multiple turtle drawing, that will be the
+ primary focus for animations. That said, the polygon implementation in TABOP where polygons
+ ignore branching is not possible using multiple turtles because it depends on left-to-right
+ interpretation. Polygons that are contained in single branch are still fine.
+ <2022-08-17 Wed> Need to get color/materials set up for multiple turtles
+<2022-08-18 Thu> implement global color table, so MT looks pretty good
+
 ** need layer to step through Lsystem.Rewrite and interp
 ** screen capture to 'movie'? what does babylon offer
 * Multiple turtle implementation
 Attractive from a visualization standpoint, and maybe a cleaner encapsulation
+<2022-08-17 Wed> Initial changes done - move this to animation
 * Bugs
 ** extrusion orientation of straight paths
  <2022-05-21 Sat> The orientation is fixed, i think, but something is broken with lighting

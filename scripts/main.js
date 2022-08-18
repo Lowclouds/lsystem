@@ -514,8 +514,9 @@ function makeAxes (size=10) {
 
 makeAxes();
 
+//Turtle3d.initColorTable();
 var t = new Turtle3d(scene);
-initCTable(t);
+//Turtle3d.initCTable(t);
 updateTurtleInfo(t,0);
 
 //console.log(t.TurtleState);
