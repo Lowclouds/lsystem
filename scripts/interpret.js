@@ -97,16 +97,16 @@ function turtleInterp (ti, ls, opts=null) {
    t0.setHeading([0,1,0]);
    gencode('t0.setHeading([0,1,0])');
    gencode('.setSize(' + idata.stemsize + ', true);\n');
-   if (idata.ctable != null && idata.ctable != []) {
-      t0.deleteMaterials();
-      let numMat = t0.materialList.length;
-      idata.ctable.forEach((e) => {
-         t0.addMaterial(null, e);
-         puts(`add material w/color: ${e}`, NTRP_INIT);
-      });
-      t0.setMaterial(1);
-      puts(`set ${t0.getTurtle()} material to idx ${numMat}, color ${t0.getColor()}`, NTRP_INIT);
-   }
+   // if (idata.ctable != null && idata.ctable != []) {
+   //    t0.deleteMaterials();
+   //    let numMat = t0.materialList.length;
+   //    idata.ctable.forEach((e) => {
+   //       t0.addMaterial(null, e);
+   //       puts(`add material w/color: ${e}`, NTRP_INIT);
+   //    });
+   //    t0.setMaterial(1);
+   //    puts(`set ${t0.getTurtle()} material to idx ${numMat}, color ${t0.getColor()}`, NTRP_INIT);
+   // }
 
    t0.hide();
    t0.penDown();
@@ -366,10 +366,11 @@ function turtleInterp (ti, ls, opts=null) {
                if (isPM) {
                   mi = p0;
                } else {
-                  mi = t.getMaterialIdx();
+                  mi = turtle.getMaterialIdx();
                   mi--;
                }
                turtle.setMaterial(mi);
+               puts(`setMaterial(${mi})`, NTRP_SETTING);
                gencode(`turtle.setMaterial(${mi});\n`);
                // idata.ci %= idata.ctable.length;
                // turtle.setColor(idata.ctable[idata.ci]);
@@ -380,10 +381,10 @@ function turtleInterp (ti, ls, opts=null) {
                if (isPM) {
                   mi = p0;
                } else {
-                  mi = t.getMaterialIdx();
+                  mi = turtle.getMaterialIdx();
                   mi++;
                }
-               //puts(`setMaterial(${mi})`);
+               puts(`setMaterial(${mi})`, NTRP_SETTING);
                turtle.setMaterial(mi);
                gencode(`turtle.setMaterial(${mi});\n`);
                break;

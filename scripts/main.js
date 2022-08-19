@@ -207,6 +207,8 @@ function uiDoRewrite() {
    return ipromise;
 }
 
+var interpOpts = {gencode: false};
+
 function uiDoDraw () {
    let ipromise = new Promise((resolve,reject) => {
       try {
@@ -214,7 +216,7 @@ function uiDoDraw () {
 	 btnDraw.disabled = true;
 	 btnRPRD.disabled = true;
 
-	 turtleInterp(t, lsys, {gencode: codegenOn})
+	 turtleInterp(t, lsys, interpOpts)
             .then(value => {
                if (t.getTrackMeshes().length == 0) {
 		  btnMSave.disabled = true;
@@ -294,9 +296,11 @@ lsSaveCodeEnable.addEventListener("click", () => {
    let cv = lsSaveCodeEnable.textContent;
    if (cv == 'Gen Code') {
       codegenOn = true;
+      interpOpts.gencode = true;
       lsSaveCodeEnable.textContent = 'No Code';
    } else {
       codegenOn = false;
+      interpOpts.gencode = false;
       lsSaveCodeEnable.textContent = 'Gen Code';
    }
    lsSaveCode.toggleAttribute('disabled');
@@ -534,9 +538,7 @@ var lsState = 'Start';
 var lsys; // = new Lsystem();
 
 var codegenOn = false;
-
 var rwresult=null;
-var interpOpts=null;
 var tracksAlways = false;
 
 // btnAllTracks.textContent = 'Tracks Off';
