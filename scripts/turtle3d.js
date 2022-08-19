@@ -354,6 +354,7 @@ class Turtle3d {
       s.H = this.TurtleState.H.clone();
       s.L = this.TurtleState.L.clone();
       s.U = this.TurtleState.U.clone();
+      s.lastNormal = this.TurtleState.lastNormal.clone();
       if (this.TurtleState.trackMesh != null) { s.trackMesh = this.TurtleState.trackMesh.clone();}
       if (this.TurtleState.trackPath != null) { s.trackPath = this.TurtleState.trackPath.clone();}
       return s;
@@ -366,7 +367,7 @@ class Turtle3d {
       // ts.H = savedstate.H.clone();
       // ts.L = savedstate.L.clone();
       // ts.U = savedstate.U.clone();
-      ts.trackShape = Turtle3d.trackContours.get(ts.trackShapeID);
+      this.setTrackShape(ts.trackShapeID);
       if (savedstate.trackMesh != null) { ts.trackMesh = savedstate.trackMesh;}
       if (savedstate.trackPath != null) { ts.trackPath = savedstate.trackPath;}
 
