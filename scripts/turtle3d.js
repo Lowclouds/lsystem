@@ -442,7 +442,6 @@ class Turtle3d {
    }
 
    setTrackShape (id)  {
-      puts(`set track shape to: ${id}, size == ${this.getSize()}`);
       let c = Turtle3d.trackContours.get(id);
       if (c) {
          this.TurtleState.trackShapeID = id;
@@ -452,7 +451,7 @@ class Turtle3d {
          }
          this.TurtleState.trackType=Turtle3d.TRACK_EXT;
       } else {
-         puts(`Contour ${id} not found`);
+         puts(`Warning: Contour ${id} not found`);
       }
       puts(`set track shape to: ${id}, size == ${this.getSize()}`, TRTL_SETGET);
       return this;
