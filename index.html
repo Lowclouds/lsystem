@@ -1,4 +1,4 @@
-
+7
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -69,11 +69,12 @@
 		border: 2px solid black;
 		margin: 5px; /**/
 	    }
-            menu {
+            menu,ul {
                 display: flex;
                 list-style: none;
                 padding: 0;
-                width: 100%;
+                width: 80%;
+                white-space: pre;
             }
             
             .styled:disabled {
@@ -117,74 +118,74 @@
         <script src="scripts/triangulate.js"></script>
     </head>
 
-   <body>
-     <div class="mbox">
-       <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
-       
-       <div class="right-side">
-         <label for="btns1" id="btnlbl">Turtle Controls </label>
-         <button id="tcbtn">v</button>
-         <div id="turtleall">
-	   <p>
-             <menu class="buttonbar" id="turtlectrls">
-               <li><button id="btn1"></button></li>
-               <li><button id="btn2"></button></li>
-               <li><button id="btn3"></button></li>
-               <li><button id="btn4"></button></li>
-               <li><button id="btn5"></button></li>
-               <li><button id="btn6"></button></li>
+  <body>
+    <div class="mbox">
+      <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
+      
+      <div class="right-side">
+        <label for="btns1" id="btnlbl">Turtle Controls </label>
+        <button id="tcbtn">v</button>
+        <div id="turtleall">
+	  <p>
+            <menu class="buttonbar" id="turtlectrls">
+              <li><button id="btn1"></button></li>
+              <li><button id="btn2"></button></li>
+              <li><button id="btn3"></button></li>
+              <li><button id="btn4"></button></li>
+              <li><button id="btn5"></button></li>
+              <li><button id="btn6"></button></li>
 
-               <li><button id="tinfoctrlbtn">></button></li>
-             </menu>
-	     </p>
-	     <table class="tbl" id="turtleinfo">
-	       <tr><td></td><td id="t1">Turtle 1</td><td id="t2">Turtle 2</td></tr>
-	       <tr><td>Pos</td><td id="t1P"></td><td id="t2P"></td></tr>
-	       <tr><td>H(eading)</td><td id="t1H"></td><td id="t2H"></td></tr>
-	       <tr><td>L(left)</td><td id="t1L"></td><td id="t2L"></td></tr>
-	       <tr><td>U(p)</td><td id="t1U"></td><td id="t2U"></td></tr>
-	     </table>
-	     <!-- <textarea class="tio" id="text1" rows="1" cols="40"></textarea> -->
-         </div>
-	 <div class="lsystem">
-	   <div class="section-info">
-	     <div>L-System Controls</div>
-             <div> <a href="./content/quick-ref.html">Quick Ref</a> </div>
-           </div class="section-details">
-	   <!--- <label for="lsFile">Load: </label> -->
-	     <input id="lsFile" name="lsFile" type="file" accept=".ls,.txt,text/plain">
-             <button id="lsSave" name="lsSave">Save</button>
-             <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Gen Code</button>
-             <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
-	   <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
-	   <p>
-	     <menu class="buttonbar" id="lsctrls"> 
-	       <button class="abutton"  id="btnParse">Parse</button>
-	       <button class="abutton"  id="btnRewrite">Rewrite</button>
-	       <button class="abutton"  id="btnDraw">Draw</button>
-	       <button class="abutton"  id="btnRPRD">Reset-and-Draw</button>
-	       <button class="abutton"  id="btnSingleStep">Step</button>
-	       <button class="abutton"  id="btnAnimate">Animate</button>
-	       <button class="abutton"  id="btnMSave">Save Mesh</button>
-	       <!-- <button class="abutton"  id="btnAllTracks">Tracks On</button> -->
-             </menu>
-	   </p>
-	   <p>
-	     <div> L-system status </div>
-	     <menu class="buttonbar" id="lsstatus">
-               <button class="lsprogress" id="numIterations">0</button>
-               <button class="lsprogress" id="numNodes">0</button>
-               <button class="lsprogress" id="numDrawn">0</button>
-	     </menu>
-	   </p>
-	   <p>
-	     <div>L-System Expansion</div>
-	     <textarea class="tio" id="lsResult" name="lsResult" rows="15" cols="45"></textarea>
-             <textarea class="tio" id="lsCode" name="lsCode" rows="1" cols="45"></textarea>
-	   </p>
-	 </div>
-       </div>
-     </div>
-     <script src="scripts/main.js"></script>
-   </body>
+              <li><button id="tinfoctrlbtn"></button></li>
+            </menu>
+          </p>
+          <table class="tbl" id="turtleinfo">
+	    <tr><td></td><td id="t1">Turtle 1</td><td id="t2">Turtle 2</td></tr>
+	    <tr><td>Pos</td><td id="t1P"></td><td id="t2P"></td></tr>
+	    <tr><td>H(eading)</td><td id="t1H"></td><td id="t2H"></td></tr>
+	    <tr><td>L(left)</td><td id="t1L"></td><td id="t2L"></td></tr>
+	    <tr><td>U(p)</td><td id="t1U"></td><td id="t2U"></td></tr>
+	  </table>
+	  <!-- <textarea class="tio" id="text1" rows="1" cols="40"></textarea> -->
+        </div>
+        <div class="lsystem">
+	  <div class="section-info">
+	    <div>L-System Controls</div>
+            <div> <a href="./content/quick-ref.html">Quick Ref</a> </div>
+          </div class="section-details">
+	  <p>
+	    <menu class="buttonbar" id="lsctrls"> 
+	      <button class="abutton"  id="btnParse">Parse</button>
+	      <button class="abutton"  id="btnRewrite">Rewrite</button>
+	      <button class="abutton"  id="btnDraw">Draw</button>
+	      <button class="abutton"  id="btnRPRD">Reset-and-Draw</button>
+	      <button class="abutton"  id="btnSingleStep">Step</button>
+	      <button class="abutton"  id="btnAnimate">Animate</button>
+	      <button class="abutton"  id="btnMSave">Save Mesh</button>
+	      <!-- <button class="abutton"  id="btnAllTracks">Tracks On</button> -->
+            </menu>
+	  </p>
+          <!--- <label for="lsFile">Load: </label> -->
+	  <input id="lsFile" name="lsFile" type="file" accept=".ls,.txt,text/plain">
+          <button id="lsSave" name="lsSave">Save</button>
+          <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Gen Code</button>
+          <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
+	  <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
+	  <p>
+            <ul class="buttonbar" id="lsstatus">
+	      <li> L-system status:  </li>
+              <li><button class="lsprogress" id="numIterations">0</button></li>
+              <li><button class="lsprogress" id="numNodes">0</button></li>
+              <li><button class="lsprogress" id="numDrawn">0</button></li>
+            </ul>
+	  </p>
+	  <p>
+	    <div>L-System Expansion</div>
+	    <textarea class="tio" id="lsResult" name="lsResult" rows="15" cols="45"></textarea>
+            <textarea class="tio" id="lsCode" name="lsCode" rows="1" cols="45"></textarea>
+	  </p>
+	</div>
+      </div>
+    </div>
+    <script src="scripts/main.js"></script>
+  </body>
 </html>
