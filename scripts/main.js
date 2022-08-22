@@ -1,5 +1,4 @@
-
-// myHeading.textContent = 'An L-system interpreter';
+// Myheading.textContent = 'An L-system interpreter';
 
 var turtleCtrlBtn = document.getElementById('tcbtn');
 var turtleInfoBtn = document.getElementById('tinfoctrlbtn');
@@ -165,6 +164,7 @@ const lblNumIterations = document.getElementById('numIterations');
 const lblNumNodes = document.getElementById('numNodes');
 const lblNumDrawn = document.getElementById('numDrawn');
 
+var animationState =  {stepStart: false};
 function uiDoParse () {
    let ipromise = new Promise((resolve, reject) => {
       let spec = lsSrc.value;
@@ -173,12 +173,13 @@ function uiDoParse () {
       lblNumDrawn.textContent = 0;
       lblNumDrawn.style.backgroundColor = 'lightgray';
       try {
-	 lsys = Lsystem.Parse(spec);
-	 lsResult.value = lsys.serialize();
-	 resolve(true)
+         lsys = Lsystem.Parse(spec);
+         lsResult.value = lsys.serialize();
+         animationState.stepStart = false;
+         resolve(true)
       } catch(error) {
-	 lsResult.value = `Parse failed: ${error}`;
-	 reject(error);
+         lsResult.value = `Parse failed: ${error}`;
+         reject(error);
       }
    });
    return ipromise;
@@ -187,22 +188,23 @@ function uiDoParse () {
 function uiDoRewrite() {
    let ipromise = new Promise((resolve,reject) => {
       if (lsys && lsResult.textContent != 'Empty') {
-	 try {
+         try {
             lsResult.value =listtostr(lsys.Rewrite()); //.toString();
-	    lblNumIterations.textContent = lsys.dDone;
-	    lblNumNodes.textContent=lsys.current.length;
-	    lblNumDrawn.textContent=0;
-	    resolve(true);
-	 } catch (error) {
-	    lsResult.value = `Rewrite failed: ${error}`;
-	    reject(`Rewrite failed: ${error}`);
-	 }
+            lblNumIterations.textContent = lsys.dDone;
+            lblNumNodes.textContent=lsys.current.length;
+            lblNumDrawn.textContent=0;
+            resolve(true);
+         } catch (error) {
+            lsResult.value = `Rewrite failed: ${error}`;
+            reject(`Rewrite failed: ${error}`);
+         }
       } else {
-	 resolve(true);
+         resolve(true);
       }
       lblNumIterations.textContent = lsys.dDone;
       lblNumNodes.textContent=lsys.current.length;
       lblNumDrawn.textContent=0;
+      animationState.stepStart = true;
    });
    return ipromise;
 }
@@ -212,38 +214,38 @@ var interpOpts = {gencode: false};
 function uiDoDraw () {
    let ipromise = new Promise((resolve,reject) => {
       try {
-	 btnMSave.disabled = true;
-	 btnDraw.disabled = true;
-	 btnRPRD.disabled = true;
+         btnMSave.disabled = true;
+         btnDraw.disabled = true;
+         btnRPRD.disabled = true;
 
-	 turtleInterp(t, lsys, interpOpts)
+         turtleInterp(t, lsys, interpOpts)
             .then(value => {
                if (t.getTrackMeshes().length == 0) {
-		  btnMSave.disabled = true;
+                  btnMSave.disabled = true;
                } else {
-		  btnMSave.disabled = false;
-	       }
+                  btnMSave.disabled = false;
+               }
                btnDraw.disabled = false;
                btnRPRD.disabled = false;
                t.show();
-	       resolve(true);
+               resolve(true);
             }).catch(error => {
                puts(error);
                btnMSave.disabled = true;
                btnDraw.disabled = false;
                btnRPRD.disabled = false;
                t.show();
-	       reject(error);
+               reject(error);
      })
       } catch (error) {
-	 puts(error);
-	 if (t.getTrackMeshes().length == 0) {
+         puts(error);
+         if (t.getTrackMeshes().length == 0) {
             btnMSave.disabled = true;
             btnRPRD.disabled = false;
             btnDraw.disabled = false;
             t.show();
-	    reject(error);
-	 }
+            reject(error);
+         }
       }
    });
    return ipromise;
@@ -324,36 +326,95 @@ btnRPRD.addEventListener("click", () => {
    /* --------- reparse ---------*/
    uiDoParse()
       .then(value => {
-	 /* --------- rewrite ---------*/
-	 uiDoRewrite()
-	    .then (value => {
-	       /* --------- reset ---------*/
+         /* --------- rewrite ---------*/
+         uiDoRewrite()
+            .then (value => {
+               /* --------- reset ---------*/
                t.reset();
                Turtle3d.clearTracksByTag('lsystem');
                /* --------- draw ---------*/
-	       uiDoDraw();
-	    });
+               uiDoDraw();
+            });
       }).catch (error => {puts(error);});
 });
 
+
 btnSingleStep.addEventListener('click', ()=> {
-   if (lsys && lsys.axiom != []) {
+   if (lsys && lsys.axiom.length != 0) {
       try {
-	 let str = lsys.current;
-	 if (lsys.dDone == 0) {
-	    str = lsys.axiom;
-	 }
-         lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
-	 lblNumIterations.textContent = lsys.dDone;
-	 lblNumNodes.textContent=lsys.current.length;
-	 lblNumDrawn.textContent=0;
-	 Turtle3d.clearTracksByTag('lsystem');
+         let str;
+         let doRewrite = true;
+         if (lsys.dDone == 0) {
+            if (! animationState.stepStart) {
+               animationState.stepStart = true;
+               lsys.current = lsys.axiom.slice();
+               doRewrite = false;
+            } else  {
+               str = lsys.axiom;
+            }
+         } else {
+            str = lsys.current;
+         }
+         if (doRewrite) {
+            lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
+         } else {
+            lsResult.value = listtostr(lsys.axiom);
+         }
+         lblNumIterations.textContent = lsys.dDone;
+         lblNumNodes.textContent=lsys.current.length;
+         lblNumDrawn.textContent=0;
+         Turtle3d.clearTracksByTag('lsystem');
          t.reset();
-	 uiDoDraw();
-//	 resolve(true);
+         uiDoDraw();
+//       resolve(true);
       } catch (error) {
-	 lsResult.value = `Rewrite failed: ${error}`;
-//	 reject(`Rewrite failed: ${error}`);
+         lsResult.value = `Rewrite failed: ${error}`;
+//       reject(`Rewrite failed: ${error}`);
+      }
+   } else {
+      if (!lsys) {
+         lsResult.value = 'Lsystem undefined: load or enter one and click parse';
+      } else {
+         lsResult.value = 'Lsystem axiom is empty: nothing to do';
+      }
+   }
+});
+
+btnAnimate.addEventListener('click', ()=> {
+   if (lsys && lsys.axiom.length != 0) {
+      let str;
+      try {
+         if (lsys.dDone == 0) {
+            if (! animationState.stepStart) {
+               animationState.stepStart = true;
+               lsResult.value = listtostr(lsys.axiom);
+               lblNumIterations.textContent = 0;
+               lblNumDrawn.textContent=0;
+               lblNumNodes.textContent=lsys.axiom.length;
+               return;
+            } else  {
+               str = lsys.axiom;
+            }
+         } else {
+            str = lsys.current;
+         }
+         lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
+         lblNumIterations.textContent = lsys.dDone;
+         lblNumNodes.textContent=lsys.current.length;
+         lblNumDrawn.textContent=0;
+         Turtle3d.clearTracksByTag('lsystem');
+         t.reset();
+         uiDoDraw();
+//       resolve(true);
+      } catch (error) {
+         lsResult.value = `Rewrite failed: ${error}`;
+//       reject(`Rewrite failed: ${error}`);
+      }
+   } else {
+      if (!lsys) {
+         lsResult.value = 'Lsystem undefined: load or enter one and click parse';
+      } else {
+         lsResult.value = 'Lsystem axiom is empty: nothing to do';
       }
    }
 });
@@ -540,7 +601,7 @@ var lsys; // = new Lsystem();
 var codegenOn = false;
 var rwresult=null;
 var tracksAlways = false;
-
+
 // btnAllTracks.textContent = 'Tracks Off';
 // btnAllTracks.addEventListener("click", () => {
 //    try {
@@ -569,22 +630,22 @@ var tracksAlways = false;
 //       lsResult.value = lsys.serialize();
 //       lsState = 'Parsed';
 //       if (lsResult.textContent != 'Empty') {
-// 	 uiDoRewrite()
-// 	    .then(value => {
-// 	       //lsResult.value = lsys.Rewrite(); //.toString();
+//       uiDoRewrite()
+//          .then(value => {
+//             //lsResult.value = lsys.Rewrite(); //.toString();
 //                /* --------- reset ---------*/
 //                t.reset();
 //                /* --------- draw ---------*/
 //                turtleInterp(t, lsys, {gencode: codegenOn})
-// 		  .then(value => {
-// 		     btnMSave.disabled = false;
-// 		     t.show();
-// 		  }).catch(error => {
-// 		     puts(error);
-// 		     btnMSave.disabled = true;
-// 		     t.show();
-// 		  })
-// 	    });
+//                .then(value => {
+//                   btnMSave.disabled = false;
+//                   t.show();
+//                }).catch(error => {
+//                   puts(error);
+//                   btnMSave.disabled = true;
+//                   t.show();
+//                })
+//          });
 //       }
 //    })
 //    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
@@ -594,6 +655,35 @@ var tracksAlways = false;
 // ------------------------------------------------------------
 //  begin noodling
 // ------------------------------------------------------------
+function loadUserCode(event) {
+   let file = lsFile.files.item(0);
+   if (file != null) {
+      let reader = new FileReader();
+      
+      reader.onload = function() {
+         lsSrc.value = reader.result;
+         //lsResult.value = '';
+         lsState='Start';
+         // btnCpp.textContent = 'Show CPP';
+      }
+      reader.readAsText(file);
+    }
+}
+
+
+
+function createScriptElement(stxt) {
+   if (document.createElement && document.getElementsByTagName) {
+      var head_tag = document.getElementsByTagName('head')[0];
+      var script_tag = document.createElement('script');
+      var script_text = document.createTextNode(stxt);
+      script_tag.setAttribute('type', 'text/javascript');
+      script_tag.appendChild(script_text);
+      //script_tag.setAttribute('src', src);
+      head_tag.appendChild(script_tag);
+   }
+}
+
 function roll(a) { a.unshift(a.pop()); return a;}
 
 function crand() {return new BABYLON.Color3(math.random(), math.random(),math.random())}

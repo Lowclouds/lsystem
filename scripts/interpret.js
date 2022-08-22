@@ -393,7 +393,7 @@ function turtleInterp (ti, ls, opts=null) {
                //turtle.newBranch({ci: idata.ci, st: idata.st});
                // gencode(`turtle.newBranch();\n`);
                let s = turtle.getState();
-               let newt = new Turtle3d(null, {noturtle: true});
+               let newt = new Turtle3d(turtle.scene, {noturtle: true});
                newt.setState(s); // inherit current turtle state
                newt.addTag(idata.trackTag);
                branches.push({turtle: newt, spos: branchpos + 1, keep: false});

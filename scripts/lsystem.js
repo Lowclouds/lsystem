@@ -4,21 +4,22 @@
   Prusinkiewicz' group at the University of Calgary, available here: 
   http://algorithmicbotany.org
 */
-/* required packages
-   supplied here
-   turtle3d.js for actually drawing
-   interpret.js unites this file and turtle3d.js
-   colortables.js
-   logtag.js for tagged logging and class global variables
+/* 
+   required packages
+   -supplied here
+   --turtle3d.js for actually drawing
+   --interpret.js unites this file and turtle3d.js
+   --colortables.js
+   --logtag.js for tagged logging and class global variables
    
-   external packages
-   cpp.js to remove comments and expand #defines.
+   -external packages
+   --cpp.js to remove comments and expand #defines.
       this version modified to ignore // comments, since they 
       can occur in production strings
-   math.js for math.evaluate
-   babylon.js and some of its dependencies, for underlying graphics environment
-   one of earcut, libtess, or triangulate for mesh triangulation
-      libtess is winning, so far
+   --math.js for math.evaluate
+   --babylon.js and some of its dependencies, for underlying graphics environment
+   --one of earcut, libtess, or triangulate for mesh triangulation
+     libtess is winning, so far, but we're using none of them
 */
 
 'use strict';
@@ -64,6 +65,8 @@ RE.ws = /\s+/g;
 RE.asterisk = /^\s*\*\s*/;
 RE.prodTop = new RegExp(`${prodNameStr}? *(.*?)--?>(.*)`)
 RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
+RE.pre_condition = /^ *({.+)/;  
+RE.post_condition = / *([^{}]*) *(?:\* *{(.+)})?/;
 RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
 
 RE.assignAny = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*([^;]+);?`,'g');
@@ -141,19 +144,20 @@ class Lsystem {
    static functions = new Map(); // functions also global for all l-systems
 
    constructor(spec,lbl = '1') {
-      this.spec = null;	// should be a text file/string or empty for sub-lsystems
+      this.spec = null; // should be a text file/string or empty for sub-lsystems
       if (spec == null) {
-	 this.spec = 'no specification';
+         this.spec = 'no specification';
       } else {
-	 this.spec = spec;	// should be a text file/string
+         this.spec = spec;      // should be a text file/string
       }
       this.label = lbl;
       this.axiom = [];
       this.rules = [];
       this.decomprules = [];      // unimplemented
       this.homorules = [];      // unimplemented
-      this.Dlength = 0;	// number of iterations
-      this.dDone = 0;	// number of iterations done;
+      this.Dlength = 0; // number of iterations
+      this.dDone = 0;   // number of iterations done;
+      this.stepStart = false;    // 
       this.locals = new Map(); // from variable assignment statements
       this.locals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
@@ -186,7 +190,7 @@ class Lsystem {
       this.verbose = 0;
       this.stemsize = 0.1;
       this.step = 1;    // default forward step size
-      this.delta = 90;	// default angle
+      this.delta = 90;  // default angle
       this.ignore=[];
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
@@ -201,11 +205,11 @@ class Lsystem {
 
    show(w='all') {
       if (w == 'all') {
-	 for (const prop in this) {
-	    puts(this.showOneProp(prop));
-	 }
+         for (const prop in this) {
+            puts(this.showOneProp(prop));
+         }
       } else {
-	 puts(this.showOneProp(w));
+         puts(this.showOneProp(w));
       }
    }
 
@@ -213,7 +217,7 @@ class Lsystem {
       let s = '';
       for (const prop in this) {
          if (prop != 'spec') {
-	    s = s + this.showOneProp(prop);
+            s = s + this.showOneProp(prop);
          }
       }
       return s;
@@ -222,16 +226,16 @@ class Lsystem {
    showOneProp(prop) {
       let s = '';
       if (this.hasOwnProperty(prop)) {
-	 let t = Lsystem.myTypeOf(this[prop]);
-	 if (t == 'map') {
-	    if (this[prop] == '') {
-	       return `${prop} is empty\n`;
-	    } else {
-	       s = `${prop} contains:\n`;
-	       for (let e of this[prop].entries()) { 
-		  s = s + `  ${e}\n`;}
-	    }
-	 } else 
+         let t = Lsystem.myTypeOf(this[prop]);
+         if (t == 'map') {
+            if (this[prop] == '') {
+               return `${prop} is empty\n`;
+            } else {
+               s = `${prop} contains:\n`;
+               for (let e of this[prop].entries()) { 
+                  s = s + `  ${e}\n`;}
+            }
+         } else 
             switch (prop ) {
             case 'axiom':
                s = `${prop} = ` + Lsystem.listtostr(this.axiom) + '\n';
@@ -242,11 +246,11 @@ class Lsystem {
                if (this[prop].length == 0) {
                   s = `${prop} := empty\n`;
                } else {
-	          s = `${prop}:= {pre, strict, post} {cond} {succ} {scope}\n`;
-	          this[prop].forEach((r) => {
+                  s = `${prop}:= {pre, strict, post} {cond} {succ} {scope}\n`;
+                  this[prop].forEach((r) => {
                      //console.log(`Showing: ${r}`);
                      r.forEach((e,i) => {
-	                s += '\{';
+                        s += '\{';
                         if (i < 3) {
                            s += `${e}`;
                         } else if (Lsystem.myTypeOf(e) == 'map') {
@@ -278,9 +282,9 @@ class Lsystem {
                }
                break;
             default:
-	       s = `${prop} = ${this[prop]}\n`;
+               s = `${prop} = ${this[prop]}\n`;
                break;
-	    }
+            }
       }
       return s;
    }
@@ -292,9 +296,9 @@ class Lsystem {
       this.homorules = [];
       this.Dlength = 0;
       this.dDone = 0;
+      this.stepStart = false;
       this.globals.clear();
       this.locals.clear();
-      //this.stemsize = 0.1;
       this.delta = 90;
       this.current=[];
       this.next=[];
@@ -313,7 +317,7 @@ class Lsystem {
      delegates all the work to parseHelper.
      Returns a parsed Lsystem instance
     */ 
-   static Parse (spec) {
+   static Parse (spec, lsystem = null) {
       const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_TRANSITION=3;
       // preprocess the spec with standard Cpp-like preprocessor
       let pp = new cpp_js();
@@ -327,19 +331,24 @@ class Lsystem {
       let nestPos;                      // where we left line mode
       let nestIndex=0;
       let nesting = [];                 // keep track of define nesting;
-      let ls0 = new Lsystem(cppSpec, 'main'); // preemptively naming it 
+      let ls0;
+      if (lsystem) {
+         ls0 = lsystem;
+      } else {
+         ls0 = new Lsystem(cppSpec, 'main'); // preemptively naming it 
+      }
       Lsystem.lsystems.clear();
       Lsystem.lsystems.set('main', ls0);
 
       parseHelper(ls0);    // this is the toplevel l-system
 
       if (! ls0.Dlength) {
-	 if (ls0.locals.has('n')) {
-	    ls0.Dlength = ls0.locals.get('n');
-	 } else {
-	    ls0.Dlength = 1;
+         if (ls0.locals.has('n')) {
+            ls0.Dlength = ls0.locals.get('n');
+         } else {
+            ls0.Dlength = 1;
             puts('Derivation length not specified; defaulting to 1');
-	 }
+         }
       }
       ls0.subsystems = Lsystem.lsystems;
       ls0.verbose=0;
@@ -398,12 +407,12 @@ class Lsystem {
          while (pos < end) {
             eol = findEOL(cppSpec,pos);
             if ((eol - pos) < 1) {
-	       puts("skipping short line: " + cppSpec.slice(pos,eol), LSYS_PARSE);
-	       pos = eol + 1; // advance file pointer
-	       continue;
+               puts("skipping short line: " + cppSpec.slice(pos,eol), LSYS_PARSE);
+               pos = eol + 1; // advance file pointer
+               continue;
             }
             // remove extra spaces and carriage returns
-	    line = cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
+            line = cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
             puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
             pos = eol + 1; // advance file pointer
 
@@ -676,6 +685,17 @@ class Lsystem {
          condition = leftside[4];   // undefined or not
          puts(`parseProd: condition = ${condition}`, LSYS_PARSE, LSYS_PARSE_PROD);
          if (condition) {
+            let pre = null;
+            let post = null;
+            let p0 = 0;
+            let p1 = 0;
+            let c;
+            if ( RE.pre_condition.test(condition)) {
+               while (condition[p0] != '{') { p0++; }
+               [c,p1] = Lsystem.skipbrackets(condition, p0,1,1);
+               pre = condition.slice(p0+1,p1-1);
+            }
+            
             condition = condition.replace(RE.asterisk,'');
             puts(`parseProd: condition = ${condition} after asterisk replacement`, LSYS_PARSE, LSYS_PARSE_PROD);
             
@@ -767,7 +787,7 @@ class Lsystem {
                }
                if (nested == 0) {
                   let parms = s.substring(m.indices[2][0]+1, j-1);
-	          l[i] = new ParameterizedModule(m[1], parms);
+                  l[i] = new ParameterizedModule(m[1], parms);
                   // reset s
                   re.lastIndex = j;
                   puts(`parms: ${parms}`, LSYS_PARSE_SUCC);
@@ -834,14 +854,14 @@ class Lsystem {
       let r=[];
       let v;
       for (let i=0;i<list.length;i++) {
-	 v=list[i];
-	 if (Array.isArray(v)) {
-	    //put('list[' + i + ']: ' + v + ' is an array');
-	     v.forEach(m => {r.push(m)});
-	 } else {
-	    //put('list[' + i + ']: ' + v + ' is NOT an array');
-	    r.push(v);
-	 }
+         v=list[i];
+         if (Array.isArray(v)) {
+            //put('list[' + i + ']: ' + v + ' is an array');
+             v.forEach(m => {r.push(m)});
+         } else {
+            //put('list[' + i + ']: ' + v + ' is NOT an array');
+            r.push(v);
+         }
       }
       return r;
    }
@@ -856,7 +876,7 @@ class Lsystem {
          if (m[2] === undefined) {
             l[i] = m[1];
          } else {
-	    l[i] = new ParameterizedModule(m[1], m[2]);
+            l[i] = new ParameterizedModule(m[1], m[2]);
          }
          //console.log(l[i]);
          i++;
@@ -883,8 +903,8 @@ class Lsystem {
  
    // rewrite string derivation length times
    // generate step per cpfg docs
-   Rewrite (ls = this, it = 0, string = null) {
-      if (string === null) {
+   Rewrite (ls = this, it = 0, string=null ) {
+      if (string===null) {
          ls.current = ls.axiom.slice();
       } else {
          ls.current = string;
@@ -904,9 +924,9 @@ class Lsystem {
       for (let i=1; i <= niter; i++) {
          puts(`iteration ${i}\n${mstring}`, LSYS_REWRITE);
          clength = mstring.length;
-	 lsnext = mstring.slice();     // default production is to copy
-         for (let n=0; n < clength; n++) {
-	    let node = mstring[n];
+         lsnext = mstring.slice();     // default production is to copy
+         for (let n=0; n < clength; n++)   {
+            let node = mstring[n];
             puts(`looking at node[${n}] = ${node}`, LSYS_REWRITE);
             // special handling of cut module, %
             if (node == '%') {
@@ -917,71 +937,83 @@ class Lsystem {
             }
             // 
             let doExpand = false;
-	    for (const rule of rules) {
+            // find best rule match
+            let bestrule = null;
+            let bestruleContextLength = 0;
+            let bestscope = null;
+            for (const rule of rules) {
                puts(`matching against rule: ${rule}`, LSYS_REWRITE_VERB);
-               let pred = rule[0]; // == [[lctxt] strictp [rctxt]]
                let scope = rule[3];
+               let pred = rule[0]; // == [[lctxt] strictp [rctxt]]
                let strictp = pred[1];
                puts(`comparing  ${node} to strictp: ${strictp}`, LSYS_REWRITE_VERB);
-               if (this.formalMatch(strictp, node, scope)) {
-		  let lctxt = pred[0];
-		  let rctxt = pred[2];
  // todo: evaluate pre-condition expression before evaluating scope._test_()
-         	  if (! lctxt.length && ! rctxt.length && scope._test_()) {
-                     lsnext[n] = this.expand(rule);
-                     doExpand=true;
-                     puts(`unconditional expansion to: ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
-                     break;
-		  } else {
-                     //puts(`context sensitive rule: lctxt: ${lctxt} or rctxt: ${rctxt}`);
+               if (this.formalMatch(strictp, node, scope)) {
+                  let lctxt = pred[0];
+                  let rctxt = pred[2];
+                  if (lctxt.length == 0 && rctxt.length == 0 && scope._test_()) {
+                     if (bestrule === null) {
+                        bestrule = rule;
+                        bestruleContextLength = 0;
+                        bestscope = scope;
+                     }
+                  } else {
                      if (lctxt.length && 
                          ! ls.findcontext(mstring, lctxt, n, -1, scope, restrict)) {
                            continue;
-		     }
-		     if (rctxt.length && 
+                     }
+                     if (rctxt.length && 
                          ! this.findcontext(mstring, rctxt, n, 1, scope, restrict)) {
                         continue;
-		     }
- // todo: evaluate pre-condition expression
-                     doExpand = scope._test_();
-                     if (doExpand) {
- // todo: evaluate post-condition expression 
-                        lsnext[n] = this.expand(rule);
-                        puts(`this expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
-                        break;  // stop looking through rules
                      }
-		  }
+                     if (lctxt.length + rctxt.length > bestruleContextLength &&
+                        scope._test_) {
+                        bestrule = rule;
+                        bestruleContextLength = lctxt.length + rctxt.length;
+                        bestscope = scope;
+                     }
+                  }
                }
-	    }
-            if (! doExpand) {
-               // special case a few module types
-               if (this.formalMatch(Lsystem.modLsystemStart, node, null)) {
-                  let sublslabel = node.p[0].toString();
-                  let subls = Lsystem.lsystems.get(sublslabel);
-                  if (subls) {
-                     lsStack.push(ls);
-                     ls = subls;
-                     rules = ls.rules;
-                     lsLabel= ls.label;
-                     restrict = ls.restrict;
-                     // what about lsystem global variables ???
-                     puts(`switching to lsystem: ${lsLabel}`, LSYS_REWRITE);
-                     //     continue;
-                  } else {
-                     throw new Error(`lsystem: ${sublslabel} not found in ${node}`); 
-                  }
-               } else if (this.formalMatch(Lsystem.modLsystemEnd, node, null)) {
-                  let subls = lsStack.pop()
-                  if (! subls) {
-                     throw new Error(`lsystem: no lsystem found on stack!`); 
-                  } else {
-                     ls = subls;
-                     lsLabel = ls.label;
-                     rules = ls.rules;
-                     restrict = ls.restrict;
-                     puts(`Returning to lsystem: ${lsLabel}`, LSYS_REWRITE);
-                     //   continue;
-                  }
+            }
+            puts(`bestrule is ${bestrule}`, LSYS_REWRITE);
+            if (bestrule) {
+               this.formalMatch(bestrule, node, bestscope); // (re)bind formal arguments
+ // todo: evaluate pre-condition expression ???
+               if (bestscope._test_()) {
+                  lsnext[n] = this.expand(bestrule);
+                  doExpand=true;
+                  puts(`this expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
+ // todo: evaluate post-condition expression ???
+               }
+            }
+//            if (! doExpand) {
+            // special case a few module types
+            if (this.formalMatch(Lsystem.modLsystemStart, node, null)) {
+               let sublslabel = node.p[0].toString();
+               let subls = Lsystem.lsystems.get(sublslabel);
+               if (subls) {
+                  lsStack.push(ls);
+                  ls = subls;
+                  rules = ls.rules;
+                  lsLabel= ls.label;
+                  restrict = ls.restrict;
+                  // what about lsystem global variables ???
+                  puts(`switching to lsystem: ${lsLabel}`, LSYS_REWRITE);
+                  //     continue;
+               } else {
+                  throw new Error(`lsystem: ${sublslabel} not found in ${node}`); 
+               }
+            } else if (this.formalMatch(Lsystem.modLsystemEnd, node, null)) {
+               let subls = lsStack.pop()
+               if (! subls) {
+                  throw new Error(`lsystem: no lsystem found on stack!`); 
+               } else {
+                  ls = subls;
+                  lsLabel = ls.label;
+                  rules = ls.rules;
+                  restrict = ls.restrict;
+                  puts(`Returning to lsystem: ${lsLabel}`, LSYS_REWRITE);
+                  //   continue;
                }
             }
          }
@@ -989,7 +1021,11 @@ class Lsystem {
          //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
       }
       ls.current = mstring;
-      ls.dDone += niter;
+      if (string) {
+         ls.dDone += niter;     // step case
+      } else {
+         ls.dDone = niter;
+      }
       // this.next = null;
       puts(`Expanded tree has ${this.current.length} nodes after ${ls.dDone} interations`);
       return this.current;
@@ -1034,16 +1070,16 @@ class Lsystem {
             // might want to yell if A.m == B.m, but number of arguments differ
             // go ahead and bind actual values to formal parameters
             if (nodeA.p.length != nodeB.p.length) {
-               puts(`Warning: rule expects ${nodeA.p.length} parameters, but module has ${nodeB.p.length}`);
+               puts(`Warning: rule, ${nodeA.toString()}, expects ${nodeA.p.length} parameters, but module is: ${nodeB.toString()}`);
             }
             if (scope !== null && scope.hasOwnProperty('_bind_')) {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
                   puts(`${scope._bind_}(${nodeA.p[fp]}, ${nodeB.p[fp]})`, LSYS_MATCH);
                   scope._bind_(nodeA.p[fp], nodeB.p[fp]);
-                  if (LogTag.isSet(LSYS_MATCH)) {
-                     puts("scope bind:");
-                     scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
-                  }
+               }
+               if (LogTag.isSet(LSYS_MATCH)) {
+                  puts("scope bind:");
+                  scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
                }
             }
             return true;
@@ -1064,7 +1100,7 @@ class Lsystem {
    findcontext (mlist,ctxt, snode, dir, rscope, restrict=null) {
 
       let nmax = mlist.length;
-      let n = snode + dir;	// index of the module to look at
+      let n = snode + dir;      // index of the module to look at
       let ci = (dir < 0) ? ctxt.length -1 : 0; // start from end of left ctxt str
       let m;  // module in string  under consideration
       let c;  // module in context under consideration
@@ -1108,8 +1144,8 @@ class Lsystem {
                      return false;
                   }
                }
-            } else {		//# dir == 1 right context:downwards:basipetal
-	       if (m == '[' && c != '[') { 
+            } else {            //# dir == 1 right context:downwards:basipetal
+               if (m == '[' && c != '[') { 
                   [m, n] = Lsystem.skipbrackets(mlist, n, dir);
                } else if (c == ']') {
                   while (m != ']') {
@@ -1165,19 +1201,19 @@ class Lsystem {
       let openBracket, closeBracket;
       if (dir == 1) {
          if (startbracket == leftb) {
-	    openBracket = leftb;
-	    closeBracket = rightb;
+            openBracket = leftb;
+            closeBracket = rightb;
          } else {
-	    puts(`starting with ${startbracket} must proceed to right`,LSYS_REWRITE);
-	    return ["", start];
+            puts(`starting with ${startbracket} must proceed to right`,LSYS_REWRITE);
+            return ["", start];
          }
       } else {
          if (startbracket == rightb) {
-	    openBracket = rightb ;
-	    closeBracket = leftb ;
+            openBracket = rightb ;
+            closeBracket = leftb ;
          } else {
-	    puts(`starting with ${startbracket} must proceed to left`,LSYS_REWRITE);
-	    return ["", start];
+            puts(`starting with ${startbracket} must proceed to left`,LSYS_REWRITE);
+            return ["", start];
          }
       }  
       let n = start;
@@ -1189,21 +1225,21 @@ class Lsystem {
          c = l[n];
          switch(c) {
          case closeBracket:
-	    nested += -1;
-	    break;
+            nested += -1;
+            break;
          case openBracket:
-	    nested += 1;
-	    break;
-	 }
-	 //puts(`l[${n}] = ${l[n]}`); 
+            nested += 1;
+            break;
+         }
+         //puts(`l[${n}] = ${l[n]}`); 
       }
       if (nested == 0) {
-	 n += dir;
-	 if (n > -1 && n < nmax) {
+         n += dir;
+         if (n > -1 && n < nmax) {
             c = l[n];
-	 } else {
+         } else {
             c = "";
-	 }
+         }
       } else {
          puts(`ill-formed branch at ${start}: ${l[start]}`);
       }
@@ -1249,12 +1285,12 @@ function flatten( list) {
    for (let i=0;i<list.length;i++) {
       v=list[i];
       if (Array.isArray(v)) {
-	 //puts('list[' + i + ']: ' + v + ' is an array');
-	 //for (let j=0, m; m=v[j]; j++) {r.push(m)}
-	 v.forEach(m => {r.push(m)});
+         //puts('list[' + i + ']: ' + v + ' is an array');
+         //for (let j=0, m; m=v[j]; j++) {r.push(m)}
+         v.forEach(m => {r.push(m)});
       } else {
-	 //puts('list[' + i + ']: ' + v + ' is NOT an array');
-	 if (v != null && v != '') {
+         //puts('list[' + i + ']: ' + v + ' is NOT an array');
+         if (v != null && v != '') {
             r.push(v);
          }
       }
@@ -1272,7 +1308,7 @@ function strtolist(s) {
       if (m[2] === undefined) {
          l[i] = m[1];
       } else {
-	 l[i] = new ParameterizedModule(m[1], m[2]);
+         l[i] = new ParameterizedModule(m[1], m[2]);
       }
       //console.log(l[i]);
       i++;
@@ -1346,11 +1382,11 @@ function flattenv( list) {
    for (let i=0;i<list.length;i++) {
       v=list[i].asArray();
       if (Array.isArray(v)) {
-	 puts('list[' + i + ']: ' + v + ' is an array');
-	 v.forEach(m => {r.push(m)});
+         puts('list[' + i + ']: ' + v + ' is an array');
+         v.forEach(m => {r.push(m)});
       } else {
-	 puts('list[' + i + ']: ' + v + ' is NOT an array');
-	 r.push(v);
+         puts('list[' + i + ']: ' + v + ' is NOT an array');
+         r.push(v);
       }
    }
    return r;
@@ -1452,4 +1488,4 @@ const loadScript = src => {
 //var mRe=`(${symbolReStr})(?:\\((${param1ReStr})(?:,(\[^)]+))*\\))?`;
 //var fmRe=`(${symbolReStr})(?:\\((${formalparmsre})\\))?`;
 
-//RE.prod = new RegExp(`${prodNameStr}? *(?:(?:${moduleReStr})+<)?${moduleReStr}(?:>(?:${moduleReStr})+)?(?::${expReStr})?--?>(.+)`);
+
