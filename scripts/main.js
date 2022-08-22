@@ -2,6 +2,7 @@
 
 var turtleCtrlBtn = document.getElementById('tcbtn');
 var turtleInfoBtn = document.getElementById('tinfoctrlbtn');
+turtleInfoBtn.textContent = ">";
 document.getElementById("turtleinfo").style.display='none'; // turn off turtle info
 
 var showhidebtn = document.getElementById('btn1');
@@ -18,6 +19,9 @@ resetbtn.textContent = "Reset";
 
 var cameraTargetbtn = document.getElementById('btn5');
 cameraTargetbtn.textContent = "Look at Turtle"
+
+var drawSpeedCtrl = document.getElementById('drawspeed');
+drawSpeedCtrl.value = 20;
 
 var turtleInfo = [
     [document.getElementById('t1'),
@@ -209,7 +213,7 @@ function uiDoRewrite() {
    return ipromise;
 }
 
-var interpOpts = {gencode: false};
+var interpOpts = {gencode: false, miCount: drawSpeedCtrl.value};
 
 function uiDoDraw () {
    let ipromise = new Promise((resolve,reject) => {
@@ -217,7 +221,7 @@ function uiDoDraw () {
          btnMSave.disabled = true;
          btnDraw.disabled = true;
          btnRPRD.disabled = true;
-
+         interpOpts.miCount = drawSpeedCtrl.value;
          turtleInterp(t, lsys, interpOpts)
             .then(value => {
                if (t.getTrackMeshes().length == 0) {

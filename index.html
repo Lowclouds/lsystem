@@ -13,7 +13,7 @@
                 height: 100%;
                 margin: 0;
                 padding: 1px;
-                font-size: 10px;
+                font-size: 12px;
             }
 	    .mbox {
 		display: flex;
@@ -50,7 +50,7 @@
                 font-size: 1.1rem;
             }
             .buttonbar, button {
-                font-size: 1.10rem;
+                font-size: 1.1rem;
             }
 	    .tbl {
 		width: 95%;
@@ -59,11 +59,23 @@
 	    tr, td {
 		border: 1px solid black;
 	    }
-	    lsprogress {
-		border: 2px solid black;
-		margin: 5px;
-		padding: 3px;
+	    .lsprogress {
+		border: 1px solid black;
+		margin: 2px;
+		padding: 1px;
 	    } 
+            .spacer {
+                border: 0px;
+                margin: 1px;
+                padding: 1px;
+                background-color: white;
+            }
+            .spacer20 {
+                border: 0px;
+                margin: 1px;
+                padding: 20px;
+                background-color: white;
+            }
 	    .tio {
 		width: 90%;
 		border: 2px solid black;
@@ -167,8 +179,6 @@
           <!--- <label for="lsFile">Load: </label> -->
 	  <input id="lsFile" name="lsFile" type="file" accept=".ls,.txt,text/plain">
           <button id="lsSave" name="lsSave">Save</button>
-          <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Gen Code</button>
-          <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
 	  <textarea class="tio" id="lsSrc" name="lsSrc" rows="10" cols="45"></textarea>
 	  <p>
             <ul class="buttonbar" id="lsstatus">
@@ -176,10 +186,16 @@
               <li><button class="lsprogress" id="numIterations">0</button></li>
               <li><button class="lsprogress" id="numNodes">0</button></li>
               <li><button class="lsprogress" id="numDrawn">0</button></li>
+              <li><label class="spacer" id="drawspeedlabel">Draw Speed</label></li>
+              <li><input type="number" id="drawspeed" min="1" max="500"</input></li>
             </ul>
 	  </p>
 	  <p>
-	    <div>L-System Expansion</div>
+	    <div>L-System Expansion
+              <label class="spacer20" id="widespacer"></label>
+              <button id="lsSaveCodeEnable" name="lsEnableSaveCode">Gen Code</button>
+              <button id="lsSaveCode" name="lsSaveCode" disabled>Save Code</button>
+            </div>
 	    <textarea class="tio" id="lsResult" name="lsResult" rows="15" cols="45"></textarea>
             <textarea class="tio" id="lsCode" name="lsCode" rows="1" cols="45"></textarea>
 	  </p>
