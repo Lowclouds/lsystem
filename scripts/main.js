@@ -23,6 +23,20 @@ cameraTargetbtn.textContent = "Look at Turtle"
 var drawSpeedCtrl = document.getElementById('drawspeed');
 drawSpeedCtrl.value = 20;
 
+drawSpeedCtrl.addEventListener('input', () => {
+   drawSpeedCtrl.checkValidity();
+});
+
+drawSpeedCtrl.addEventListener('invalid', () => {
+   let max = Number(drawSpeedCtrl.getAttribute('max'));
+   let min = Number(drawSpeedCtrl.getAttribute('min'));
+   if (drawSpeedCtrl.value > max) {
+      drawSpeedCtrl.value = max;
+   } else if (drawSpeedCtrl.value < min) {
+      drawSpeedCtrl.value = min;
+   }
+});
+
 var turtleInfo = [
     [document.getElementById('t1'),
      document.getElementById('t1P'),
@@ -384,44 +398,44 @@ btnSingleStep.addEventListener('click', ()=> {
    }
 });
 
-btnAnimate.addEventListener('click', ()=> {
-   if (lsys && lsys.axiom.length != 0) {
-      let str;
-      try {
-         if (lsys.dDone == 0) {
-            if (! animationState.stepStart) {
-               animationState.stepStart = true;
-               lsResult.value = listtostr(lsys.axiom);
-               lblNumIterations.textContent = 0;
-               lblNumDrawn.textContent=0;
-               lblNumNodes.textContent=lsys.axiom.length;
-               return;
-            } else  {
-               str = lsys.axiom;
-            }
-         } else {
-            str = lsys.current;
-         }
-         lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
-         lblNumIterations.textContent = lsys.dDone;
-         lblNumNodes.textContent=lsys.current.length;
-         lblNumDrawn.textContent=0;
-         Turtle3d.clearTracksByTag('lsystem');
-         t.reset();
-         uiDoDraw();
-//       resolve(true);
-      } catch (error) {
-         lsResult.value = `Rewrite failed: ${error}`;
-//       reject(`Rewrite failed: ${error}`);
-      }
-   } else {
-      if (!lsys) {
-         lsResult.value = 'Lsystem undefined: load or enter one and click parse';
-      } else {
-         lsResult.value = 'Lsystem axiom is empty: nothing to do';
-      }
-   }
-});
+// btnAnimate.addEventListener('click', ()=> {
+//    if (lsys && lsys.axiom.length != 0) {
+//       let str;
+//       try {
+//          if (lsys.dDone == 0) {
+//             if (! animationState.stepStart) {
+//                animationState.stepStart = true;
+//                lsResult.value = listtostr(lsys.axiom);
+//                lblNumIterations.textContent = 0;
+//                lblNumDrawn.textContent=0;
+//                lblNumNodes.textContent=lsys.axiom.length;
+//                return;
+//             } else  {
+//                str = lsys.axiom;
+//             }
+//          } else {
+//             str = lsys.current;
+//          }
+//          lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
+//          lblNumIterations.textContent = lsys.dDone;
+//          lblNumNodes.textContent=lsys.current.length;
+//          lblNumDrawn.textContent=0;
+//          Turtle3d.clearTracksByTag('lsystem');
+//          t.reset();
+//          uiDoDraw();
+// //       resolve(true);
+//       } catch (error) {
+//          lsResult.value = `Rewrite failed: ${error}`;
+// //       reject(`Rewrite failed: ${error}`);
+//       }
+//    } else {
+//       if (!lsys) {
+//          lsResult.value = 'Lsystem undefined: load or enter one and click parse';
+//       } else {
+//          lsResult.value = 'Lsystem axiom is empty: nothing to do';
+//       }
+//    }
+// });
 
 btnMSave.toggleAttribute('disabled');
 btnMSave.addEventListener("click", () => {
