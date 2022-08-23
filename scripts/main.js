@@ -175,7 +175,7 @@ const btnDraw = document.getElementById('btnDraw');
 const btnRPRD = document.getElementById('btnRPRD');
 //const btnAllTracks = document.getElementById('btnAllTracks');
 const btnSingleStep =  document.getElementById('btnSingleStep');
-const btnAnimate =  document.getElementById('btnAnimate');
+//const btnAnimate =  document.getElementById('btnAnimate');
 const btnMSave = document.getElementById('btnMSave');
 
 const lblNumIterations = document.getElementById('numIterations');
