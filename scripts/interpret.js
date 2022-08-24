@@ -16,7 +16,7 @@ function turtleInterp (ti, ls, opts=null) {
       ptCaptureMode: Turtle3d.CAPTURE_NONE, //
       mi: 0,                       // module index
       miCount: opts.miCount? opts.miCount : 200, // number of modules to interpret/frame
-      isMT: opts.mt ? opts.mt : false,                // use multiple turtles, or not
+      useMT: opts.useMT ? opts.useMT : false,                // USE MULTIPLE turtles, or not
       interval: 1000 / (10 * desiredFps),
       lastTime: performance.now(),
       ctable:  null,
@@ -44,7 +44,7 @@ function turtleInterp (ti, ls, opts=null) {
       return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}, useTracksAlways: ${idata.useTracksAlways}`;
    }
 
-   puts(`miCount: ${idata.miCount}, interval: ${idata.interval}`);
+   puts(`miCount: ${idata.miCount}, interval: ${idata.interval}, useMT: ${idata.useMT}`);
 
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
       if (ls[p]) {
@@ -390,7 +390,7 @@ function turtleInterp (ti, ls, opts=null) {
                break;
             }
             case '[': {           // start a branch
-               if (idata.isMT) {
+               if (idata.useMT) {
                   let s = turtle.getState();
                   let newt = new Turtle3d(turtle.scene, {noturtle: true});
                   newt.setState(s); // inherit current turtle state
@@ -406,7 +406,7 @@ function turtleInterp (ti, ls, opts=null) {
                break;
             }
             case ']': {           // end a branch
-               if (idata.isMT) {
+               if (idata.useMT) {
                   // should probably complain about unfinished tracks and polygons...
                   let shouldKeep = branches[branch].keep;
                   branches.splice(branch,1); // remove this branch - could be first

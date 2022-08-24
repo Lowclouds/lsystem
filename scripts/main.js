@@ -177,6 +177,11 @@ const btnRPRD = document.getElementById('btnRPRD');
 const btnSingleStep =  document.getElementById('btnSingleStep');
 //const btnAnimate =  document.getElementById('btnAnimate');
 const btnMSave = document.getElementById('btnMSave');
+const btnMT = document.getElementById('btnMT');
+btnMT.addEventListener('input', () => {
+   puts('btnMT toggled');
+   interpOpts.useMT = btnMT.checked;
+});
 
 const lblNumIterations = document.getElementById('numIterations');
 const lblNumNodes = document.getElementById('numNodes');
@@ -238,7 +243,7 @@ function uiDoDraw () {
          interpOpts.miCount = drawSpeedCtrl.value;
          turtleInterp(t, lsys, interpOpts)
             .then(value => {
-               if (t.getTrackMeshes().length == 0) {
+               if (Turtle3d.getTracksByTag('lsystem').length == 0) {
                   btnMSave.disabled = true;
                } else {
                   btnMSave.disabled = false;
@@ -257,7 +262,7 @@ function uiDoDraw () {
      })
       } catch (error) {
          puts(error);
-         if (t.getTrackMeshes().length == 0) {
+         if (Turtle3d.getTracksByTag('lsystem').length == 0) {
             btnMSave.disabled = true;
             btnRPRD.disabled = false;
             btnDraw.disabled = false;
@@ -439,14 +444,14 @@ btnSingleStep.addEventListener('click', ()=> {
 
 btnMSave.toggleAttribute('disabled');
 btnMSave.addEventListener("click", () => {
-    let meshes = t.getTrackMeshes();
-    if (meshes.length) {
-       let fname = "lsys";
-       puts("saving some meshes");
-       saveLsystemMeshes(fname, meshes);
-    } else {
-       puts('No meshes to save');
-    }
+   let meshes =Turtle3d.getTracksByTag('lsystem'); // t.getTrackMeshes();
+   if (meshes.length) {
+      let fname = "lsys";
+      puts("saving some meshes");
+      saveLsystemMeshes(fname, meshes);
+   } else {
+      puts('No meshes to save');
+   }
 });
 
 /* --------------------------------------------------------------------------------
