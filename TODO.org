@@ -32,12 +32,14 @@ Back burner
  interpretation. Polygons that are contained in single branch are still fine.
  <2022-08-17 Wed> Need to get color/materials set up for multiple turtles
 <2022-08-18 Thu> implement global color table, so MT looks pretty good
-
+<2022-08-24 Wed> Bailed on animation - step mode is pretty good with multiple turtles and 
+speed control. Animation, with capture of layers, will need to wait a bit more.
 ** need layer to step through Lsystem.Rewrite and interp
 ** screen capture to 'movie'? what does babylon offer
 * Multiple turtle implementation
 Attractive from a visualization standpoint, and maybe a cleaner encapsulation
 <2022-08-17 Wed> Initial changes done - move this to animation
+<2022-08-24 Wed> This is done, including UI to toggle between single and multiple turtle drawing.
 * Bugs
 ** extrusion orientation of straight paths
  <2022-05-21 Sat> The orientation is fixed, i think, but something is broken with lighting

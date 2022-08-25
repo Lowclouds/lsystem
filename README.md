@@ -55,6 +55,9 @@
     It is possible to define and use L-System generated contours for path shapes, which is not supported in L-Studio
   * Piecewise path.
     Paths can be extruded along paths where the points are not explicit spline control points. The path uses the underlying BABYLON Path3D (which looks very much like a CatmullRom spline).
+  * Stepwise interpretation of Lsystem, a poor man's animation, is working. By controlling the 'speed' of interpretation in iterations/frame, you can get a decent look at the evolution of the system. Coupled with the multiple turtle mode, this looks pretty good. Creating movies of animations is again on the backburner.
+  * Multiple turtle mode. Instead of a left-to-right, effectively depth-first, drawing, this mode does a bread-first traversal of the branches, so the tree grows in a more natural fashion. For lsystems without branches, there is no difference.
+
 
 ## Missing or changed features
   * It does not implement stochastic L-systems, but that can be closely approximated by parametric expressions and could be made essentially equivalent (using conditional expressions and the rand function
@@ -65,7 +68,7 @@
 
 ## Features in the  works:
 
-   * Animations
+   * Animations - but see step mode with multiple turtle mode
    * Homomorphisms
    * Array specified contours and surfaces
    * L-system surface generation
