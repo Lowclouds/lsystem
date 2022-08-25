@@ -1,7 +1,7 @@
 
 class LogTag {
    static tagSet = 0n;
-   static mode = 0;
+   static mode = 0n;
    static set(...tags) {
       for (const tag of tags) {
          LogTag.tagSet |= tag;  // set bit
