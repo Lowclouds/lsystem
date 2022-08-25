@@ -90,14 +90,18 @@ function turtleInterp (ti, ls, opts=null) {
 
    idata.ndelta= -1*idata.delta;
 
-   var t0 = new Turtle3d(ti.scene, {noturtle: true, globalPolygons: true});
-   let ts = ti.getState()
+   var t0 = new Turtle3d(ti.scene, {noturtle: true});  // , globalPolygons: true});
+   idata.gencode('var t0 = new Turtle3d(ti.scene, {noturtle: true})');
+   let ts = ti.getState();
    t0.setState(ts);
+   idata.gencode('t0.setState(ti.getState());\n');
 
    t0.addTag(idata.trackTag);
    t0.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
    t0.setHeading([0,1,0]);
-   idata.gencode('t0.setHeading([0,1,0])');
+   idata.gencode(`
+  t0.addTag('${idata.trackTag}');
+  t0.setHeading([0,1,0])`);
    idata.gencode('.setSize(' + idata.stemsize + ', true);\n');
 
    // if (idata.ctable != null && idata.ctable != []) {
@@ -116,6 +120,7 @@ function turtleInterp (ti, ls, opts=null) {
    idata.gencode('t0.hide().pd();\n');
    
    var branches = [{turtle: t0, spos: 0, keep: true}]; 
+   idata.gencode('var branches = [{turtle: t0, spos: 0, keep: true}];\n');
    var lstring = ls.current;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
    puts(`using settings: ` + idata.show(), NTRP_INIT);
@@ -143,17 +148,20 @@ function turtleInterp (ti, ls, opts=null) {
             packItUp(t0);
             return;
          }
-
+         idata.gencode('let turtle;\n');
          for (i = 0, branch=0; i < idata.miCount && branches.length>0; i++,branch++) {
             branch %= branches.length;
             branchpos = branches[branch].spos;
             turtle = branches[branch].turtle;
+            idata.gencode(`turtle = branches[${branch}].turtle;\n`);
             puts(`branch: ${branch} of ${branches.length}, branchpos: ${branchpos}, turtle: ${turtle.Turtle}`, NTRP_PROGRESS);
             if (branchpos >= lstring.length) {
                let shouldKeep = branches[branch].keep;
                branches.splice(branch,1); // remove this branch - could be first
+               idata.gencode(`branches.splice(${branch},1);\n`);
                if (! shouldKeep) {
                   turtle.dispose(false); // don't dispose tracks, thought
+                  idata.gencode('turtle.dispose(false);\n');
                }
                continue;
             }               
@@ -177,7 +185,7 @@ function turtleInterp (ti, ls, opts=null) {
             switch (m) {
             case 'F': {
                let d = isPM ? p0 : idata.step;
-               idata.gencode('ti');
+               idata.gencode('turtle');
                if (! turtle.isPenDown()) {
                   turtle.penDown();
                   idata.gencode('.pd()');
@@ -190,7 +198,7 @@ function turtleInterp (ti, ls, opts=null) {
             case 'f': {
                let d = isPM ? p0 : idata.step;
                let pState = turtle.isPenDown();
-               idata.gencode('ti');
+               idata.gencode('turtle');
                if (pState) {
                   turtle.penUp();
                   idata.gencode('.pu()');
@@ -207,7 +215,7 @@ function turtleInterp (ti, ls, opts=null) {
             }
             case 'G': {
                let d = isPM ? p0 : idata.step;
-               idata.gencode('ti');
+               idata.gencode('turtle');
                if (! turtle.isPenDown()) {
                   turtle.penDown();
                   idata.gencode('.pd()');
@@ -220,7 +228,7 @@ function turtleInterp (ti, ls, opts=null) {
             case 'g': {
                let d = isPM ? p0 : idata.step;
                let p = turtle.isPenDown();
-               idata.gencode('ti');
+               idata.gencode('turtle');
                if (p) {
                   turtle.penUp();
                   idata.gencode('.pu()');
@@ -248,7 +256,7 @@ function turtleInterp (ti, ls, opts=null) {
             case '@m': {
                if (isPM) {
                   let p = turtle.isPenDown();
-                  idata.gencode('ti');
+                  idata.gencode('turtle');
                   if (p) {
                      turtle.penUp();
                      idata.gencode('.pu()');
@@ -391,11 +399,19 @@ function turtleInterp (ti, ls, opts=null) {
             }
             case '[': {           // start a branch
                if (idata.useMT) {
-                  let s = turtle.getState();
+                  let s = turtle.getState(); 
                   let newt = new Turtle3d(turtle.scene, {noturtle: true});
                   newt.setState(s); // inherit current turtle state
                   newt.addTag(idata.trackTag);
                   branches.push({turtle: newt, spos: branchpos + 1, keep: false});
+                  idata.gencode(`{
+   let s = turtle.getState(); 
+   let newt = new Turtle3d(turtle.scene, {noturtle: true});
+   newt.setState(s);
+   newt.addTag('${idata.trackTag}');
+   branches.push({turtle: newt, spos: ${branchpos + 1}, keep: false});
+}`);
+
                   // skip past new twig on this branch
                   let [m,newpos] = Lsystem.skipbrackets(lstring, branchpos, 1);
                   branches[branch].spos = newpos;
@@ -410,8 +426,10 @@ function turtleInterp (ti, ls, opts=null) {
                   // should probably complain about unfinished tracks and polygons...
                   let shouldKeep = branches[branch].keep;
                   branches.splice(branch,1); // remove this branch - could be first
+                  idata.gencode(`branches.splice(${branch},1);\n`);
                   if (! shouldKeep) {
                      turtle.dispose(false); // don't dispose tracks, thought
+                     idata.gencode('turtle.dispose(false);\n');
                   }
                } else {
                   // let s = no state to save
