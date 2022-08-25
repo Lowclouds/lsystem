@@ -21,7 +21,7 @@ var cameraTargetbtn = document.getElementById('btn5');
 cameraTargetbtn.textContent = "Look at Turtle"
 
 var drawSpeedCtrl = document.getElementById('drawspeed');
-drawSpeedCtrl.value = 20;
+drawSpeedCtrl.value = 200;
 
 drawSpeedCtrl.addEventListener('input', () => {
    drawSpeedCtrl.checkValidity();
@@ -178,6 +178,7 @@ const btnSingleStep =  document.getElementById('btnSingleStep');
 //const btnAnimate =  document.getElementById('btnAnimate');
 const btnMSave = document.getElementById('btnMSave');
 const btnMT = document.getElementById('btnMT');
+btnMT.checked = true;
 btnMT.addEventListener('input', () => {
    puts('btnMT toggled');
    interpOpts.useMT = btnMT.checked;
@@ -232,7 +233,7 @@ function uiDoRewrite() {
    return ipromise;
 }
 
-var interpOpts = {gencode: false, miCount: drawSpeedCtrl.value};
+var interpOpts = {gencode: false, miCount: drawSpeedCtrl.value, useMT: btnMT.checked};
 
 function uiDoDraw () {
    let ipromise = new Promise((resolve,reject) => {
@@ -640,38 +641,38 @@ var tracksAlways = false;
 
 
 // load an example file
-// fetch('./tests/3d-a1.ls')
-//    .then( response => {
-//       if (! response.ok) {
-//          throw new Error(`${response.status}`);
-//       }
-//       return response.text();
-//    })
-//    .then(text => {
-//       lsSrc.value = text;
-//       lsys = Lsystem.Parse(lsSrc.value);
-//       lsResult.value = lsys.serialize();
-//       lsState = 'Parsed';
-//       if (lsResult.textContent != 'Empty') {
-//       uiDoRewrite()
-//          .then(value => {
-//             //lsResult.value = lsys.Rewrite(); //.toString();
-//                /* --------- reset ---------*/
-//                t.reset();
-//                /* --------- draw ---------*/
-//                turtleInterp(t, lsys, {gencode: codegenOn})
-//                .then(value => {
-//                   btnMSave.disabled = false;
-//                   t.show();
-//                }).catch(error => {
-//                   puts(error);
-//                   btnMSave.disabled = true;
-//                   t.show();
-//                })
-//          });
-//       }
-//    })
-//    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
+fetch('./tests/3d-a1.ls')
+   .then( response => {
+      if (! response.ok) {
+         throw new Error(`${response.status}`);
+      }
+      return response.text();
+   })
+   .then(text => {
+      lsSrc.value = text;
+      lsys = Lsystem.Parse(lsSrc.value);
+      lsResult.value = lsys.serialize();
+      lsState = 'Parsed';
+      if (lsResult.textContent != 'Empty') {
+      uiDoRewrite()
+         .then(value => {
+            //lsResult.value = lsys.Rewrite(); //.toString();
+               /* --------- reset ---------*/
+               t.reset();
+               /* --------- draw ---------*/
+               turtleInterp(t, lsys, interpOpts)
+               .then(value => {
+                  btnMSave.disabled = false;
+                  t.show();
+               }).catch(error => {
+                  puts(error);
+                  btnMSave.disabled = true;
+                  t.show();
+               })
+         });
+      }
+   })
+   .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
 
 // ------------------------------------------------------------
 //  end of UI
