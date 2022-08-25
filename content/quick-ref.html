@@ -3,13 +3,13 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-07-25 Mon 15:36 -->
+<!-- 2022-08-25 Thu 00:35 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>L-System Modules Quick Guide</title>
-<meta name="generator" content="Org mode" />
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
   .title  { text-align: center;
              margin-bottom: .2em; }
   .subtitle { text-align: center;
@@ -30,8 +30,9 @@
   #postamble p, #preamble p { font-size: 90%; margin: .2em; }
   p.verse { margin-left: 3%; }
   pre {
-    border: 1px solid #ccc;
-    box-shadow: 3px 3px 3px #eee;
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
     padding: 8pt;
     font-family: monospace;
     overflow: auto;
@@ -39,22 +40,22 @@
   }
   pre.src {
     position: relative;
-    overflow: visible;
-    padding-top: 1.2em;
+    overflow: auto;
   }
   pre.src:before {
     display: none;
     position: absolute;
-    background-color: white;
-    top: -10px;
-    right: 10px;
+    top: -8px;
+    right: 12px;
     padding: 3px;
-    border: 1px solid black;
+    color: #555;
+    background-color: #f2f2f299;
   }
-  pre.src:hover:before { display: inline;}
+  pre.src:hover:before { display: inline; margin-top: 14px;}
   /* Languages per Org manual */
   pre.src-asymptote:before { content: 'Asymptote'; }
   pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
   pre.src-C:before { content: 'C'; }
   /* pre.src-C++ doesn't work in CSS */
   pre.src-clojure:before { content: 'Clojure'; }
@@ -190,73 +191,32 @@
   .org-info-js_search-highlight
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   .org-svg { width: 90%; }
-  /*]]>*/-->
 </style>
-<script type="text/javascript">
-/*
-@licstart  The following is the entire license notice for the
-JavaScript code in this tag.
-
-Copyright (C) 2012-2020 Free Software Foundation, Inc.
-
-The JavaScript code in this tag is free software: you can
-redistribute it and/or modify it under the terms of the GNU
-General Public License (GNU GPL) as published by the Free Software
-Foundation, either version 3 of the License, or (at your option)
-any later version.  The code is distributed WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
-
-As additional permission under GNU GPL version 3 section 7, you
-may distribute non-source (e.g., minimized or compacted) forms of
-that code without the copy of the GNU GPL normally required by
-section 4, provided you include this license notice and a URL
-through which recipients can access the Corresponding Source.
-
-
-@licend  The above is the entire license notice
-for the JavaScript code in this tag.
-*/
-<!--/*--><![CDATA[/*><!--*/
- function CodeHighlightOn(elem, id)
- {
-   var target = document.getElementById(id);
-   if(null != target) {
-     elem.cacheClassElem = elem.className;
-     elem.cacheClassTarget = target.className;
-     target.className = "code-highlighted";
-     elem.className   = "code-highlighted";
-   }
- }
- function CodeHighlightOff(elem, id)
- {
-   var target = document.getElementById(id);
-   if(elem.cacheClassElem)
-     elem.className = elem.cacheClassElem;
-   if(elem.cacheClassTarget)
-     target.className = elem.cacheClassTarget;
- }
-/*]]>*///-->
-</script>
 </head>
 <body>
-<div id="content">
+<div id="content" class="content">
 <h1 class="title">L-System Modules Quick Guide</h1>
-<div id="table-of-contents">
+<div id="table-of-contents" role="doc-toc">
 <h2>Table of Contents</h2>
-<div id="text-table-of-contents">
+<div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org518a81a">1. Turtle Motion</a></li>
-<li><a href="#org0f8ef06">2. Turtle Orientation</a></li>
-<li><a href="#orgabd0b9a">3. Turtle Settings</a></li>
-<li><a href="#org594d517">4. Turtle Geometry</a></li>
-<li><a href="#orgfe7146d">5. L-system Geometry</a></li>
-<li><a href="#org5d31c16">6. L-System Syntax</a>
+<li><a href="#org3e480b0">1. Turtle Motion</a></li>
+<li><a href="#org4c580b5">2. Turtle Orientation</a></li>
+<li><a href="#org9785910">3. Turtle Settings</a></li>
+<li><a href="#org580dc0c">4. Turtle Geometry</a></li>
+<li><a href="#org0243489">5. L-system Geometry</a></li>
+<li><a href="#orgb21e07f">6. L-System Syntax</a>
 <ul>
-<li><a href="#org23b084f">6.1. Comments</a></li>
-<li><a href="#org325ba88">6.2. Defines</a></li>
-<li><a href="#orge6baa30">6.3. Settings</a></li>
-<li><a href="#orgd082c84">6.4. Expressions</a></li>
+<li><a href="#org0f03e86">6.1. Comments</a></li>
+<li><a href="#orgedc660c">6.2. Defines</a></li>
+<li><a href="#org46a60fd">6.3. Settings</a></li>
+<li><a href="#org146b822">6.4. Expressions</a></li>
+</ul>
+</li>
+<li><a href="#orga7376c2">7. UI and controls</a>
+<ul>
+<li><a href="#org35e10ed">7.1. Turtle controls</a></li>
+<li><a href="#orgea25599">7.2. L-system controls</a></li>
 </ul>
 </li>
 </ul>
@@ -272,8 +232,8 @@ Modules marked <b>u</b> are <b>unimplemented</b><br />
 Modules marked <b>p</b> are <b>partially implemented</b><br />
 </p>
 
-<div id="outline-container-org518a81a" class="outline-2">
-<h2 id="org518a81a"><span class="section-number-2">1</span> Turtle Motion</h2>
+<div id="outline-container-org3e480b0" class="outline-2">
+<h2 id="org3e480b0"><span class="section-number-2">1.</span> Turtle Motion</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Without a parameter move 'step' amount
@@ -316,8 +276,8 @@ Without a parameter move 'step' amount
 </div>
 </div>
 
-<div id="outline-container-org0f8ef06" class="outline-2">
-<h2 id="org0f8ef06"><span class="section-number-2">2</span> Turtle Orientation</h2>
+<div id="outline-container-org4c580b5" class="outline-2">
+<h2 id="org4c580b5"><span class="section-number-2">2.</span> Turtle Orientation</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Without a parameter turn 'delta' degrees
@@ -380,8 +340,8 @@ Without a parameter turn 'delta' degrees
 </div>
 </div>
 
-<div id="outline-container-orgabd0b9a" class="outline-2">
-<h2 id="orgabd0b9a"><span class="section-number-2">3</span> Turtle Settings</h2>
+<div id="outline-container-org9785910" class="outline-2">
+<h2 id="org9785910"><span class="section-number-2">3.</span> Turtle Settings</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Defaults without a parameter to one
@@ -444,8 +404,8 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org594d517" class="outline-2">
-<h2 id="org594d517"><span class="section-number-2">4</span> Turtle Geometry</h2>
+<div id="outline-container-org580dc0c" class="outline-2">
+<h2 id="org580dc0c"><span class="section-number-2">4.</span> Turtle Geometry</h2>
 <div class="outline-text-2" id="text-4">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -540,8 +500,8 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-orgfe7146d" class="outline-2">
-<h2 id="orgfe7146d"><span class="section-number-2">5</span> L-system Geometry</h2>
+<div id="outline-container-org0243489" class="outline-2">
+<h2 id="org0243489"><span class="section-number-2">5.</span> L-system Geometry</h2>
 <div class="outline-text-2" id="text-5">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -581,12 +541,12 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org5d31c16" class="outline-2">
-<h2 id="org5d31c16"><span class="section-number-2">6</span> L-System Syntax</h2>
+<div id="outline-container-orgb21e07f" class="outline-2">
+<h2 id="orgb21e07f"><span class="section-number-2">6.</span> L-System Syntax</h2>
 <div class="outline-text-2" id="text-6">
 </div>
-<div id="outline-container-org23b084f" class="outline-3">
-<h3 id="org23b084f"><span class="section-number-3">6.1</span> Comments</h3>
+<div id="outline-container-org0f03e86" class="outline-3">
+<h3 id="org0f03e86"><span class="section-number-3">6.1.</span> Comments</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
 C-style comments, '/​* stuff, including newline */​' are supported.<br />
@@ -594,8 +554,8 @@ Single-line '//' style comments are not - they conflict with L-system syntax.
 </p>
 </div>
 </div>
-<div id="outline-container-org325ba88" class="outline-3">
-<h3 id="org325ba88"><span class="section-number-3">6.2</span> Defines</h3>
+<div id="outline-container-orgedc660c" class="outline-3">
+<h3 id="orgedc660c"><span class="section-number-3">6.2.</span> Defines</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
    Lines that start with '#define macro value', 'macro' being some word, create
@@ -604,8 +564,8 @@ the L-system before parsing starts.
 </p>
 </div>
 </div>
-<div id="outline-container-orge6baa30" class="outline-3">
-<h3 id="orge6baa30"><span class="section-number-3">6.3</span> Settings</h3>
+<div id="outline-container-org46a60fd" class="outline-3">
+<h3 id="org46a60fd"><span class="section-number-3">6.3.</span> Settings</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
    Before the axiom is specified, variables can be set for the L-system. 
@@ -727,8 +687,8 @@ shouldn't conflict with any module parameters.
 </p>
 </div>
 </div>
-<div id="outline-container-orgd082c84" class="outline-3">
-<h3 id="orgd082c84"><span class="section-number-3">6.4</span> Expressions</h3>
+<div id="outline-container-org146b822" class="outline-3">
+<h3 id="org146b822"><span class="section-number-3">6.4.</span> Expressions</h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
    Expressions occur in tests, parameters, and pre/post test <b>u</b>. They 
@@ -766,14 +726,90 @@ Of particular note, are the logical operators which must be written explicitly a
 <p>
 e.g. (t &gt; 0) and not u
 </p>
+</div>
+</div>
+</div>
+<div id="outline-container-orga7376c2" class="outline-2">
+<h2 id="orga7376c2"><span class="section-number-2">7.</span> UI and controls</h2>
+<div class="outline-text-2" id="text-7">
+<ul class="org-ul">
+<li>subject to constant change -</li>
+</ul>
+</div>
+<div id="outline-container-org35e10ed" class="outline-3">
+<h3 id="org35e10ed"><span class="section-number-3">7.1.</span> Turtle controls</h3>
+<div class="outline-text-3" id="text-7-1">
+<p>
+At the top are the turtle controls. To the right of the label, "Turtle Controls" is a widget
+that will expand and collapse the controls. The first expansion is a buttonbar that controls the
+default turtle. If you open the Javascript console, you can directly enter Turtle3d commands to get 
+an idea for how it works. You can also turn on the Gen Code mode to get examples of how the turtle 
+is used. 
+</p>
+
+<ul class="org-ul">
+<li><b>Hide/Show</b> will hide or show the turtle shape, which is a mini axis of the HLU system of the turtle.</li>
+<li><b>Clear</b> will clear all the geometry generated by the turtle(s).</li>
+<li><b>Home</b> moves the turtle back to 0,0,0 and orients it along the axes.</li>
+<li><b>Reset</b> is the same as <b>Clear</b> and <b>Home</b></li>
+<li><b>Look at Turtle</b> orients the camera so the turtle is in the center of view.</li>
+<li><b>Show/Hide Color Table</b> displays the current color/material table</li>
+<li><b>&gt;</b> is a widget to expand a table that shows the position and heading of the turtle</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgea25599" class="outline-3">
+<h3 id="orgea25599"><span class="section-number-3">7.2.</span> L-system controls</h3>
+<div class="outline-text-3" id="text-7-2">
+<p>
+Below the Turtle controls are the L-system controls. There is a link to this *Quick Ref*erence.
+The buttonbar and controls below that display and manipulate the lsystem and rendering of it.
+Since you need an L-system to use these, you can enter one manually in the text area below the Browse
+button, or use the Browse button to find a local L-system file. [Details later]
+</p>
+
+<ul class="org-ul">
+<li><b>Parse</b> this button will parse whatever text is in the L-system source area and show the result in the
+L-Ssytem Expansion text box.</li>
+<li><b>Rewrite</b> will rewrite the parsed L-system, and, again, place the result in the L-system Expansion box.</li>
+<li><b>Draw</b> will interpret the expanded system and draw the geometry on the canvas. Note, that <b>Draw</b> neither
+clears, homes, or resets any previously drawn geometry.</li>
+<li><b>Reset-and-Draw</b> will clear, and reset the turtle before drawing</li>
+<li><b>Step</b> will do one interation step of the the L-system, no matter how many interations are specified in
+the L-system spec. As a special case, if the <b>Parse</b> button is used to clear and reparse the L-system,</li>
+<li><b>Step</b> will initially write and interpret the axiom; subsequent steps will clear the previous geometry,
+rewrite one step of the L-system, and redraw it. This can be informative when multi-turtle mode is on and
+the draw speed is set low.</li>
+<li><b>MultiTurtle?</b> is a checkbox to turn this mode on/off. When on, the interpretation/drawing creates a new
+turtle for each branch and then gives each turtle one step on its branch in a round-robin draw mode. When
+a turtle reaches the end of the branch it is destroyed.</li>
+
+<li><b>Browse&#x2026;.</b> allows you to load an lsystem locally. It is a text file, typically with a .ls extension</li>
+<li><p>
+<b>Save</b> allows you to save the L-system
+</p>
+
+<p>
+Below the L-system source box are status and more controls:
+</p></li>
+<li><b>L-system status:</b> |X|Y|Z| , where X is the number of iterations/expansions of the axiom; Y is the number
+of modules in the L-system expansion, and Z is the number of modules that have been interpreted/drawn. This
+last box will turn green when drawing is complete.</li>
+<li><b>Draw Speed</b> is an input to control the drawing speed in modules/frame. It defaults to 200 and runs from
+1 to 500. Higher rates tend to bog down the browser.</li>
+<li><b>Save Mesh</b> allows you to save draw geometry to a GLTF file.</li>
+<li><b>Gen Code</b> causes the interpretation to generate the turtle code that it uses to draw the geometry. This 
+is simpler in single turtle mode.</li>
+<li><b>Save Code</b> allows you to save that generated code.</li>
+</ul>
 <hr />
 </div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2022-07-25 Mon 15:36</p>
-<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+<p class="date">Created: 2022-08-25 Thu 00:35</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>
