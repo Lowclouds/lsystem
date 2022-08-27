@@ -12,6 +12,7 @@ class Turtle3d {
    static meshes = new Map();        // no defaults
    static polygonStack = [];   // per TABOP usage, stores state of polygon creation
    static polygonVerts = null;   // array of vertices on edge of polygon, in order
+
    static initColorTable(scene) {
       for (let i = 0; i < ColorTable.length; i++) {
          let m = new BABYLON.StandardMaterial("trackMat",scene);
@@ -182,6 +183,13 @@ class Turtle3d {
       // make this turtle useless
       delete this.Turtle;
       delete this.TurtleState;
+   }
+
+   static addMesh(name, mesh) {
+      Turtle3d.meshes.set(name, mesh);
+   }
+   static getMesh(name) {
+      return Turtle3d.meshes.get(name);
    }
 
    // getters and setters
@@ -812,7 +820,7 @@ class Turtle3d {
    }
 
    drawImmediate(ts, oldPos, newPos) {
-      //let t = this.Turtle;
+      let t = this.Turtle;
       let type = ts.trackType;
       let segment;
       let doSetMaterial = true;
@@ -872,7 +880,7 @@ class Turtle3d {
      puts(`drawImmediate: mesh type: ${type}, position: ${segment.position}`, TRTL_DRAW);
      this.meshCommonSetup(segment, false, doSetMaterial, BABYLON.Vector3.Zero());
    }
-
+   
    drawTrack() {
       let t = this.Turtle;
       let tp = this.TurtleState.trackPath;
@@ -1246,7 +1254,7 @@ class Turtle3d {
          // puts(`indices: ${vertexData.indices}`);
          // puts(`normals: ${vertexData.normals}`);
 
-         pmesh = new BABYLON.Mesh("poly", this.scene);
+         pmesh = new BABYLON.Mesh(this.Turtle, this.scene);
          vertexData.applyToMesh(pmesh,true);
 
          this.meshCommonSetup(pmesh, false);

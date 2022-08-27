@@ -466,13 +466,15 @@ function saveLsystemMeshes(filename, meshes) {
       shouldExportNode: function (node) {
          let ok = mlist.includes(node);
          if (ok) {
-            puts(`ok with ${node.id}`);
+            puts(`ok with ${node.id}/${node.name}`);
          }
          return ok;
       },
    };
    
-   //BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
+   // BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
+   //    glb.downloadFiles();
+   // });
    BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
      gltf.downloadFiles();
    });
@@ -894,3 +896,29 @@ function loadTpack(pack, mat) {
 //    t.setState(savedState);
 // }
 
+    // let  assetsManager = new BABYLON.AssetsManager(scene);  
+
+    // //called when a single task has been sucessfull
+    // assetsManager.onTaskSuccessObservable.add(function(task) {
+
+    //    // var mesh = task.loadedMeshes[0]; //will hold the mesh that has been loaded recently
+    //     console.log('task successful', task);
+    // });
+
+    // assetsManager.onTaskErrorObservable.add(function(task) {
+    //     console.log('task failed', task.errorObject.message, task.errorObject.exception);
+    // });
+
+    // var loadButton = document.getElementById('loadFile');
+
+    // loadButton.onchange = function(evt){
+
+    //     var files = evt.target.files;
+    //     var filename = files[0].name;
+    //     var blob = new Blob([files[0]]);
+
+    //     BABYLON.FilesInput.FilesToLoad[filename] = blob;
+        
+    //     assetsManager.addMeshTask(name, "", "file:", filename);
+    //     assetsManager.load();
+    // }; 
