@@ -179,45 +179,20 @@ class Turtle3d {
    } // end constructor
 
    // a destructor sort of. primarily keeps the global list of turtles up to date
+   // this leaves contours and meshes created/imported by this turtle intact
    dispose (doClear = true) {
       if (doClear) {this.clear();} // disposes drawn meshes
       Turtle3d.clearTracksByTag(`${this.Turtle} && turtle`); // disposes the turtleShape
       Turtle3d.Turtles.delete(this.Turtle);   // delete from global map
-      // make this turtle useless
+      // make this turtle useless and get rid of references to stuff
       delete this.Turtle;
       delete this.TurtleState;
-   }
-
-   static reset() {
-      Turtle3d.Turtles = new Map();
-      Turtle3d.counter = 0;
-      Turtle3d.trackContours = new Map();
-      Turtle3d.meshes = new Map();
-      Turtle3d.polygonStack = [];
-      Turtle3d.polygonVerts = null;
-   }
-   static addMesh(name, mesh, opts=null) {
-      mesh.setEnabled(false);
-      let mobj = {m: mesh, name: name, counter: 0, contactPoint: null, endPoint: null, heading: null, up: null, scale: 1};
-      if (opts) {
-         let mobjkeys = mobj.keys();
-         opts.keys().forEach(k => {
-            if (mobjkeys.includes(k)) {
-               mobj[k] = opts[k];}});
-      }
-      Turtle3d.meshes.set(name, mobj);
-   }
-   static getMesh(name) {
-      return Turtle3d.meshes.get(name);
-   }
-   
-   insertMesh(name, scale=1) {
-      let mobj = Turtle3d.getMesh(name);
-      let mesh = mobj.m;
-      let cntr = mobj.counter;
-      mobj.counter++;
-      let inst = mesh.createInstance(mobj.name + cntr);
-      this.meshCommonSetup(inst, {setmaterial: false, pos: this.getPos(), rotate:true, tags: 'mesh'});
+      delete this.materialList;
+      delete this.trackPaths;
+      delete this.branchStack;
+      delete this.tempContour;
+      delete this.polygonStack;
+      delete this.polygonVerts;
    }
 
    // getters and setters
@@ -836,6 +811,27 @@ class Turtle3d {
       return this.yaw(-1*angle);
    }
 
+   // handle L-system branching
+   newBranch(udata=null) {
+      this.branchStack.push({tstate: this.getState(), userData: udata});
+      return this;
+   }
+   endBranch() {
+      if (this.TurtleState.trackPath != null) {
+         this.endTrack();
+      }
+      const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
+      if (last) {
+         this.setState(last.tstate);
+         //this.TurtleState.trackPath = last.tstate.trackPath;
+         return last.userData;
+      } else {
+         console.warn('endBranch called with no branch started!');
+         return null;
+      }
+   }
+
+   // drawing
    draw(oldPos, newPos) {
       let ts = this.TurtleState;
       if (this.isPenDown() && ts.drawMode == Turtle3d.DRAW_IMMEDIATE) {
@@ -1011,25 +1007,6 @@ class Turtle3d {
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
 
-   newBranch(udata=null) {
-      this.branchStack.push({tstate: this.getState(), userData: udata});
-      return this;
-   }
-   endBranch() {
-      if (this.TurtleState.trackPath != null) {
-         this.endTrack();
-      }
-      const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
-      if (last) {
-         this.setState(last.tstate);
-         //this.TurtleState.trackPath = last.tstate.trackPath;
-         return last.userData;
-      } else {
-         console.warn('endBranch called with no branch started!');
-         return null;
-      }
-   }
-
    newTrack(ctype='p0') {
       let ptype;
       let tp;
@@ -1194,7 +1171,7 @@ class Turtle3d {
             mesh.scaling.y = opts.scaling.y;
             mesh.scaling.z = opts.scaling.z;
          }
-         puts(`scaled mesh by: ${typeof scaling === 'number' ? scaling : scaling.toString()}`, TRTL_DRAW)
+         puts(`scaled mesh by: ${typeof opts.scaling === 'number' ? opts.scaling : opts.scaling.toString()}`, TRTL_DRAW)
       }
 
       if (opts.pos) {
@@ -1204,8 +1181,8 @@ class Turtle3d {
       }
 
       if (opts.rotate) {
-         mesh.rotation = BABYLON.Vector3.RotationFromAxis(ts.H, ts.U, ts.L.scale(-1));
-         puts(`rotated mesh to match turtrle`, TRTL_DRAW)
+         mesh.rotation = BABYLON.Vector3.RotationFromAxis(ts.H, ts.U, ts.L.scale(1));
+         puts(`rotated mesh to match turtle`, TRTL_DRAW)
       }
 
       mesh.isVisible = true;
@@ -1404,6 +1381,54 @@ class Turtle3d {
          break;
       }
       return this;
+   }
+   
+   // insert instance of named mesh at provided scale
+   insertMesh(name, scale=1) {
+      let mobj = Turtle3d.getMesh(name);
+      let mesh = mobj.m;
+      let cntr = mobj.counter;
+      mobj.counter++;
+      let inst = mesh.createInstance(mobj.name + cntr);
+      let mopts = {setmaterial: false, pos: this.getPos(), rotate:true};
+      if (scale != 1) {
+         mopts.scaling = scale;
+      }
+      this.meshCommonSetup(inst, mopts);
+   }
+
+   // add/get meshes for instancing
+   static addMesh(name, mesh, opts=null) {
+      mesh.setEnabled(false);
+      if (BABYLON.Tags.HasTags(mesh)) {
+         mesh.removeTags(BABYLON.Tags.GetTags(mesh));
+      } else {
+         BABYLON.Tags.EnableFor(mesh);
+      }
+      mesh.addTags('mesh Turtle3d');
+      let mobj = {m: mesh, name: name, counter: 0, contactPoint: null, endPoint: null, heading: null, up: null, scale: 1};
+      if (opts) {
+         let mobjkeys = mobj.keys();
+         opts.keys().forEach(k => {
+            if (mobjkeys.includes(k)) {
+               mobj[k] = opts[k];}});
+      }
+      Turtle3d.meshes.set(name, mobj);
+   }
+   static getMesh(name) {
+      return Turtle3d.meshes.get(name);
+   }
+
+   /*
+     reset Turtle3d class variables
+    */
+   static reset() {
+      Turtle3d.Turtles = new Map();
+      Turtle3d.counter = 0;
+      Turtle3d.trackContours = new Map();
+      Turtle3d.meshes = new Map();
+      Turtle3d.polygonStack = [];
+      Turtle3d.polygonVerts = null;
    }
 }
 
