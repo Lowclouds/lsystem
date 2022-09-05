@@ -1,12 +1,12 @@
 lsystem: 1
-ignore: ?$
+ignore: $
 dlength: 
 axiom: A
-p11: A --> I[?(2)A$]
+p11: A --> I[$(2)A$]
 endlsystem
 
 lsystem: 2
-ignore: ?$
+ignore: $
 axiom: A
 P21: A -> IA
 endlsystem

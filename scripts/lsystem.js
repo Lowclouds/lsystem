@@ -139,7 +139,7 @@ class Lsystem {
    // single map for all l-systems in a spec
    // we want the first entry to be the main lsystem
    static lsystems = new Map();
-   static modLsystemStart = new  ParameterizedModule('?', 'i,s');
+   static modLsystemStart = new  ParameterizedModule('$', 'i,s');
    static modLsystemEnd = '$';
    static functions = new Map(); // functions also global for all l-systems
 
@@ -919,7 +919,7 @@ class Lsystem {
       let rules = this.rules;
       let lsStack = [];
       let restrict = ls.restrict;
-      // parallelize this later?
+      // parallelize this later? never if subLsystems are supported
       let clength;
       for (let i=1; i <= niter; i++) {
          puts(`iteration ${i}\n${mstring}`, LSYS_REWRITE);
@@ -927,7 +927,7 @@ class Lsystem {
          lsnext = mstring.slice();     // default production is to copy
          for (let n=0; n < clength; n++)   {
             let node = mstring[n];
-            puts(`looking at node[${n}] = ${node}`, LSYS_REWRITE);
+            puts(`looking at node[${n}] = ${node}, Lsys: ${lsLabel}`, LSYS_REWRITE);
             // special handling of cut module, %
             if (node == '%') {
                let on = n;
@@ -982,7 +982,7 @@ class Lsystem {
                if (bestscope._test_()) {
                   lsnext[n] = this.expand(bestrule);
                   doExpand=true;
-                  puts(`this expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
+                  puts(`expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
  // todo: evaluate post-condition expression ???
                }
             }
@@ -993,10 +993,10 @@ class Lsystem {
                let subls = Lsystem.lsystems.get(sublslabel);
                if (subls) {
                   lsStack.push(ls);
-                  ls = subls;
-                  rules = ls.rules;
-                  lsLabel= ls.label;
-                  restrict = ls.restrict;
+                  //ls = subls;
+                  rules = subls.rules;
+                  lsLabel= subls.label;
+                  restrict = subls.restrict;
                   // what about lsystem global variables ???
                   puts(`switching to lsystem: ${lsLabel}`, LSYS_REWRITE);
                   //     continue;
@@ -1006,9 +1006,9 @@ class Lsystem {
             } else if (this.formalMatch(Lsystem.modLsystemEnd, node, null)) {
                let subls = lsStack.pop()
                if (! subls) {
-                  throw new Error(`lsystem: no lsystem found on stack!`); 
+                  throw new Error(`Rewrite: no lsystem found on stack after "$"!`); 
                } else {
-                  ls = subls;
+                  //ls = subls;
                   lsLabel = ls.label;
                   rules = ls.rules;
                   restrict = ls.restrict;

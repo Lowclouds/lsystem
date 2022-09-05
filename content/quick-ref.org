@@ -8,6 +8,8 @@ translated to module in English.)
 
 Modules marked *u* are *unimplemented*
 Modules marked *p* are *partially implemented*
+Modules marked *c* are *changed from TABOP/cpfg*
+Modules marked *n* are *new for this implementation*
 #+END_VERSE
 
 * Turtle Motion
@@ -47,8 +49,8 @@ Modules marked *p* are *partially implemented*
 | @C(d) *u* | circle of diameter d in HL plane                  |
 | @O(d)    | sphere of diameter d                              |
 | ~S *u*   | insert predefined surface, Sym                    |
-| @Ds(id)  | start a contour with tag id                       |
-| @De(id)  | end contour id                                    |
+| @Ds(id) *n* | start a contour with tag id                       |
+| @De(id) *n* | end contour id and save it                        |
 | @#(id)   | set contour(id) as current track shape            |
 | {        | start polygon                                     |
 | }        | end polygon                                       |
@@ -60,12 +62,12 @@ Modules marked *p* are *partially implemented*
 | } *p*    | end current path of any type and extrude contour   |
 | .        | add current position to path, polygon, or contour |
 
-* L-system Geometry
+* L-system Geometry and Control
 | [               | start branch, pushing state onto stack    |
 | ]               | end branch, popping branch state stack    |
 | % *p*           | cut modules to end of branch              |
-| ?(id,scale) *p* | push current L-system and use L-system id |
-| $               | end current L-system, return to previous  |
+| $(id,scale) *c* | push current Lsystem and use sub-Lsystem id   |
+| $               | end current sub-Lsystem, return to previous  |
   
 * L-System Syntax
 ** Comments
