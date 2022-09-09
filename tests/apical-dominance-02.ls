@@ -3,9 +3,9 @@ derivation length: 15
 delta = 45
 axiom: A
 A   --> PS(MAXINHIBIT)A
-P>S(i)  -> S(i-2)P
-S(0) < P --> [+@vFA][-@vFA]
+P>S(n)  -> S(n-2)P
+S(i) < P : i == 0 --> [+@vFA][-@vFA]
 S(i) > S(j) -->  F
-S(i) : i > 0 --> S(i-1)
-S(0) > P --> *
+S(n) : n> 0 --> S(n-1)
+S(i) > P : i==0 --> *
 
