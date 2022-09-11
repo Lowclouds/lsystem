@@ -276,7 +276,7 @@ class Lsystem {
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
       this.needsEnvironment = false;
-      this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
+      //this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
    }
 
    // i read it in a magazine, oh
@@ -287,7 +287,19 @@ class Lsystem {
    show(w='all') {
       if (w == 'all') {
          for (const prop in this) {
-            puts(this.showOneProp(prop));
+            if (prop == 'subsystems') {
+               let subs = this.subsystems.keys();
+               subs.next();  /* skip main  */
+               let sub = subs.next().value;
+               while (sub) {
+                  puts(`sub-Lsystem ${sub}`);
+                  puts(this.subsystems.get(sub).serialize());
+                  sub = subs.next().value;
+                  puts(`    ------------\n`);
+               }  
+            } else {
+               puts(this.showOneProp(prop));
+            }
          }
       } else {
          puts(this.showOneProp(w));
@@ -298,7 +310,19 @@ class Lsystem {
       let s = '';
       for (const prop in this) {
          if (prop != 'spec') {
-            s = s + this.showOneProp(prop);
+            if (prop == 'subsystems') {
+               let subs = this.subsystems.keys();
+               subs.next();  /* skip main  */
+               let sub = subs.next().value;
+               while (sub) {
+                  s += `/*    ------------    */\n`;
+                  s += `sub-Lsystem ${sub}\n`;
+                  s += `${this.subsystems.get(sub).serialize()}`;
+                  sub = subs.next().value;
+               }  
+            } else {
+               s = s + this.showOneProp(prop);
+            }
          }
       }
       return s;
@@ -306,66 +330,69 @@ class Lsystem {
 
    showOneProp(prop) {
       let s = '';
-      if (this.hasOwnProperty(prop)) {
-         let t = Lsystem.myTypeOf(this[prop]);
-         if (t == 'map') {
-            if (this[prop] == '') {
-               return `${prop} is empty\n`;
+      if (this[prop]) {
+         switch (prop ) {
+         case 'axiom':
+            s = `${prop} = ` + Lsystem.listtostr(this.axiom) + '\n';
+            break;
+         case 'rules':
+         case 'homorules':
+         case 'decomprules':
+            if (this[prop].length == 0) {
+               s = `${prop} := empty\n`;
             } else {
-               s = `${prop} contains:\n`;
-               for (let e of this[prop].entries()) { 
-                  s = s + `  ${e}\n`;}
-            }
-         } else 
-            switch (prop ) {
-            case 'axiom':
-               s = `${prop} = ` + Lsystem.listtostr(this.axiom) + '\n';
-               break;
-            case 'rules':
-            case 'homorules':
-            case 'decomprules':
-               if (this[prop].length == 0) {
-                  s = `${prop} := empty\n`;
-               } else {
-                  s = `${prop}:= {pre, strict, post} {cond} {succ} {scope}\n`;
-                  this[prop].forEach((r) => {
-                     //console.log(`Showing: ${r}`);
-                     r.forEach((e,i) => {
-                        s += '\{';
-                        if (i < 3) {
-                           s += `${e}`;
-                        } else if (Lsystem.myTypeOf(e) == 'map') {
-                           s += 'has scope';
-                        }
-                        
-                        // switch(i) {
-                        // case 0: 
-                        //    e.forEach((p,j) => {
-                        //       //console.log(`looking at ${p}`);
-                        //       if (p) {s += Lsystem.listtostr([p]);}
-                        //       if (j<2) {s += ',';}
-                        //       return;
-                        //    });
-                        //    break;
-                        // case 1:
-                        //    s += e;
-                        //    break;
-                        // case 2:
-                        //    s += Lsystem.listtostr(e);
-                        //    break;
-                        // }
-                        s += '\}';
-                        return;
-                     });
-                     s += `\n`;
+               s = `${prop}:= {pre, strict, post} {cond} {succ} {scope}\n`;
+               this[prop].forEach((r) => {
+                  //console.log(`Showing: ${r}`);
+                  r.forEach((e,i) => {
+                     s += '\{';
+                     if (i < 3) {
+                        s += `${e}`;
+                     } else if (Lsystem.myTypeOf(e) == 'map') {
+                        s += 'has scope';
+                     }
+                     
+                     // switch(i) {
+                     // case 0: 
+                     //    e.forEach((p,j) => {
+                     //       //console.log(`looking at ${p}`);
+                     //       if (p) {s += Lsystem.listtostr([p]);}
+                     //       if (j<2) {s += ',';}
+                     //       return;
+                     //    });
+                     //    break;
+                     // case 1:
+                     //    s += e;
+                     //    break;
+                     // case 2:
+                     //    s += Lsystem.listtostr(e);
+                     //    break;
+                     // }
+                     s += '\}';
                      return;
                   });
-               }
-               break;
-            default:
-               s = `${prop} = ${this[prop]}\n`;
-               break;
+                  s += `\n`;
+                  return;
+               });
             }
+            break;
+         case 'subsystems':
+            break;
+         default:
+            let t = Lsystem.myTypeOf(this[prop]);
+            if (t == 'map') { 
+               if (this[prop] == '') {
+                  return `${prop} is empty\n`;
+               } else {
+                  s = `${prop} contains:\n`;
+                  for (let e of this[prop].entries()) { 
+                     s = s + `  ${e}\n`;}
+               }
+            } else {
+               s = `${prop} = ${this[prop]}\n`;
+            }
+            break;
+         }
       }
       return s;
    }
@@ -391,7 +418,7 @@ class Lsystem {
      The Parse function is a wrapper for a bunch of variables used in the parse functions and 
      delegates all the work to parseHelper.
      Returns a parsed Lsystem instance
-    */ 
+   */ 
    static Parse (spec, lsystem = null) {
       const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_TRANSITION=3;
       // preprocess the spec with standard Cpp-like preprocessor
@@ -937,9 +964,9 @@ ${msg}`;
       //          pr.nextState = inItems;
       //       }
       //         }
-         
+      
       //         return pr;
-         
+      
       //         // m = line.matchAll(RE.assignFun);
       //         //     puts(m);
       //         //     for (let parts of m) {
@@ -962,7 +989,7 @@ ${msg}`;
          v=list[i];
          if (Array.isArray(v)) {
             //put('list[' + i + ']: ' + v + ' is an array');
-             v.forEach(m => {r.push(m)});
+            v.forEach(m => {r.push(m)});
          } else {
             //put('list[' + i + ']: ' + v + ' is NOT an array');
             r.push(v);
@@ -1004,7 +1031,7 @@ ${msg}`;
       });
       return r;
    }
- 
+   
    // rewrite string derivation length times
    // generate step per cpfg docs
    Rewrite (ls = this, it = 0, string=null ) {
@@ -1051,7 +1078,7 @@ ${msg}`;
                //let pred = rule[0]; // == [[lctxt] strictp [rctxt]]
                let strictp = rule.strictPredecessor();
                puts(`comparing  ${node} to strictp: ${strictp}`, LSYS_REWRITE_VERB);
- // todo: evaluate pre-condition expression before evaluating scope._test_()
+               // todo: evaluate pre-condition expression before evaluating scope._test_()
                // side-effect of formalMatch is that scope is updated
                if (this.formalMatch(strictp, node, scope)) {
                   let lctxt = rule.leftContext()
@@ -1089,15 +1116,15 @@ ${msg}`;
             }
             puts(`bestrule is ${bestrule}`, LSYS_REWRITE);
             if (bestrule) {
-   // todo: evaluate pre-condition expression ??? must go further up the chain
+               // todo: evaluate pre-condition expression ??? must go further up the chain
                // this.formalMatch(bestrule.strictPredecessor(), node, bestscope); // (re)bind formal arguments
                // if (bestscope._test_()) {
                lsnext[n] = this.expand(bestrule);
                doExpand=true;
                puts(`expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
- // todo: evaluate post-condition expression ???
+               // todo: evaluate post-condition expression ???
             }
-//          if (! doExpand) {
+            //          if (! doExpand) {
             // special case a few module types
             if (this.formalMatch(Lsystem.modLsystemStart, node, null)) {
                let sublslabel = node.p[0].toString();
@@ -1182,6 +1209,7 @@ ${msg}`;
             // go ahead and bind actual values to formal parameters
             if (nodeA.p.length != nodeB.p.length) {
                puts(`Warning: rule, ${nodeA.toString()}, expects ${nodeA.p.length} parameters, but module is: ${nodeB.toString()}`);
+               return false;
             }
             if (scope !== null && scope.hasOwnProperty('_bind_')) {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
@@ -1385,7 +1413,7 @@ ${msg}`;
       } while(! atEnd);
       return i;
    }
- 
+   
 }
 
 // flatten a list by one level

@@ -72,7 +72,7 @@ class Turtle3d {
       const globalPolygons = opts.globalPolygons || false;
 
       this.materialList = [];
-      this.trackPaths = [];
+      this.extrusionID = 0;
       this.branchStack = [];    // stack of turtle state created when lsystem branches
       this.tempContour = null;
       this.polygonStack = [],   // per TABOP usage, stores state of polygon creation
@@ -188,7 +188,6 @@ class Turtle3d {
       delete this.Turtle;
       delete this.TurtleState;
       delete this.materialList;
-      delete this.trackPaths;
       delete this.branchStack;
       delete this.tempContour;
       delete this.polygonStack;
@@ -221,6 +220,7 @@ class Turtle3d {
    isPenUp() {return ! this.TurtleState.penIsDown;}
    isShown() {return this.TurtleState.isShown;}
 
+   isTrackStarted() {return this.TurtleState.trackPath != null;}
    /* 
       a few static functions to select tracks/meshes across turtles
     */ 
@@ -536,7 +536,6 @@ class Turtle3d {
       for (var index = 0; index < tracks.length; index++) {
          tracks[index].dispose();
       }
-      this.trackPaths = [];
       this.meshCount = [0,0];
       this.meshList = [];
       return this;
@@ -818,6 +817,7 @@ class Turtle3d {
    }
    endBranch() {
       if (this.TurtleState.trackPath != null) {
+         puts('endBranch with open trackPath, calling endTrack', TRTL_TRACK)
          this.endTrack();
       }
       const last = this.branchStack.pop(); //this.branchStack[this.branchStack.length-1];
@@ -855,7 +855,7 @@ class Turtle3d {
                                                    {points: [oldPos, newPos],
                                                     tessellation: 32}, this.scene);
          segment.color = this.toColorVector();
-	 doSetMaterial = false;
+         doSetMaterial = false;
          break;
       case Turtle3d.TRACK_TUBE:
          let radiusFunc = (i,distance) => {
@@ -904,7 +904,7 @@ class Turtle3d {
       this.meshCommonSetup(segment, {setmaterial: doSetMaterial, pos: BABYLON.Vector3.Zero()});
    }
    
-   drawTrack() {
+   drawTrack(id = null) {
       let t = this.Turtle;
       let tp = this.TurtleState.trackPath;
       if (tp === null || tp.points.length < 2) {
@@ -926,7 +926,6 @@ class Turtle3d {
       }
 
       const extrusion = BABYLON.MeshBuilder.ExtrudeShapeCustom(t,
-      //const extrusion = ExtrudeShapeFixCustom(t,
                                               {shape: tp.shape,
                                                path: pathpts,
                                                updatable: true,
@@ -998,11 +997,14 @@ class Turtle3d {
       } else {
          extrusion.material = this.materialList[srm[1].m];
       }
-      extrusion.id= t + this.trackPaths.length;
-      this.meshCommonSetup(extrusion, {setmaterial: doSetMaterial, pos: BABYLON.Vector3.Zero()});
-      this.trackPaths.push(extrusion); //
-
-      // position the turtle at end of path
+      extrusion.id= t + this.extrusionID++;
+      if (!id) {
+         this.meshCommonSetup(extrusion, {setmaterial: doSetMaterial, pos: BABYLON.Vector3.Zero()});
+      } else {
+         Turtle3d.addMesh(id, extrusion);
+         puts(`added extrusion: ${extrusion.id} with id: ${id} to meshes`, TRTL_POLYGON, TRTL_MESH)
+      }
+            // position the turtle at end of path
       let tmesh = this.turtleShape;
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
    }
@@ -1050,7 +1052,7 @@ class Turtle3d {
       return this;
    }
 
-   endTrack() {
+   endTrack(id = null) {
       let ts = this.TurtleState;
       let tp = ts.trackPath;
       puts(`endTrack, type: ${tp.type}`, TRTL_TRACK);
@@ -1071,7 +1073,7 @@ class Turtle3d {
             console.error('Unexpected path type: ' + tp.type);
             break;
          }
-         this.drawTrack();
+         this.drawTrack(id);
          ts.drawMode = Turtle3d.DRAW_IMMEDIATE; // back to immediate draw
          ts.trackPath = null;
       } else {
@@ -1158,7 +1160,7 @@ class Turtle3d {
       let tag = opts.tags || `${t} track ${ttag}`;
 
       if (opts.setmaterial) {
-	     mesh.material = this.materialList[ts.trackMaterial];
+             mesh.material = this.materialList[ts.trackMaterial];
       }
 
       if (opts.scaling) {
@@ -1236,7 +1238,7 @@ class Turtle3d {
    }
 
    // implements the '}' module
-   endPolygon () {
+   endPolygon (id = null) {
       let ts = this.TurtleState;
       let pbase;
       if (this.useGlobalPolygons) {
@@ -1258,9 +1260,7 @@ class Turtle3d {
 
          vertexData.positions = pbase.polygonVerts.flat();
          vertexData.indices = fanTriangulate(pbase.polygonVerts);
-         // for (let i = 0; i < pbase.polygonVerts.length; i++) {
-         //    vertexData.indices[i] = i; // we assume they're in order;
-         // }
+
          vertexData.normals = [];
          BABYLON.VertexData.ComputeNormals(vertexData.positions, vertexData.indices, vertexData.normals);
          // puts(`positions: ${vertexData.positions}`);
@@ -1270,11 +1270,15 @@ class Turtle3d {
          pmesh = new BABYLON.Mesh(this.Turtle, this.scene);
          vertexData.applyToMesh(pmesh,true);
 
-         this.meshCommonSetup(pmesh);
-
          // make sure the material has backFaceCulling set to false
          this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
-         puts(`created a new polygon(${pbase.polygonVerts.length})`, TRTL_POLYGON);
+         if (!id) {
+            this.meshCommonSetup(pmesh);
+            puts(`created a new polygon(${pbase.polygonVerts.length})`, TRTL_POLYGON);
+         } else {
+            Turtle3d.addMesh(id, pmesh);
+            puts(`added polygon: ${pmesh.id} with id: ${id} to meshes`, TRTL_POLYGON, TRTL_MESH);
+         }
       } else {
          puts('polygon creation failed: polygonVerts.length = ' + pbase.polygonVerts, TRTL_POLYGON );
       }

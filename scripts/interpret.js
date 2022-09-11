@@ -27,11 +27,11 @@ function turtleInterp (ti, ls, opts=null) {
       trackTag: 'lsystem',
       code: ''
    }
-   // if (opts != null) {
-   //    for (const p in opts) {
+   // if (opts) {
+   //     opts.keys().forEach(p => {
    //       idata[p] = opts[p];
    //       puts(`set idata[${p}] to ${opts[p]}`);
-   //    }
+   //    });
    // }
 
    idata.gencode = function gencode (snippet) {
@@ -54,11 +54,11 @@ function turtleInterp (ti, ls, opts=null) {
          case 'delta': {idata.delta = ls.delta; break;}
          case 'ctable': {idata.ctable = ls.ctable; break;}
          }
-         puts(`set idata[${p}] to ${ls[p]}`);
+         puts(`set idata[${p}] to ${ls[p]}`,NTRP_INIT);
       }
    }
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
-      puts(`checking for var ${p}`);
+      puts(`checking for var ${p}`,NTRP_INIT);
       if (ls.locals.get(p)) {
          switch (p) {
          case 'step': {idata.step = ls.locals.get(p); break;}
@@ -66,7 +66,7 @@ function turtleInterp (ti, ls, opts=null) {
          case 'delta': {idata.delta = ls.locals.get(p);  break;}
          case 'ctable': {idata.ctable = ls.locals.get(p); break;}
          }
-         puts(`set idata[${p}] to ${ls.locals.get(p)}`);
+         puts(`set idata[${p}] to ${ls.locals.get(p)}`,NTRP_INIT);
       }
    }
 
@@ -85,7 +85,7 @@ function turtleInterp (ti, ls, opts=null) {
    } else {
       view = {auto: 'X'};
    }
-   puts(`lsystem view is ${view}`);
+   puts(`lsystem view is ${view.toString()}`, NTRP_SETTING);
    idata.view = view;
 
    idata.ndelta= -1*idata.delta;
@@ -138,7 +138,7 @@ function turtleInterp (ti, ls, opts=null) {
    //idata.lastTime = performance.now();
 
    let ipromise = new Promise((resolve, reject) => {
-      console.log('in Promise');
+      //console.log('in Promise');
       function doModule () {
          let branch, branchpos, turtle;
          let i;
@@ -220,7 +220,7 @@ function turtleInterp (ti, ls, opts=null) {
                   turtle.penDown();
                   idata.gencode('.pd()');
                }
-               turtle.forward(d, false);
+               turtle.forward(d, false); /* do not store a path or polygon point */
                idata.gencode(`.fd(${d},false);\n`);
                //puts('Gfd: ' + d);
                break;
@@ -410,7 +410,7 @@ function turtleInterp (ti, ls, opts=null) {
    newt.setState(s);
    newt.addTag('${idata.trackTag}');
    branches.push({turtle: newt, spos: ${branchpos + 1}, keep: false});
-}`);
+}\n`);
 
                   // skip past new twig on this branch
                   let [m,newpos] = Lsystem.skipbrackets(lstring, branchpos, 1);
@@ -424,11 +424,15 @@ function turtleInterp (ti, ls, opts=null) {
             case ']': {           // end a branch
                if (idata.useMT) {
                   // should probably complain about unfinished tracks and polygons...
+                  if (turtle.isTrackStarted()) {
+                     turtle.endTrack();
+                     idata.gencode('turtle.endTrack();\n')
+                  }
                   let shouldKeep = branches[branch].keep;
                   branches.splice(branch,1); // remove this branch - could be first
                   idata.gencode(`branches.splice(${branch},1);\n`);
                   if (! shouldKeep) {
-                     turtle.dispose(false); // don't dispose tracks, thought
+                     turtle.dispose(false); // don't dispose tracks, though
                      idata.gencode('turtle.dispose(false);\n');
                   }
                } else {
@@ -488,7 +492,7 @@ function turtleInterp (ti, ls, opts=null) {
                   }
                } else {
                   turtle.endTrack(p0);
-                  idata.gencode(`turtle.endTrack();\n`);
+                  idata.gencode(`turtle.endTrack(${p0});\n`);
                   puts('ending track, type:' + p0, NTRP_TRACKS);
                }
                break;
@@ -515,7 +519,8 @@ function turtleInterp (ti, ls, opts=null) {
                break;
             case '@Gc': {
                if (isPM) {
-                  turtle.setTrackQuality(p0);
+                  turtle.setTrackQuality(p0);
+
                   idata.gencode(`turtle.setTrackQuality(${p0});\n`);
                }
                // idata.cpoly.push(otoa(turtle.getPos()));
