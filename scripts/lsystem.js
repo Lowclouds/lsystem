@@ -242,11 +242,11 @@ class Lsystem {
       this.locals = new Map(); // from variable assignment statements
       this.locals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
-            if (arg[0] == "'" && arg[arg.length-1] == "'") {
+            if (arg[1] == arg[0] && (arg[0] == "'" || arg[0] == '"') ) {
                puts('locals: returning quoted string arg', LSYS_EXPAND);
                module.p[ndx] = arg; // new String(arg);
             } else {
-               puts(`locals: evaluating ${arg}`);
+               puts(`locals: evaluating ${arg}`, LSYS_EXPAND);
                module.p[ndx] = math.evaluate(arg, this.locals);
             }
          });
@@ -255,7 +255,7 @@ class Lsystem {
       this.globals = new Map();
       this.globals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
-            if (arg[0] == "'" && arg[arg.length-1] == "'") {
+            if (arg[1] == arg[0] && (arg[0] == "'" || arg[0] == '"') ) {
                puts('globals: returning quoted string arg', LSYS_EXPAND);
                module.p[ndx] = arg; // new String(arg);
             } else {
@@ -842,17 +842,20 @@ ${msg}`;
          if (needScope) {
             initScope(scope, ls.globals, ls.locals);
             //puts("scope before funcs: " + Object.entries(scope));
-
             scope._bind_ = function (v, exp) {
                puts(`bind(${v}=${exp})`, LSYS_PARSE_PROD);
-               math.evaluate(v+'='+exp, scope);
+               if (exp == "''" || exp == '""') {
+                  scope.set(v,'""');
+               } else {
+                  math.evaluate(v+'='+exp, scope);
+               }
             }
             puts(`test func: _test_() = ${condition}`, LSYS_PARSE_PROD);
             scope._test_ = function () {return math.evaluate(`${condition}`, scope);}
             scope._expand_ = (module) => {
                module.p.forEach((arg,ndx) => {
-                  if (arg[0] == "'" && arg[arg.length-1] == "'") {
-                     //puts('returning arg');
+                  if (arg[1] == arg[0] && (arg[0] == "'" || arg[0] == '"') ) {
+                     puts(`arg[$ndx}], ${arg}, is a string; expanding unchanged`, LSYS_EXPAND);
                      module.p[ndx] = arg; // new String(arg);
                   } else {
                      puts(`evaluating ${arg} in scope: ${scope}`, LSYS_EXPAND);
@@ -1040,11 +1043,12 @@ ${msg}`;
       } else {
          ls.current = string;
       }
-      ls.current = this.expand([null,null,ls.current, ls.locals]);
+      //ls.current = this.expand([null,null,ls.current, ls.locals]);
       let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
-      let mstring = ls.current;
+      //let mstring = ls.current;
+      let mstring = this.expand([null,null,ls.current, ls.locals]);
       let lsnext;
       let lsLabel = ls.label;
       let rules = this.rules;
@@ -1155,8 +1159,8 @@ ${msg}`;
                }
             }
          }
-         mstring = flatten(lsnext);
          //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
+         mstring = lsnext.flat();
       }
       ls.current = mstring;
       if (string) {
@@ -1182,7 +1186,7 @@ ${msg}`;
             successor[ndx] = nmod;
          }});
          //puts(`successor: ${successor}`, LSYS_EXPAND);
-         puts(`actual successor: ${rule[2]}`, LSYS_EXPAND);
+         puts(`actual successor: ${rule[2]} --> ${successor}`, LSYS_EXPAND);
       } else {
          successor = rule[2];
       }
