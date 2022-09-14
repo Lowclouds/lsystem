@@ -176,6 +176,7 @@ function turtleInterp (ti, ls, opts=null) {
             if (typeof pM === 'string') {
                m = pM
                isPM = false;
+               pmArgs = [];
             } else {
                m = pM.m;
                pmArgs=pM.p;
@@ -478,11 +479,17 @@ function turtleInterp (ti, ls, opts=null) {
                }
                break;}
             case '}': {
-               if (!isPM) {
+               if (!isPM || p0 == '""') {
                   if ( idata.inPolygon > 0) {
-                     puts('ending polygon', NTRP_TRACKS);
-                     turtle.endPolygon();
-                     idata.gencode(`turtle.endPolygon();\n`);
+                     if (pmArgs.length < 2) {
+                        puts('ending polygon', NTRP_TRACKS);
+                        turtle.endPolygon();
+                        idata.gencode(`turtle.endPolygon();\n`);
+                     } else {
+                        puts('ending polygon as mesh ' + pmArgs[1], NTRP_TRACKS);
+                        turtle.endPolygon(pmArgs[1]);
+                        idata.gencode(`turtle.endPolygon(${pmArgs[1]});\n`);
+                     }
                      idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
                      if (idata.inPolygon < 1) {
                         idata.ptCaptureMode = Turtle3d.CAPTURE_NONE; // turn off polygon capture
@@ -491,9 +498,16 @@ function turtleInterp (ti, ls, opts=null) {
                      puts('end polygon attempted when no polygon started', NTRP_TRACKS);
                   }
                } else {
-                  turtle.endTrack(p0);
-                  idata.gencode(`turtle.endTrack(${p0});\n`);
-                  puts('ending track, type:' + p0, NTRP_TRACKS);
+                  puts(`end track: pmArgs: ${pmArgs}`);
+                  if (pmArgs.length < 2) {
+                     turtle.endTrack();
+                     idata.gencode(`turtle.endTrack(${p0});\n`);
+                     puts('ending track, type:' + p0, NTRP_TRACKS);
+                  } else {
+                     turtle.endTrack(pmArgs[1]);
+                     idata.gencode(`turtle.endTrack(${pmArgs[1]});\n`);
+                     puts('ending track, type:' + p0 + ' to mesh: ' + pmArgs[1], NTRP_TRACKS);
+                  }
                }
                break;
             }
@@ -562,9 +576,10 @@ function turtleInterp (ti, ls, opts=null) {
                   // we're capturing points for a contour, but the contour,
                   // itself can be a plain path, or a spline of some type
                   let p1 = pM.p.length > 1 ? pM.p[1] : Turtle3d.PATH_POINTS;
-                  turtle.beginContour(p0, p1, p0);
-                  idata.gencode(`turtle.beginContour('${p0}', ${p1}, '${p0}');\n`);
+                  turtle.beginContour(p0, p1);
+                  idata.gencode(`turtle.beginContour('${p0}', ${p1}));\n`);
                   idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
+                  puts(`beginContour(${p0}, ${p1})`);
                } else {
                   throw new Error('@Ds module requires an id/name parameter');
                }
@@ -593,10 +608,14 @@ function turtleInterp (ti, ls, opts=null) {
                }
                break;
             }
-            case '$': {
-
+            case '~':
+               if (isPM) {
+                  puts(`insert mesh: ${pmArgs}`, NTRP_TRACKS);
+                  turtle.insertMesh(p0,pmArgs[1] ? pmArgs[1] : 1);
+               } else {
+                  puts(`insert mesh: needs some arguments, but got none`);
+               }
                break;
-            }
             case 'A':
             case 'S':
             case 'L': 

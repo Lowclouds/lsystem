@@ -1151,6 +1151,7 @@ class Turtle3d {
    //meshCommonSetup (mesh, scaling = null, setmaterial = true, pos = null, rotate=false) {
    meshCommonSetup (mesh, opts = {scaling: null, 
                                   setmaterial: true,
+                                  backFaceCulling: true,
                                   pos: null,
                                   rotate:false,
                                   tags: null}) {
@@ -1160,7 +1161,8 @@ class Turtle3d {
       let tag = opts.tags || `${t} track ${ttag}`;
 
       if (opts.setmaterial) {
-             mesh.material = this.materialList[ts.trackMaterial];
+         mesh.material = this.materialList[ts.trackMaterial];
+         mesh.material.backFaceCulling = opts.backFaceCulling;
       }
 
       if (opts.scaling) {
@@ -1272,10 +1274,9 @@ class Turtle3d {
 
          // make sure the material has backFaceCulling set to false
          this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
-         if (!id) {
-            this.meshCommonSetup(pmesh);
-            puts(`created a new polygon(${pbase.polygonVerts.length})`, TRTL_POLYGON);
-         } else {
+         this.meshCommonSetup(pmesh);
+         puts(`created a new polygon(${pbase.polygonVerts.length})`, TRTL_POLYGON);
+         if (id) {
             Turtle3d.addMesh(id, pmesh);
             puts(`added polygon: ${pmesh.id} with id: ${id} to meshes`, TRTL_POLYGON, TRTL_MESH);
          }
@@ -1337,7 +1338,7 @@ class Turtle3d {
       if (this.tempContour != null) {
          let id = this.tempContour.id;
          let pts;
-         let olds;
+         let olds = null;
          switch (this.tempContour.type) {
          case Turtle3d.PATH_POINTS:
             pts = Array.from(this.tempContour.pts);
@@ -1353,7 +1354,7 @@ class Turtle3d {
             puts(`contour type: ${this.tempContour.type} not implemented`);
          }
          this.tempContour = null;
-         return olds.udata;
+         return olds ? olds.udata : null;
       } else {
          throw new Error(`Ended contour with id: ${id}, expected ${this.tempContour.id}`);
       }
@@ -1390,15 +1391,19 @@ class Turtle3d {
    // insert instance of named mesh at provided scale
    insertMesh(name, scale=1) {
       let mobj = Turtle3d.getMesh(name);
-      let mesh = mobj.m;
-      let cntr = mobj.counter;
-      mobj.counter++;
-      let inst = mesh.createInstance(mobj.name + cntr);
-      let mopts = {setmaterial: false, pos: this.getPos(), rotate:true};
-      if (scale != 1) {
-         mopts.scaling = scale;
+      if (mobj) {
+         let mesh = mobj.m;
+         let cntr = mobj.counter;
+         mobj.counter++;
+         let inst = mesh.createInstance(mobj.name + cntr);
+         let mopts = {setmaterial: false, pos: this.getPos(), rotate:true, backFaceCulling: true};
+         if (scale != 1) {
+            mopts.scaling = scale;
+         }
+         this.meshCommonSetup(inst, mopts);
+      } else {
+         puts(`warning: mesh, ${name}, not found`);
       }
-      this.meshCommonSetup(inst, mopts);
    }
 
    // add/get meshes for instancing

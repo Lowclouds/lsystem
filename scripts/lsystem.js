@@ -34,7 +34,7 @@
 const RE = {};
 
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?|~\\w\\d*";
+var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%\~]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|\\?[PHLU]?";
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 /* test for module RE string
@@ -242,9 +242,16 @@ class Lsystem {
       this.locals = new Map(); // from variable assignment statements
       this.locals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
-            if (arg[1] == arg[0] && (arg[0] == "'" || arg[0] == '"') ) {
-               puts('locals: returning quoted string arg', LSYS_EXPAND);
-               module.p[ndx] = arg; // new String(arg);
+            puts(`locals: arg: ${arg}, ndx: ${ndx}`);
+            let end = arg.length-1;
+            let s0 = arg[0];
+            let s1 = arg[end];
+            if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+               let str = arg.split("");
+               str[0] = '"';
+               str[end] = '"';
+               puts('locals: returning quoted string arg' + str, LSYS_EXPAND);
+               module.p[ndx] = str.join('');
             } else {
                puts(`locals: evaluating ${arg}`, LSYS_EXPAND);
                module.p[ndx] = math.evaluate(arg, this.locals);
@@ -255,9 +262,15 @@ class Lsystem {
       this.globals = new Map();
       this.globals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
-            if (arg[1] == arg[0] && (arg[0] == "'" || arg[0] == '"') ) {
-               puts('globals: returning quoted string arg', LSYS_EXPAND);
-               module.p[ndx] = arg; // new String(arg);
+            let end = arg.length-1;
+            let s0 = arg[0];
+            let s1 = arg[end];
+            if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+               let str = arg.split("");
+               puts('locals: returning quoted string arg' + str, LSYS_EXPAND);
+               str[0] = '"';
+               str[end] = '"';
+               module.p[ndx] = str.join('');
             } else {
                puts(`globals: evaluating ${arg}`, LSYS_EXPAND);
                module.p[ndx] = math.evaluate(arg,this.globals);
@@ -844,19 +857,28 @@ ${msg}`;
             //puts("scope before funcs: " + Object.entries(scope));
             scope._bind_ = function (v, exp) {
                puts(`bind(${v}=${exp})`, LSYS_PARSE_PROD);
-               if (exp == "''" || exp == '""') {
-                  scope.set(v,'""');
+               let end = exp.length-1;
+               let s0 = exp[0];
+               let s1 = exp[end];
+               if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+                  scope.set(v, exp); // keep strings
                } else {
-                  math.evaluate(v+'='+exp, scope);
+                  math.evaluate(v+'=' + exp, scope);
                }
             }
             puts(`test func: _test_() = ${condition}`, LSYS_PARSE_PROD);
             scope._test_ = function () {return math.evaluate(`${condition}`, scope);}
             scope._expand_ = (module) => {
                module.p.forEach((arg,ndx) => {
-                  if (arg[1] == arg[0] && (arg[0] == "'" || arg[0] == '"') ) {
-                     puts(`arg[$ndx}], ${arg}, is a string; expanding unchanged`, LSYS_EXPAND);
-                     module.p[ndx] = arg; // new String(arg);
+                  let end = arg.length-1;
+                  let s0 = arg[0];
+                  let s1 = arg[end];
+                  if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+                     let str = arg.split("");
+                     str[0] = '"';
+                     str[end] = '"';
+                     module.p[ndx] = str.join('');
+                     puts('locals: returning quoted string arg' + module.p[ndx], LSYS_EXPAND);
                   } else {
                      puts(`evaluating ${arg} in scope: ${scope}`, LSYS_EXPAND);
                      module.p[ndx] = math.evaluate(arg,scope);
