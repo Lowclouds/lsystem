@@ -200,6 +200,7 @@ class Turtle3d {
    getL() { return this.TurtleState.L;}
    getU() { return this.TurtleState.U;}
    getColor() { return this.TurtleState.color;}
+   getColorVector() { return this.toColorVector(this.TurtleState.color);}
    getSize() { return this.TurtleState.size;}
    getTurtleShape() { return this.turtleShape;} // a mesh
    getTrackShapeID() {return this.TurtleState.trackShapeID;} // number or string
@@ -1117,20 +1118,29 @@ class Turtle3d {
       return this;
    }
 
-   drawSphere(d=1, arc=1, qual=32, slice=1, scaling=null) {
-      let mesh, p, opts = {};
-      opts.diameter = d;
-      opts.segments = qual;
-      opts.arc = arc;
-      opts.slice = slice;
-      opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
-      opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
-      opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
-      opts.updatable = true;
+   drawSphere(d=1, arc=1, qual=32, slice=1, scaling=1) {
+      let mesh, opts = {};
+      let mname = `__sphere_${arc}_${qual}_${slice}`;
+      if (! Turtle3d.getMesh(mname)) {
+         opts.diameter = 1;
+         opts.segments = qual;
+         opts.arc = arc;
+         opts.slice = slice;
+         opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+         opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
+         opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
+         // opts.updatable = true;
 
-      mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
-
-      this.meshCommonSetup(mesh, {scaling: scaling, setmaterial: true, pos: this.TurtleState.P, rotate: true});
+         mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
+         Turtle3d.addMesh(mname, mesh);
+      }
+      if (typeof scaling === 'number') {
+         scaling *= d;
+      } else {                  // assume vector3
+         scaling.scaleInPlace(d);
+      }
+      this.insertMesh(mname, scaling);
+      //this.meshCommonSetup(mesh, {scaling: scaling, setmaterial: true, pos: this.TurtleState.P, rotate: true});
       return this;
    }
 
@@ -1401,6 +1411,7 @@ class Turtle3d {
          if (scale != 1) {
             mopts.scaling = scale;
          }
+         inst.instancedBuffers.color = BABYLON.Color4.FromColor3(this.getColorVector(), 1);
          this.meshCommonSetup(inst, mopts);
       } else {
          puts(`warning: mesh, ${name}, not found`);
@@ -1417,6 +1428,8 @@ class Turtle3d {
       }
       mesh.addTags('mesh Turtle3d');
       let mobj = {m: mesh, name: name, counter: 0, contactPoint: null, endPoint: null, heading: null, up: null, scale: 1};
+      mesh.registerInstancedBuffer("color",4);
+      mesh.instancedBuffers.color =BABYLON.Color4(1,1,1,1); //FromColor3(mesh.material.diffuseColor, 1);
       if (opts) {
          let mobjkeys = mobj.keys();
          opts.keys().forEach(k => {

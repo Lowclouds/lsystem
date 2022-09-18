@@ -242,7 +242,7 @@ class Lsystem {
       this.locals = new Map(); // from variable assignment statements
       this.locals._expand_ = (module) => {
          module.p.forEach((arg,ndx) => {
-            puts(`locals: arg: ${arg}, ndx: ${ndx}`);
+            puts(`locals: arg: ${arg}, ndx: ${ndx}`, LSYS_EXPAND);
             let end = arg.length-1;
             let s0 = arg[0];
             let s1 = arg[end];
