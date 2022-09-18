@@ -7,7 +7,7 @@ class LogTag {
          LogTag.tagSet |= tag;  // set bit
       }
    }
-   static setMode(mode=LOG_ANYOF) {
+   static setMode(mode=LogTag.LOG_ANYOF) {
       switch (mode) {
       case LogTag.LOG_ANYOF:
       case LogTag.LOG_ALLOF:

@@ -916,7 +916,7 @@ class Turtle3d {
       puts(`trackPath.length: ${pathpts.length}`, TRTL_TRACK);
       //puts(`pathpts: ${pathpts}`);
       let srm = tp.srm;         // scale, rotation, material at each [control] point
-      puts(`srm: ${srm}`, TRTL_TRACK);
+      puts(`srm: ${srm.toString()}`, TRTL_TRACK);
 
       function getscale(i,distance) {
          return srm[i].s;
@@ -924,7 +924,8 @@ class Turtle3d {
       function getrotation(i,distance) {
          return srm[i].r;
       }
-
+      
+      // const extrusion = ExtrudeShapeFixCustom(t,
       const extrusion = BABYLON.MeshBuilder.ExtrudeShapeCustom(t,
                                               {shape: tp.shape,
                                                path: pathpts,
@@ -1609,7 +1610,7 @@ class HermiteSpline extends TrackPath {
          this.pointPair.p1 = newPos;
          this.pointPair.t1 = ts.H.clone();
          this.pointPair.rt = ts.size/2;
-         this.pointPair.normt = ts.L.clone();
+         this.pointPair.normt = ts.L.clone().scaleInPlace(-1);
          this.controlPoints.push(this.pointPair);
          let newPair = {p0: newPos.clone(), t0: this.pointPair.t1.clone(),tm0: 1.2, tm1: 1.2,
                         rb: this.pointPair.rt, normb: this.pointPair.normt.clone(), radiusSpline: null};
@@ -1629,6 +1630,7 @@ class HermiteSpline extends TrackPath {
          }
          let blen = BABYLON.Vector3.Distance(p1,p0);
          let twistInc = totalTwist/this.ptsPerSegment;
+         puts(`Hermite pathpair: p0: ${p0}, p1 ${p1}, normb: ${pp.normb}, normt: ${pp.normt}, totaltwist:: ${totalTwist}`, TRTL_HERMITE);
          let pathspline = BABYLON.Curve3.CreateHermiteSpline(
             p0,t0.scale(blen*pp.tm0),p1,pp.t1.scale(blen*pp.tm1),this.ptsPerSegment);
 
@@ -1673,7 +1675,7 @@ class HermiteSpline extends TrackPath {
                radii.push(BABYLON.Vector3.Dot(rt, pp.normb)*2);
             }
 
-            puts(`tmap length: ${tmap.length}\n ${tmap}`, TRTL_HERMITE); 
+            puts(`tmap length: ${tmap.length}`, TRTL_HERMITE); 
             puts(`tmap: ${tmap}`, TRTL_HERMITE);
             puts(`radii: ${radii}`, TRTL_HERMITE);
 

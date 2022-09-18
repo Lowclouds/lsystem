@@ -512,10 +512,10 @@ function turtleInterp (ti, ls, opts=null) {
                break;
             }
             case '@Gs': {
+               puts(`Starting new Hermite Spline Track, type: 'p1'`, NTRP_TRACKS);
                turtle.newTrack('p1');
                turtle.storePoint(turtle.getPos());
                idata.gencode(`turtle.newTrack('p1');\nturtle.storePoint(turtle.getPos());\n`);
-               puts(`Starting new Hermite Spline Track, type: 'p1'`, NTRP_TRACKS);
             }
                break;
             case '@Ge':
@@ -523,8 +523,9 @@ function turtleInterp (ti, ls, opts=null) {
                   turtle.setTrackQuality(p0);
                   idata.gencode(`turtle.setTrackQuality(${p0});\n`);
                }
-               turtle.endTrack();
-               idata.gencode(`turtle.endTrack();\n`);
+               let id = (pmArgs.length == 2) ? pmArgs[1] : null;
+               turtle.endTrack(id);
+               idata.gencode(`turtle.endTrack(${id});\n`);
                break;
             case '.': // record a polygon or path point
                turtle.storePoint(turtle.getPos());
