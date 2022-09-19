@@ -91,7 +91,7 @@ function turtleInterp (ti, ls, opts=null) {
    idata.ndelta= -1*idata.delta;
 
    var t0 = new Turtle3d(ti.scene, {noturtle: true});  // , globalPolygons: true});
-   idata.gencode('var t0 = new Turtle3d(ti.scene, {noturtle: true})');
+   idata.gencode('var t0 = new Turtle3d(ti.scene, {noturtle: true});\n');
    let ts = ti.getState();
    t0.setState(ts);
    idata.gencode('t0.setState(ti.getState());\n');
@@ -100,8 +100,8 @@ function turtleInterp (ti, ls, opts=null) {
    t0.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
    t0.setHeading([0,1,0]);
    idata.gencode(`
-  t0.addTag('${idata.trackTag}');
-  t0.setHeading([0,1,0])`);
+t0.addTag('${idata.trackTag}');
+t0.setHeading([0,1,0])`);
    idata.gencode('.setSize(' + idata.stemsize + ', true);\n');
 
    // if (idata.ctable != null && idata.ctable != []) {
