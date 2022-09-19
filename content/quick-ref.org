@@ -48,13 +48,13 @@ Modules marked *n* are *new for this implementation*
 | @o(d)    | circle of diameter d                              |
 | @C(d) *u* | circle of diameter d in HL plane                  |
 | @O(d)    | sphere of diameter d                              |
-| ~S *u*   | insert predefined surface, Sym                    |
+| ~(S,s) *c* | insert predefined surface S, with optional scale, s |
 | @Ds(id) *n* | start a contour with tag id                       |
 | @De(id) *n* | end contour id and save it                        |
 | @#(id)   | set contour(id) as current track shape            |
-| {        | start polygon                                     |
-| }        | end polygon                                       |
-| {(0)     | start path with stepwise control pts              |
+| {      | start polygon                                     |
+| }(n,S)   | end polygon of type n (possibly empty), optional save as mesh S |
+| {(0)  *c*  | start path with stepwise control pts, not polygon |
 | {(1)     | start open path with Hermite spline control pts   |
 | {(2) *u* | start closed path with Hermite spline control pts |
 | {(3) *u* | start open path with B-spline control pts         |
@@ -150,9 +150,9 @@ follow mathjs syntax: [[https://mathjs.org/docs/expressions/syntax.html][Express
   the draw speed is set low.
  - *MultiTurtle?* is a checkbox to turn this mode on/off. When on, the interpretation/drawing creates a new
   turtle for each branch and then gives each turtle one step on its branch in a round-robin draw mode. When
-  a turtle reaches the end of the branch it is destroyed.
+  a turtle reaches the end of the branch it is destroyed. This mode typically appears more natural.
 
- - *Browse....* allows you to load an lsystem locally. It is a text file, typically with a .ls extension
+ - *Choose File* allows you to load an lsystem locally. It is a text file, typically with a .ls extension
  - *Save* allows you to save the L-system
 
   Below the L-system source box are status and more controls:
