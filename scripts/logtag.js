@@ -7,26 +7,19 @@ class LogTag {
          LogTag.tagSet |= tag;  // set bit
       }
    }
-   static setMode(mode=LogTag.LOG_ANYOF) {
-      switch (mode) {
-      case LogTag.LOG_ANYOF:
-      case LogTag.LOG_ALLOF:
-         LogTag.mode = mode;
-         break;
-      default:
-         LogTag.mode = LogTag.LOG_ANYOF;
-      }
-   }
    static clear(...tags) {
       for (const tag of tags) {
          LogTag.tagSet ^= tag;  // clear bit
       }
    }
+   static clearAll() {
+      LogTag.tagSet = 0n;
+      LogTag.mode = 0n;
+   }
 
    static isSet(tag) {
       return (tag & LogTag.tagSet) != 0n;
    }
-
    static areSet(tags) {
       if (LogTag.mode == LogTag.LOG_ANYOF) {
          for (const tag of tags) {
@@ -41,6 +34,16 @@ class LogTag {
             alltags |= tag;
          }
          return (alltags == (alltags & LogTag.tagSet));
+      }
+   }
+   static setMode(mode=LogTag.LOG_ANYOF) {
+      switch (mode) {
+      case LogTag.LOG_ANYOF:
+      case LogTag.LOG_ALLOF:
+         LogTag.mode = mode;
+         break;
+      default:
+         LogTag.mode = LogTag.LOG_ANYOF;
       }
    }
 

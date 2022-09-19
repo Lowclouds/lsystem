@@ -1,4 +1,3 @@
-// blah
 
 lsystem: d
 derivation length:1

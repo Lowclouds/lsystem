@@ -580,7 +580,7 @@ function turtleInterp (ti, ls, opts=null) {
                   turtle.beginContour(p0, p1);
                   idata.gencode(`turtle.beginContour('${p0}', ${p1}));\n`);
                   idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
-                  puts(`beginContour(${p0}, ${p1})`);
+                  puts(`beginContour(${p0}, ${p1})`, NTRP_CONTOUR);
                } else {
                   throw new Error('@Ds module requires an id/name parameter');
                }

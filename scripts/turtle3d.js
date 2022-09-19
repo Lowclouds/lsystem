@@ -58,7 +58,7 @@ class Turtle3d {
          drawMode: Turtle3d.DRAW_IMMEDIATE,
          trackType: Turtle3d.TRACK_TUBE, // line is really slow
          trackPath: null,
-         trackShapeID: 'default',
+         trackShapeID: '"default"',
          trackShape: null,
          trackMesh: null,
          trackTag: '',          // user-defined tag(s)
@@ -97,8 +97,8 @@ class Turtle3d {
             // this.materialList[0].diffuseColor = this.toColorVector();
             // this.materialList[0].ambientColor = this.toColorVector();
          
-         Turtle3d.trackContours.set('default', generateCircle(0.5,0.5));
-         this.TurtleState.trackShape = Turtle3d.trackContours.get('default');
+         Turtle3d.trackContours.set('"default"', generateCircle(0.5,0.5));
+         this.TurtleState.trackShape = Turtle3d.trackContours.get('"default"');
          Turtle3d.Turtles.set(this.Turtle, this);
          return true;
       }
@@ -578,7 +578,7 @@ class Turtle3d {
          ts.size = 0.1;
          ts.lastSize = ts.size;
          ts.trackShapeID = 'default';
-         ts.trackShape = Turtle3d.trackContours.get('default');
+         ts.trackShape = Turtle3d.trackContours.get('"default"');
          ts.trackMaterial = 0;
          ts.color = '0,0,0';
          ts.accumRoll = 0;
@@ -607,6 +607,7 @@ class Turtle3d {
       tH.scaleAndAddToRef(dist, newP)
       ts.P.copyFrom(newP);
       this.draw(oldP, newP);
+
       if (addpathpt) {
          switch ( ts.drawMode ) {
          case Turtle3d.CAPTURE_PATH:
@@ -859,16 +860,16 @@ class Turtle3d {
          doSetMaterial = false;
          break;
       case Turtle3d.TRACK_TUBE:
-         let radiusFunc = (i,distance) => {
-            return ((i == 0) ? ts.lastSize : ts.size)/2;
-         }
-         segment = BABYLON.MeshBuilder.CreateTube(t,
-                                                  {path: [oldPos, newPos],
-                                                   radiusFunction: radiusFunc,
-                                                   // tessellation: 16,
-                                                   updatable: true,
-                                                   cap: BABYLON.Mesh.CAP_ALL},
-                                                  this.scene);
+            let radiusFunc = (i,distance) => {
+               return ((i == 0) ? ts.lastSize : ts.size)/2;
+            }
+            segment = BABYLON.MeshBuilder.CreateTube(t,
+                                                     {path: [oldPos, newPos],
+                                                      radiusFunction: radiusFunc,
+                                                      // tessellation: 16,
+                                                      updatable: true,
+                                                      cap: BABYLON.Mesh.CAP_ALL},
+                                                     this.scene);
          this.meshCount[0]++;
          break;
       case Turtle3d.TRACK_EXT:
@@ -1411,7 +1412,9 @@ class Turtle3d {
          if (scale != 1) {
             mopts.scaling = scale;
          }
-         inst.instancedBuffers.color = BABYLON.Color4.FromColor3(this.getColorVector(), 1);
+         let c4 = BABYLON.Color4.FromColor3(this.getColorVector(), 1);
+         puts(`set instance color to ${c4}`, TRTL_MESH);
+         inst.instancedBuffers.color = c4;
          this.meshCommonSetup(inst, mopts);
       } else {
          puts(`warning: mesh, ${name}, not found`);
@@ -1429,7 +1432,7 @@ class Turtle3d {
       mesh.addTags('mesh Turtle3d');
       let mobj = {m: mesh, name: name, counter: 0, contactPoint: null, endPoint: null, heading: null, up: null, scale: 1};
       mesh.registerInstancedBuffer("color",4);
-      mesh.instancedBuffers.color =BABYLON.Color4(1,1,1,1); //FromColor3(mesh.material.diffuseColor, 1);
+      mesh.instancedBuffers.color =BABYLON.Color4(0,0,0,1); //FromColor3(mesh.material.diffuseColor, 1);
       if (opts) {
          let mobjkeys = mobj.keys();
          opts.keys().forEach(k => {
@@ -1725,7 +1728,7 @@ class HermiteSpline extends TrackPath {
       this.ptsPerSegment = n; 
    }
 
-}
+} /* end HermiteSpline */
 
 function Contour(id, type=0) {
    this.id = id;

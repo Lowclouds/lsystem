@@ -125,7 +125,6 @@ var ParameterizedModule = function(name, parms) {
 class LsystemRule extends Array {
    constructor (...a) {
       super(...a);
-      puts(this);
       if (this.length !=  4) {
          puts('resetting rule to empty rule', LSYS_PARSE_PROD);
          this[0] = [[],[],[]];
@@ -239,49 +238,10 @@ class Lsystem {
       this.Dlength = 0; // number of iterations
       this.dDone = 0;   // number of iterations done;
       this.stepStart = false;    // 
-      this.locals = new Map(); // from variable assignment statements
-      this.locals._expand_ = (module) => {
-         module.p.forEach((arg,ndx) => {
-            puts(`locals: arg: ${arg}, ndx: ${ndx}`, LSYS_EXPAND);
-            let end = arg.length-1;
-            let s0 = arg[0];
-            let s1 = arg[end];
-            if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
-               let str = arg.split("");
-               str[0] = '"';
-               str[end] = '"';
-               puts('locals: returning quoted string arg' + str, LSYS_EXPAND);
-               module.p[ndx] = str.join('');
-            } else {
-               puts(`locals: evaluating ${arg}`, LSYS_EXPAND);
-               module.p[ndx] = math.evaluate(arg, this.locals);
-            }
-         });
-      }
-      // need to rethink globals - s.b. a singleton
-      this.globals = new Map();
-      this.globals._expand_ = (module) => {
-         module.p.forEach((arg,ndx) => {
-            let end = arg.length-1;
-            let s0 = arg[0];
-            let s1 = arg[end];
-            if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
-               let str = arg.split("");
-               puts('locals: returning quoted string arg' + str, LSYS_EXPAND);
-               str[0] = '"';
-               str[end] = '"';
-               module.p[ndx] = str.join('');
-            } else {
-               puts(`globals: evaluating ${arg}`, LSYS_EXPAND);
-               module.p[ndx] = math.evaluate(arg,this.globals);
-            }
-         });
-      }
-
-      this.functions = new Map();
       this.current = [];
       this.next = [];
       this.verbose = 0;
+      this.scale = 1;
       this.stemsize = 0.1;
       this.step = 1;    // default forward step size
       this.delta = 90;  // default angle
@@ -289,6 +249,12 @@ class Lsystem {
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
       this.needsEnvironment = false;
+      this.locals = new Map(); // from variable assignment statements
+      this.locals._expand_ = expandF(this.locals, 'locals');
+      // need to rethink globals - s.b. a singleton
+      this.globals = new Map();
+      this.globals._expand_ = expandF(this.globals, 'globals');
+      this.functions = new Map();
       //this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
    }
 
@@ -868,23 +834,24 @@ ${msg}`;
             }
             puts(`test func: _test_() = ${condition}`, LSYS_PARSE_PROD);
             scope._test_ = function () {return math.evaluate(`${condition}`, scope);}
-            scope._expand_ = (module) => {
-               module.p.forEach((arg,ndx) => {
-                  let end = arg.length-1;
-                  let s0 = arg[0];
-                  let s1 = arg[end];
-                  if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
-                     let str = arg.split("");
-                     str[0] = '"';
-                     str[end] = '"';
-                     module.p[ndx] = str.join('');
-                     puts('locals: returning quoted string arg' + module.p[ndx], LSYS_EXPAND);
-                  } else {
-                     puts(`evaluating ${arg} in scope: ${scope}`, LSYS_EXPAND);
-                     module.p[ndx] = math.evaluate(arg,scope);
-                  }
-               });
-            }
+            scope._expand_ = expandF(scope, 'rule');
+               // (module) => {
+               // module.p.forEach((arg,ndx) => {
+               //    let end = arg.length-1;
+               //    let s0 = arg[0];
+               //    let s1 = arg[end];
+               //    if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+               //       let str = arg.split("");
+               //       str[0] = '"';
+               //       str[end] = '"';
+               //       module.p[ndx] = str.join('');
+               //       puts('locals: returning quoted string arg' + module.p[ndx], LSYS_EXPAND);
+               //    } else {
+               //       puts(`evaluating ${arg} in scope: ${scope}`, LSYS_EXPAND);
+               //       module.p[ndx] = math.evaluate(arg,scope);
+               //    }
+               //});
+               //}
          } else {
             scope._test_ = function(){return true;}
          }
@@ -1440,6 +1407,28 @@ ${msg}`;
       return i;
    }
    
+} /* end Lsystem */
+
+function expandF(scope, name) {
+   let n = name;
+   return function (module) {
+      module.p.forEach((arg,ndx) => {
+         puts(`${n}: arg: ${arg}, ndx: ${ndx}`, LSYS_EXPAND);
+         let end = arg.length-1;
+         let s0 = arg[0];
+         let s1 = arg[end];
+         if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+            let str = arg.split("");
+            str[0] = '"';
+            str[end] = '"';
+            puts(`${n}: returning quoted string arg ${str}`, LSYS_EXPAND);
+            module.p[ndx] = str.join('');
+         } else {
+            puts(`${n}: evaluating ${arg}`, LSYS_EXPAND);
+            module.p[ndx] = math.evaluate(arg, scope);
+         }
+      });
+   }
 }
 
 // flatten a list by one level
