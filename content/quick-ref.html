@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-09-05 Mon 13:17 -->
+<!-- 2022-09-19 Mon 16:10 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>L-System Modules Quick Guide</title>
@@ -200,23 +200,23 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org24b9cc9">1. Turtle Motion</a></li>
-<li><a href="#org3911647">2. Turtle Orientation</a></li>
-<li><a href="#org7bbd176">3. Turtle Settings</a></li>
-<li><a href="#org7bcc5fb">4. Turtle Geometry</a></li>
-<li><a href="#orgf764de4">5. L-system Geometry and Control</a></li>
-<li><a href="#org4150c45">6. L-System Syntax</a>
+<li><a href="#org30059bd">1. Turtle Motion</a></li>
+<li><a href="#orgb3b1d3f">2. Turtle Orientation</a></li>
+<li><a href="#org9c6883a">3. Turtle Settings</a></li>
+<li><a href="#orgc6ea302">4. Turtle Geometry</a></li>
+<li><a href="#org594d752">5. L-system Geometry and Control</a></li>
+<li><a href="#org79a54f7">6. L-System Syntax</a>
 <ul>
-<li><a href="#org31555a1">6.1. Comments</a></li>
-<li><a href="#org2e9e56b">6.2. Defines</a></li>
-<li><a href="#org7f81ee6">6.3. Settings</a></li>
-<li><a href="#org1c50f55">6.4. Expressions</a></li>
+<li><a href="#orgb0d5554">6.1. Comments</a></li>
+<li><a href="#org6ee1691">6.2. Defines</a></li>
+<li><a href="#org6f2a2bd">6.3. Settings</a></li>
+<li><a href="#org4dd6b5b">6.4. Expressions</a></li>
 </ul>
 </li>
-<li><a href="#org4a28804">7. UI and controls</a>
+<li><a href="#org3f664ae">7. UI and controls</a>
 <ul>
-<li><a href="#orgfb4f886">7.1. Turtle controls</a></li>
-<li><a href="#org4905278">7.2. L-system controls</a></li>
+<li><a href="#orgd14f5fa">7.1. Turtle controls</a></li>
+<li><a href="#orgcf26eda">7.2. L-system controls</a></li>
 </ul>
 </li>
 </ul>
@@ -234,8 +234,8 @@ Modules marked <b>c</b> are <b>changed from TABOP/cpfg</b><br />
 Modules marked <b>n</b> are <b>new for this implementation</b><br />
 </p>
 
-<div id="outline-container-org24b9cc9" class="outline-2">
-<h2 id="org24b9cc9"><span class="section-number-2">1.</span> Turtle Motion</h2>
+<div id="outline-container-org30059bd" class="outline-2">
+<h2 id="org30059bd"><span class="section-number-2">1.</span> Turtle Motion</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Without a parameter move 'step' amount
@@ -278,8 +278,8 @@ Without a parameter move 'step' amount
 </div>
 </div>
 
-<div id="outline-container-org3911647" class="outline-2">
-<h2 id="org3911647"><span class="section-number-2">2.</span> Turtle Orientation</h2>
+<div id="outline-container-orgb3b1d3f" class="outline-2">
+<h2 id="orgb3b1d3f"><span class="section-number-2">2.</span> Turtle Orientation</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Without a parameter turn 'delta' degrees
@@ -342,8 +342,8 @@ Without a parameter turn 'delta' degrees
 </div>
 </div>
 
-<div id="outline-container-org7bbd176" class="outline-2">
-<h2 id="org7bbd176"><span class="section-number-2">3.</span> Turtle Settings</h2>
+<div id="outline-container-org9c6883a" class="outline-2">
+<h2 id="org9c6883a"><span class="section-number-2">3.</span> Turtle Settings</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Defaults without a parameter to one
@@ -406,8 +406,8 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org7bcc5fb" class="outline-2">
-<h2 id="org7bcc5fb"><span class="section-number-2">4.</span> Turtle Geometry</h2>
+<div id="outline-container-orgc6ea302" class="outline-2">
+<h2 id="orgc6ea302"><span class="section-number-2">4.</span> Turtle Geometry</h2>
 <div class="outline-text-2" id="text-4">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -434,8 +434,8 @@ Defaults without a parameter to one
 </tr>
 
 <tr>
-<td class="org-left">~S <b>u</b></td>
-<td class="org-left">insert predefined surface, Sym</td>
+<td class="org-left">~(S,s) <b>c</b></td>
+<td class="org-left">insert predefined surface S, with optional scale, s</td>
 </tr>
 
 <tr>
@@ -459,13 +459,13 @@ Defaults without a parameter to one
 </tr>
 
 <tr>
-<td class="org-left">}</td>
-<td class="org-left">end polygon</td>
+<td class="org-left">}(n,S)</td>
+<td class="org-left">end polygon of type n (possibly empty), optional save as mesh S</td>
 </tr>
 
 <tr>
-<td class="org-left">{(0)</td>
-<td class="org-left">start path with stepwise control pts</td>
+<td class="org-left">{(0)  <b>c</b></td>
+<td class="org-left">start path with stepwise control pts, not polygon</td>
 </tr>
 
 <tr>
@@ -502,8 +502,8 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-orgf764de4" class="outline-2">
-<h2 id="orgf764de4"><span class="section-number-2">5.</span> L-system Geometry and Control</h2>
+<div id="outline-container-org594d752" class="outline-2">
+<h2 id="org594d752"><span class="section-number-2">5.</span> L-system Geometry and Control</h2>
 <div class="outline-text-2" id="text-5">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -543,12 +543,12 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org4150c45" class="outline-2">
-<h2 id="org4150c45"><span class="section-number-2">6.</span> L-System Syntax</h2>
+<div id="outline-container-org79a54f7" class="outline-2">
+<h2 id="org79a54f7"><span class="section-number-2">6.</span> L-System Syntax</h2>
 <div class="outline-text-2" id="text-6">
 </div>
-<div id="outline-container-org31555a1" class="outline-3">
-<h3 id="org31555a1"><span class="section-number-3">6.1.</span> Comments</h3>
+<div id="outline-container-orgb0d5554" class="outline-3">
+<h3 id="orgb0d5554"><span class="section-number-3">6.1.</span> Comments</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
 C-style comments, '/​* stuff, including newline */​' are supported.<br />
@@ -556,8 +556,8 @@ Single-line '//' style comments are not - they conflict with L-system syntax.
 </p>
 </div>
 </div>
-<div id="outline-container-org2e9e56b" class="outline-3">
-<h3 id="org2e9e56b"><span class="section-number-3">6.2.</span> Defines</h3>
+<div id="outline-container-org6ee1691" class="outline-3">
+<h3 id="org6ee1691"><span class="section-number-3">6.2.</span> Defines</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
    Lines that start with '#define macro value', 'macro' being some word, create
@@ -566,8 +566,8 @@ the L-system before parsing starts.
 </p>
 </div>
 </div>
-<div id="outline-container-org7f81ee6" class="outline-3">
-<h3 id="org7f81ee6"><span class="section-number-3">6.3.</span> Settings</h3>
+<div id="outline-container-org6f2a2bd" class="outline-3">
+<h3 id="org6f2a2bd"><span class="section-number-3">6.3.</span> Settings</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
    Before the axiom is specified, variables can be set for the L-system. 
@@ -689,8 +689,8 @@ shouldn't conflict with any module parameters.
 </p>
 </div>
 </div>
-<div id="outline-container-org1c50f55" class="outline-3">
-<h3 id="org1c50f55"><span class="section-number-3">6.4.</span> Expressions</h3>
+<div id="outline-container-org4dd6b5b" class="outline-3">
+<h3 id="org4dd6b5b"><span class="section-number-3">6.4.</span> Expressions</h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
    Expressions occur in tests, parameters, and pre/post test <b>u</b>. They 
@@ -731,15 +731,15 @@ e.g. (t &gt; 0) and not u
 </div>
 </div>
 </div>
-<div id="outline-container-org4a28804" class="outline-2">
-<h2 id="org4a28804"><span class="section-number-2">7.</span> UI and controls</h2>
+<div id="outline-container-org3f664ae" class="outline-2">
+<h2 id="org3f664ae"><span class="section-number-2">7.</span> UI and controls</h2>
 <div class="outline-text-2" id="text-7">
 <ul class="org-ul">
 <li>subject to constant change -</li>
 </ul>
 </div>
-<div id="outline-container-orgfb4f886" class="outline-3">
-<h3 id="orgfb4f886"><span class="section-number-3">7.1.</span> Turtle controls</h3>
+<div id="outline-container-orgd14f5fa" class="outline-3">
+<h3 id="orgd14f5fa"><span class="section-number-3">7.1.</span> Turtle controls</h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
 At the top are the turtle controls. To the right of the label, "Turtle Controls" is a widget
@@ -760,8 +760,8 @@ is used.
 </ul>
 </div>
 </div>
-<div id="outline-container-org4905278" class="outline-3">
-<h3 id="org4905278"><span class="section-number-3">7.2.</span> L-system controls</h3>
+<div id="outline-container-orgcf26eda" class="outline-3">
+<h3 id="orgcf26eda"><span class="section-number-3">7.2.</span> L-system controls</h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
 Below the Turtle controls are the L-system controls. There is a link to this *Quick Ref*erence.
@@ -784,9 +784,9 @@ rewrite one step of the L-system, and redraw it. This can be informative when mu
 the draw speed is set low.</li>
 <li><b>MultiTurtle?</b> is a checkbox to turn this mode on/off. When on, the interpretation/drawing creates a new
 turtle for each branch and then gives each turtle one step on its branch in a round-robin draw mode. When
-a turtle reaches the end of the branch it is destroyed.</li>
+a turtle reaches the end of the branch it is destroyed. This mode typically appears more natural.</li>
 
-<li><b>Browse&#x2026;.</b> allows you to load an lsystem locally. It is a text file, typically with a .ls extension</li>
+<li><b>Choose File</b> allows you to load an lsystem locally. It is a text file, typically with a .ls extension</li>
 <li><p>
 <b>Save</b> allows you to save the L-system
 </p>
@@ -810,7 +810,7 @@ is simpler in single turtle mode.</li>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2022-09-05 Mon 13:17</p>
+<p class="date">Created: 2022-09-19 Mon 16:10</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
