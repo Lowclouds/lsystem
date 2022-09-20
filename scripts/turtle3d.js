@@ -558,7 +558,7 @@ class Turtle3d {
       this.#setH(newV(1, 0, 0));
       this.#setU(newV(0, 1, 0));
       this.#setL(newV(0, 0, 1));
-      if (tshape != "") {
+      if (tshape != null) {
          tshape.position = newPos;
          this.#orientTurtle();
       }

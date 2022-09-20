@@ -21,16 +21,30 @@ Modules marked *n* are *new for this implementation*
 |@M(x,y,z) | goto position, draw or not|
 
 * Turtle Orientation
-  Without a parameter turn 'delta' degrees
-| +(a)                    | yaw left a degrees                       |
-| &(a)                    | pitch down a degrees                     |
-| ^(a)                    | pitch up a degrees                       |
-| \(a)                    | roll left a degrees                      |
-| /(a)                    | roll right a degrees                     |
-| \vert                   | yaw 180 degrees                          |
-| @v                      | roll so U is parallel to up [y]          |
-| @R(hx,hy,hz[,ux,uy,uz]) | set heading to [hx,hy,hz]                |
-|                         | set U parallel to [ux,uy,z], if supplied |
+#+BEGIN_VERSE
+  The turtle maintains three unit vectors, heading (*H*), left (*L*), and up (*U*).
+  The turtle home position natively is *H* is +x, *L* is +z, and *U* is +y,
+  but L-system Explorer pitches up 90 degrees, initially, so *H* faces up.
+
+  A positive yaw (left) rotates *H* towards *L* around *U*.
+  A positive pitch (down) rotates *U* towards *H* around *L*.
+  A positive roll rotates *L* towards *U* around *H*.
+
+  Without a parameter, a turn is 'delta' degrees; default is 90.
+#+END_VERSE
+| +(a)                    | yaw left a degrees                           |
+| -(a)                    | yaw right degrees                            |
+| &(a)                    | pitch down a degrees                         |
+| ^(a)                    | pitch up a degrees                           |
+| \(a)                    | roll left a degrees                          |
+| /(a)                    | roll right a degrees                         |
+| \vert                   | yaw 180 degrees                              |
+| @v                      | roll so U is parallel to up [y]              |
+| @R(hx,hy,hz[,ux,uy,uz]) | set heading to [hx,hy,hz]                    |
+|                         | set U parallel to [ux,uy,z], if supplied     |
+| @H(h)               *n* | set turtle to home position and orientation, |
+|                         | if optional h is not 0, then set H to +x,    |
+|                         | otherwise, H is +y. Does not draw or record point |
 
 * Turtle Settings
   Defaults without a parameter to one
