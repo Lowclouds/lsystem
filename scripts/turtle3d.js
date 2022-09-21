@@ -860,16 +860,16 @@ class Turtle3d {
          doSetMaterial = false;
          break;
       case Turtle3d.TRACK_TUBE:
-            let radiusFunc = (i,distance) => {
-               return ((i == 0) ? ts.lastSize : ts.size)/2;
-            }
-            segment = BABYLON.MeshBuilder.CreateTube(t,
-                                                     {path: [oldPos, newPos],
-                                                      radiusFunction: radiusFunc,
-                                                      // tessellation: 16,
-                                                      updatable: true,
-                                                      cap: BABYLON.Mesh.CAP_ALL},
-                                                     this.scene);
+         let radiusFunc = (i,distance) => {
+            return ((i == 0) ? ts.lastSize : ts.size)/2;
+         }
+         segment = BABYLON.MeshBuilder.CreateTube(t,
+                                                  {path: [oldPos, newPos],
+                                                   radiusFunction: radiusFunc,
+                                                   // tessellation: 16,
+                                                   updatable: true,
+                                                   cap: BABYLON.Mesh.CAP_ALL},
+                                                  this.scene);
          this.meshCount[0]++;
          break;
       case Turtle3d.TRACK_EXT:
@@ -1285,8 +1285,8 @@ class Turtle3d {
          vertexData.applyToMesh(pmesh,true);
 
          // make sure the material has backFaceCulling set to false
-         this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
-         this.meshCommonSetup(pmesh);
+         //this.materialList[this.TurtleState.trackMaterial].backFaceCulling = false;
+         this.meshCommonSetup(pmesh, {setmaterial: true, backFaceCulling: false});
          puts(`created a new polygon(${pbase.polygonVerts.length})`, TRTL_POLYGON);
          if (id) {
             Turtle3d.addMesh(id, pmesh);
@@ -1335,6 +1335,7 @@ class Turtle3d {
          if (pos == null) {
             pos = this.getPos().clone();
          }
+         puts(`store contour pt: ${pos} - z -> 0`, TRTL_CONTOUR);
          pos.z=0;               // enforce z==0
          this.tempContour.pts.push(pos);
       } else {
@@ -1373,7 +1374,10 @@ class Turtle3d {
    }
 
    storePoint(pos=null, hdg=null) {
-      let pt = vclamp(pos==null? this.getPos() : pos);
+      let pt = vclamp(pos==null? this.getPos().clone() : pos);
+      if (pt === this.TurtleState.P) {
+         pt = pt.clone();
+      }
       let ts = this.TurtleState;
 
       switch (ts.drawMode) {
@@ -1415,6 +1419,7 @@ class Turtle3d {
          let c4 = BABYLON.Color4.FromColor3(this.getColorVector(), 1);
          puts(`set instance color to ${c4}`, TRTL_MESH);
          inst.instancedBuffers.color = c4;
+         inst.isVisible 
          this.meshCommonSetup(inst, mopts);
       } else {
          puts(`warning: mesh, ${name}, not found`);
@@ -1432,7 +1437,7 @@ class Turtle3d {
       mesh.addTags('mesh Turtle3d');
       let mobj = {m: mesh, name: name, counter: 0, contactPoint: null, endPoint: null, heading: null, up: null, scale: 1};
       mesh.registerInstancedBuffer("color",4);
-      mesh.instancedBuffers.color =BABYLON.Color4(0,0,0,1); //FromColor3(mesh.material.diffuseColor, 1);
+      mesh.instancedBuffers.color = BABYLON.Color4(1,1,1,1); //FromColor3(mesh.material.diffuseColor, 1);
       if (opts) {
          let mobjkeys = mobj.keys();
          opts.keys().forEach(k => {

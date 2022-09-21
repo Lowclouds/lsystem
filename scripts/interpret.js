@@ -5,6 +5,11 @@ var idata;
 function turtleInterp (ti, ls, opts=null) {
    let desiredFps = 10;
 
+   if (ls.current.length == 0) {
+      puts('top level lsystem is empty, returning');
+      return;
+   }
+
    idata = {
       step:  1,
       stemsize: 0.1,
@@ -17,6 +22,7 @@ function turtleInterp (ti, ls, opts=null) {
       mi: 0,                       // module index
       miCount: opts.miCount? opts.miCount : 200, // number of modules to interpret/frame
       useMT: opts.useMT ? opts.useMT : false,                // USE MULTIPLE turtles, or not
+      useDefaultTurtle: opts.useDefaultTurtle ? opts.useDefaultTurtle : true,
       interval: 1000 / (10 * desiredFps),
       lastTime: performance.now(),
       ctable:  null,
@@ -90,12 +96,17 @@ function turtleInterp (ti, ls, opts=null) {
 
    idata.ndelta= -1*idata.delta;
 
-   var t0 = new Turtle3d(ti.scene, {noturtle: true});  // , globalPolygons: true});
-   idata.gencode('var t0 = new Turtle3d(ti.scene, {noturtle: true});\n');
-   let ts = ti.getState();
-   t0.setState(ts);
-   idata.gencode('t0.setState(ti.getState());\n');
-
+   
+   var t0;
+   if (idata.useDefaultTurtle) {
+      t0 = ti;
+   } else {
+      t0 = new Turtle3d(ti.scene, {noturtle: true});  // , globalPolygons: true});
+      idata.gencode('var t0 = new Turtle3d(ti.scene, {noturtle: true});\n');
+      let ts = ti.getState();
+      t0.setState(ts);
+      idata.gencode('t0.setState(ti.getState());\n');
+   }
    t0.addTag(idata.trackTag);
    t0.setSize(idata.stemsize, true); //this sets both size and lastsize to stemsize
    t0.setHeading([0,1,0]);
@@ -123,7 +134,7 @@ t0.setHeading([0,1,0])`);
    idata.gencode('var branches = [{turtle: t0, spos: 0, keep: true}];\n');
    var lstring = ls.current;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
-   puts(`using settings: ` + idata.show(), NTRP_INIT);
+   puts(`using settings with turtle ${t0.Turtle}:` + idata.show(), NTRP_INIT);
 
    lblNumDrawn.style.backgroundColor = 'lightgray';
    lblNumNodes.textContent = lstring.length;
@@ -140,37 +151,30 @@ t0.setHeading([0,1,0])`);
    let ipromise = new Promise((resolve, reject) => {
       //console.log('in Promise');
       function doModule () {
-         let branch, branchpos, turtle;
-         let i;
-         let isPM = false;
-         
          if (branches.length == 0) {
             packItUp(t0);
             return;
          }
-         idata.gencode('let turtle;\n');
-         for (i = 0, branch=0; i < idata.miCount && branches.length>0; i++,branch++) {
-            branch %= branches.length;
-            branchpos = branches[branch].spos;
-            turtle = branches[branch].turtle;
-            idata.gencode(`turtle = branches[${branch}].turtle;\n`);
-            puts(`branch: ${branch} of ${branches.length}, branchpos: ${branchpos}, turtle: ${turtle.Turtle}`, NTRP_PROGRESS);
-            if (branchpos >= lstring.length) {
-               let shouldKeep = branches[branch].keep;
-               branches.splice(branch,1); // remove this branch - could be first
-               idata.gencode(`branches.splice(${branch},1);\n`);
-               if (! shouldKeep) {
-                  turtle.dispose(false); // don't dispose tracks, thought
-                  idata.gencode('turtle.dispose(false);\n');
-               }
-               continue;
-            }               
+
+         let branch = 0
+         let turtle = branches[branch].turtle;;
+         let branchpos = branches[branch].spos;
+         let i = 0;
+         let branchIsDead = false;
+         let isPM = false;
+         
+         idata.gencode('let turtle = branches[branch].spos;\n');
+         // assumption is that lstring is not empty, so lstring[branchpos] is not empty
+         do {
+            if (idata.useMT) {
+               idata.gencode(`turtle = branches[${branch}].turtle;\n`);
+               puts(`branch: ${branch} of ${branches.length}, branchpos: ${branchpos}, turtle: ${turtle.Turtle}`, NTRP_PROGRESS);
+            }
             let pM = lstring[branchpos];
             puts(pM.toString(), NTRP_PROGRESS);
-            branches[branch].spos++; // for next time
-            idata.mi++;
 
-            //puts(turtle.getPos());
+            branches[branch].spos++; // update position on this branch
+
             let m;
             let pmArgs, p0;         // most functions have only one parameter
             if (typeof pM === 'string') {
@@ -246,8 +250,14 @@ t0.setHeading([0,1,0])`);
             }
             case '@M': {
                if (isPM) {
+                  let p = turtle.isPenDown();
+                  idata.gencode('turtle');
+                  if (!p) {
+                     turtle.penDown();
+                     idata.gencode('.pu()');
+                  }
                   turtle.goto(pM.p[0], pM.p[1],pM.p[2]);
-                  idata.gencode(`turtle.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]});\n`);
+                  idata.gencode(`.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]});\n`);
                   puts(`turtle.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]})`, NTRP_MOTION );
                } else {
                   throw new Error('module @M requires three x,y,z parameters not ' + pM.toString());
@@ -276,13 +286,15 @@ t0.setHeading([0,1,0])`);
                break;
             }
             case '@O': {
+               turtle.penDown();
                turtle.drawSphere(p0);
-               idata.gencode(`turtle.drawSphere(${p0});\n`);
+               idata.gencode(`turtle.pd().drawSphere(${p0});\n`);
                break;
             }
             case '@o': {
+               turtle.penDown();
                turtle.drawDisc(p0);
-               idata.gencode(`turtle.drawDisc(${p0});\n`);
+               idata.gencode(`turtle.pd().drawDisc(${p0});\n`);
                break;
             }
             case '+': {            // yaw left
@@ -634,7 +646,46 @@ t0.setHeading([0,1,0])`);
             default: 
                //puts(`no Action for module ${i}: ${m}`);}
             }
-         }
+            i++;
+            if (idata.useMT) {
+               do {
+                  if (branches.length) {
+                     branch++;                // switch branch
+                     branch %= branches.length;
+                     turtle = branches[branch].turtle;
+                     branchpos = branches[branch].spos; // 
+                     if (branchpos >= lstring.length) {
+                        let shouldKeep = branches[branch].keep;
+                        branches.splice(branch,1); // remove this branch - could be first
+                        idata.gencode(`branches.splice(${branch},1);\n`);
+                        if (! shouldKeep) {
+                           turtle.dispose(false); // don't dispose tracks, thought
+                           idata.gencode('turtle.dispose(false);\n');
+                        }
+                     } else {
+                        break;
+                     }
+                  } else {
+                     break;
+                  }
+               } while (1);
+            } else {
+               branchpos++;
+               if (branchpos >= lstring.length) {
+                  let shouldKeep = branches[branch].keep;
+                  if (! shouldKeep) {
+                     turtle.dispose(false); // don't dispose tracks, thought
+                     idata.gencode('turtle.dispose(false);\n');
+                  }
+                  branches = [];
+                  idata.gencode(`branches = 0;\n`);
+               }
+            }
+            
+            idata.mi++;         // for UI
+
+         } while (i < idata.miCount && branches.length>0);
+
          lblNumDrawn.textContent = idata.mi;
          //lblNumNodes.textContent= lstring.length - i;
          if (branches.length == 0) {
@@ -644,6 +695,7 @@ t0.setHeading([0,1,0])`);
             let rAF = requestAnimationFrame(doModule);
          }
       }
+
       doModule();
 
       function packItUp(turtle){
