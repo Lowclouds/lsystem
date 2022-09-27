@@ -8,8 +8,12 @@ class LogTag {
       }
    }
    static clear(...tags) {
-      for (const tag of tags) {
-         LogTag.tagSet ^= tag;  // clear bit
+      if (tags.length) {
+         for (const tag of tags) {
+            LogTag.tagSet ^= tag;  // clear bit
+         }
+      } else {
+         LogTag.tagSet = 0n;
       }
    }
    static clearAll() {
