@@ -53,30 +53,20 @@ function turtleInterp (ti, ls, opts=null) {
    puts(`miCount: ${idata.miCount}, interval: ${idata.interval}, useMT: ${idata.useMT}`);
 
    for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
-      if (ls[p]) {
-         switch (p) {
-         case 'step': {idata.step = ls.step; break;}
-         case 'stemsize': {idata.stemsize = ls.stemsize; break;}
-         case 'delta': {idata.delta = ls.delta; break;}
-         case 'ctable': {idata.ctable = ls.ctable; break;}
-         }
-         puts(`set idata[${p}] to ${ls[p]}`,NTRP_INIT);
+      let v;
+      if (v = ls.locals.get(p)) {
+         idata[p] = v;
+      } else if (v = ls.globals.get(p)) {
+         idata[p] = v;
+      } else if (v = ls[p]) {
+         idata[p] = v;
+      } else {
+         continue;
       }
-   }
-   for (const p of ['step', 'delta', 'stemsize', 'ctable']) {
-      puts(`checking for var ${p}`,NTRP_INIT);
-      if (ls.locals.get(p)) {
-         switch (p) {
-         case 'step': {idata.step = ls.locals.get(p); break;}
-         case 'stemsize': {idata.stemsize = ls.locals.get(p); break;}
-         case 'delta': {idata.delta = ls.locals.get(p);  break;}
-         case 'ctable': {idata.ctable = ls.locals.get(p); break;}
-         }
-         puts(`set idata[${p}] to ${ls.locals.get(p)}`,NTRP_INIT);
-      }
+      puts(`set idata[${p}] to ${v}`,NTRP_INIT);
    }
 
-   let view = ls.locals.get('view');
+   let view = ls.globals.get('view');
    if (view) {
       if (view.position) {
          let vp = BABYLON.Vector3.FromArray(view.position.toArray());
@@ -166,14 +156,27 @@ t0.setHeading([0,1,0])`);
          idata.gencode('let turtle = branches[branch].spos;\n');
          // assumption is that lstring is not empty, so lstring[branchpos] is not empty
          do {
+            if (branchpos >= lstring.length) {
+               removeBranch(branch, turtle);
+               branch++;                // switch branch
+               branch %= branches.length;
+               turtle = branches[branch].turtle;
+               branchpos = branches[branch].spos; // 
+               continue;
+            }
+
             if (idata.useMT) {
                idata.gencode(`turtle = branches[${branch}].turtle;\n`);
                puts(`branch: ${branch} of ${branches.length}, branchpos: ${branchpos}, turtle: ${turtle.Turtle}`, NTRP_PROGRESS);
             }
             let pM = lstring[branchpos];
-            puts(pM.toString(), NTRP_PROGRESS);
-
             branches[branch].spos++; // update position on this branch
+            if (pM) {
+               puts(pM.toString(), NTRP_PROGRESS);
+            } else {
+               console.error(`Walked off end of lstring: branchpos: ${branchpos}, branch: ${branch}, branches length: ${branches.length}`);
+               throw `Walked off end of lstring: branchpos: ${branchpos}, branch: ${branch}, branches length: ${branches.length}`
+            }
 
             let m;
             let pmArgs, p0;         // most functions have only one parameter
@@ -427,7 +430,11 @@ t0.setHeading([0,1,0])`);
 
                   // skip past new twig on this branch
                   let [m,newpos] = Lsystem.skipbrackets(lstring, branchpos, 1);
-                  branches[branch].spos = newpos;
+                  if (newpos < lstring.length) {
+                     branches[branch].spos = newpos;
+                  } else {
+                     removeBranch(branch,turtle);
+                  }
                } else {
                   turtle.newBranch({ci: idata.ci, st: idata.st});
                   idata.gencode(`turtle.newBranch();\n`);
@@ -435,19 +442,14 @@ t0.setHeading([0,1,0])`);
                break;
             }
             case ']': {           // end a branch
+               // should probably complain about unfinished tracks and polygons...
+               if (turtle.isTrackStarted()) {
+                  turtle.endTrack();
+                  idata.gencode('turtle.endTrack();\n')
+                  console.warn('branch ended with unfinished track');
+               }
                if (idata.useMT) {
-                  // should probably complain about unfinished tracks and polygons...
-                  if (turtle.isTrackStarted()) {
-                     turtle.endTrack();
-                     idata.gencode('turtle.endTrack();\n')
-                  }
-                  let shouldKeep = branches[branch].keep;
-                  branches.splice(branch,1); // remove this branch - could be first
-                  idata.gencode(`branches.splice(${branch},1);\n`);
-                  if (! shouldKeep) {
-                     turtle.dispose(false); // don't dispose tracks, though
-                     idata.gencode('turtle.dispose(false);\n');
-                  }
+                  removeBranch(branch, turtle);
                } else {
                   // let s = no state to save
                   turtle.endBranch();
@@ -527,7 +529,7 @@ t0.setHeading([0,1,0])`);
                puts(`Starting new Hermite Spline Track, type: 'p1'`, NTRP_TRACKS);
                turtle.newTrack('p1');
                turtle.storePoint(turtle.getPos());
-               idata.gencode(`turtle.newTrack('p1');\nturtle.storePoint(turtle.getPos());\n`);
+               idata.gencode(`turtle.newTrack('p1').storePoint(turtle.getPos());\n`);
             }
                break;
             case '@Ge':
@@ -536,6 +538,8 @@ t0.setHeading([0,1,0])`);
                   idata.gencode(`turtle.setTrackQuality(${p0});\n`);
                }
                let id = (pmArgs.length == 2) ? pmArgs[1] : null;
+               turtle.storePoint(turtle.getPos());
+
                turtle.endTrack(id);
                idata.gencode(`turtle.endTrack(${id});\n`);
                break;
@@ -654,14 +658,9 @@ t0.setHeading([0,1,0])`);
                      branch %= branches.length;
                      turtle = branches[branch].turtle;
                      branchpos = branches[branch].spos; // 
+                     //puts(`branch: ${branch}, branchpos: ${branchpos}, blength: ${branches.length}`);
                      if (branchpos >= lstring.length) {
-                        let shouldKeep = branches[branch].keep;
-                        branches.splice(branch,1); // remove this branch - could be first
-                        idata.gencode(`branches.splice(${branch},1);\n`);
-                        if (! shouldKeep) {
-                           turtle.dispose(false); // don't dispose tracks, thought
-                           idata.gencode('turtle.dispose(false);\n');
-                        }
+                        removeBranch(branch, turtle);
                      } else {
                         break;
                      }
@@ -669,7 +668,7 @@ t0.setHeading([0,1,0])`);
                      break;
                   }
                } while (1);
-            } else {
+            } else {            // single turtle => interpreting string left to right
                branchpos++;
                if (branchpos >= lstring.length) {
                   let shouldKeep = branches[branch].keep;
@@ -678,10 +677,9 @@ t0.setHeading([0,1,0])`);
                      idata.gencode('turtle.dispose(false);\n');
                   }
                   branches = [];
-                  idata.gencode(`branches = 0;\n`);
+                  idata.gencode(`branches = [];\n`);
                }
             }
-            
             idata.mi++;         // for UI
 
          } while (i < idata.miCount && branches.length>0);
@@ -697,6 +695,17 @@ t0.setHeading([0,1,0])`);
       }
 
       doModule();
+
+      function removeBranch(branch, turtle) {
+         let shouldKeep = branches[branch].keep;
+         branches.splice(branch,1); // remove this branch - could be first
+         idata.gencode(`branches.splice(${branch},1);\n`);
+         if (! shouldKeep) {
+            turtle.dispose(false); // don't dispose tracks, though
+            idata.gencode('turtle.dispose(false);\n');
+         }
+         puts(`deleted branch: ${branch} moving on; branches.length: ${branches.length}`, NTRP_PROGRESS);
+      }
 
       function packItUp(turtle){
          let ts = turtle.getState()
