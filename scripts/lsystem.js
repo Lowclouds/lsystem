@@ -222,6 +222,7 @@ class Lsystem {
    static modLsystemStart = new  ParameterizedModule('$', 'i,s');
    static modLsystemEnd = '$';
    static functions = new Map(); // functions also global for all l-systems
+   static globals = new Map();
 
    constructor(spec,lbl = '1') {
       this.spec = null; // should be a text file/string or empty for sub-lsystems
@@ -251,9 +252,9 @@ class Lsystem {
       this.needsEnvironment = false;
       this.locals = new Map(); // from variable assignment statements
       this.locals._expand_ = expandF(this.locals, 'locals');
+      this.globals = Lsystem.globals;
+      this.globals._expand_ = expandF(Lsystem.globals, 'globals');
       // need to rethink globals - s.b. a singleton
-      this.globals = new Map();
-      this.globals._expand_ = expandF(this.globals, 'globals');
       this.functions = new Map();
       //this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
    }
@@ -384,7 +385,9 @@ class Lsystem {
       this.Dlength = 0;
       this.dDone = 0;
       this.stepStart = false;
-      this.globals.clear();
+      if (! this.isSubLs) {
+         this.globals.clear();
+      }
       this.locals.clear();
       this.delta = 90;
       this.current=[];
@@ -420,12 +423,16 @@ class Lsystem {
       }
       Lsystem.lsystems.clear();
       Lsystem.lsystems.set('main', ls0);
+      Lsystem.globals.clear();
+      let labelSeen = false;    // have we seen the 'lsystem: xxx' label
 
       parseHelper(ls0);    // this is the toplevel l-system
 
       if (! ls0.Dlength) {
          if (ls0.locals.has('n')) {
             ls0.Dlength = ls0.locals.get('n');
+         } else if (ls0.globals.has('n')) {
+            ls0.Dlength = ls0.globals.get('n');
          } else {
             ls0.Dlength = 1;
             puts('Derivation length not specified; defaulting to 1');
@@ -555,7 +562,11 @@ class Lsystem {
                try {
                   for (let parts of m) {
                      let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or'); //.replaceAll('!', ' not ');
-                     math.evaluate(parts[1]+'='+ parts2, ls.locals);
+                     if (labelSeen) {
+                        math.evaluate(parts[1]+'='+ parts2, ls.locals);
+                     } else {
+                        math.evaluate(parts[1]+'='+ parts2, ls.globals);
+                     }
                      //ls.locals.set(parts[1], parts[2]);
                   }
                } catch (error) {
@@ -581,6 +592,7 @@ class Lsystem {
                ls.label = m[1];
                Lsystem.lsystems.set(ls.label, ls);
                puts(`reset lsystem name to ${ls.label} from ${oldlabel}`, LSYS_IN_ITEMS);
+               labelSeen = true;
                ls.show('label');
             }
          } else if (null != ( m = line.match(RE.dlength))) {
