@@ -85,6 +85,7 @@ class Turtle3d {
       // instrumentation
       this.meshCount = [0,0];
       this.meshList = [];
+      this.dumbtest = Turtle3d.trackContours;
 
       function initAll(s, nt, shape) {
          this.scene = getScene.call(this, s);
@@ -577,8 +578,6 @@ class Turtle3d {
          ts.isShown = true;
          ts.size = 0.1;
          ts.lastSize = ts.size;
-         ts.trackShapeID = 'default';
-         ts.trackShape = Turtle3d.trackContours.get('"default"');
          ts.trackMaterial = 0;
          ts.color = '0,0,0';
          ts.accumRoll = 0;
@@ -587,7 +586,10 @@ class Turtle3d {
          this.polygonVerts=null;
          Turtle3d.polygonStack=[];
          Turtle3d.polygonVerts=null;
-   
+         Turtle3d.clearMeshes();
+         Turtle3d.resetContours();
+         ts.trackShapeID = '"default"';
+         ts.trackShape = Turtle3d.trackContours.get(ts.trackShapeID);
          this.branchStack=[];
          this.tempContour = null;
       }
@@ -912,13 +914,14 @@ class Turtle3d {
       if (tp === null || tp.points.length < 2) {
          return;
       }
+      puts(`drawTrack: using shape ${tp.shape}`, TRTL_TRACK);
       let pathpts = tp.points;
       let doSetMaterial = true;
 
       puts(`trackPath.length: ${pathpts.length}`, TRTL_TRACK);
       //puts(`pathpts: ${pathpts}`);
       let srm = tp.srm;         // scale, rotation, material at each [control] point
-      puts(`srm: ${srm.toString()}`, TRTL_TRACK);
+      //puts(`srm: ${srm.toString()}`, TRTL_TRACK);
 
       function getscale(i,distance) {
          return srm[i].s;
@@ -1170,7 +1173,7 @@ class Turtle3d {
       let ts = this.TurtleState;
       let t = this.Turtle;
       let ttag = ts.trackTag;
-      let tag = opts.tags || `${t} track ${ttag}`;
+      let tags = opts.tags || `${t} track ${ttag}`;
 
       if (opts.setmaterial) {
          mesh.material = this.materialList[ts.trackMaterial];
@@ -1202,7 +1205,7 @@ class Turtle3d {
       }
 
       mesh.isVisible = true;
-      BABYLON.Tags.AddTagsTo(mesh, tag, this.scene);
+      BABYLON.Tags.AddTagsTo(mesh, tags, this.scene);
    }
 
    // implements the '{' polygon module
@@ -1373,6 +1376,13 @@ class Turtle3d {
       }
    }
 
+   static resetContours() {
+      Turtle3d.trackContours.forEach((v,k,m) => {
+         m.delete(k);
+      });
+      Turtle3d.trackContours.set('"default"', generateCircle(0.5,0.5));
+   }
+
    storePoint(pos=null, hdg=null) {
       let pt = vclamp(pos==null? this.getPos().clone() : pos);
       if (pt === this.TurtleState.P) {
@@ -1449,6 +1459,13 @@ class Turtle3d {
    static getMesh(name) {
       return Turtle3d.meshes.get(name);
    }
+   static clearMeshes() {
+      Turtle3d.meshes.forEach((v,k,m) => {
+         v.m.dispose();
+         m.delete(k);
+      });
+
+   }
 
    /*
      reset Turtle3d class variables
@@ -1457,9 +1474,9 @@ class Turtle3d {
       Turtle3d.Turtles = new Map();
       Turtle3d.counter = 0;
       Turtle3d.trackContours = new Map();
-      Turtle3d.meshes = new Map();
       Turtle3d.polygonStack = [];
       Turtle3d.polygonVerts = null;
+      Turtle3d.clearMeshes();
    }
 }
 
@@ -1659,6 +1676,7 @@ class HermiteSpline extends TrackPath {
          if (LogTag.isSet(TRTL_HERMITE)) {
             var pmesh = BABYLON.Mesh.CreateLines("hermite",pathspline.getPoints(), scene);
             pmesh.color = BABYLON.Color3.Yellow();
+            BABYLON.Tags.AddTagsTo(pmesh, 'lsystem debug', this.scene);
          }
 
          if ( pp.radiusSpline)  { // recalc pathspline
@@ -1684,6 +1702,7 @@ class HermiteSpline extends TrackPath {
                rmesh.color = BABYLON.Color3.Red()
                // let bmesh = BABYLON.Mesh.CreateLines("hermite",[p0,p1], scene);
                // bmesh.color = BABYLON.Color3.Blue()
+               BABYLON.Tags.AddTagsTo(rmesh, 'lsystem debug', this.scene);
             }
             let tmap = [];
             let radii = [];
@@ -1698,6 +1717,7 @@ class HermiteSpline extends TrackPath {
 
             puts(`tmap length: ${tmap.length}`, TRTL_HERMITE); 
             puts(`tmap: ${tmap}`, TRTL_HERMITE);
+            puts(`twistinc: ${twistInc}`, TRTL_HERMITE);
             puts(`radii: ${radii}`, TRTL_HERMITE);
 
             let extpath = new BABYLON.Path3D(pathspline.getPoints());
@@ -1705,7 +1725,6 @@ class HermiteSpline extends TrackPath {
                this.points.push(extpath.getPointAt(tmap[i]));
                this.srm.push({s:radii[i], r: twistInc, m: this.material});
             }
-
             puts(`points: ${this.points}`, TRTL_HERMITE);
          } else {
             let pts = pathspline.getPoints();
@@ -1733,7 +1752,7 @@ class HermiteSpline extends TrackPath {
       this.ptsPerSegment = n; 
    }
 
-} /* end HermiteSpline */
+} /* end HermiteSplin*/
 
 function Contour(id, type=0) {
    this.id = id;
@@ -1748,7 +1767,7 @@ function Contour(id, type=0) {
    }
 }
 
-function generateCircle(r1=0.5,r2=0.5, q=12) {
+function generateCircle(r1=0.5,r2=0.5, q=24) {
    
    var p = [];
    let a = 2*Math.PI/q;         // arc of each section
