@@ -85,7 +85,6 @@ class Turtle3d {
       // instrumentation
       this.meshCount = [0,0];
       this.meshList = [];
-      this.dumbtest = Turtle3d.trackContours;
 
       function initAll(s, nt, shape) {
          this.scene = getScene.call(this, s);
