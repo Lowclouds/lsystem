@@ -1,3 +1,4 @@
+var old = false;
 //
 // provide a 3d turtle with extensions to support lsystem interpretation
 //
@@ -1615,7 +1616,7 @@ class HermiteSpline extends TrackPath {
    constructor (t=null, opts={}) {
       super(opts);
       this.type = Turtle3d.PATH_HERMITE_OPEN;
-      this.ptsPerSegment = opts.ptsPerSegment || 30;
+      this.ptsPerSegment = opts.ptsPerSegment || 20;
       this.material = t ? t.getMaterial() : null; // default
       this.controlPoints = [];
       this.pointPair = { tm0: 1.2, tm1: 1.2, radiusSpline: null};
@@ -1667,7 +1668,8 @@ class HermiteSpline extends TrackPath {
          }
          let blen = BABYLON.Vector3.Distance(p1,p0);
          let twistInc = totalTwist/this.ptsPerSegment;
-         puts(`Hermite pathpair: p0: ${p0}, p1 ${p1}, normb: ${pp.normb}, normt: ${pp.normt}, totaltwist:: ${totalTwist}`, TRTL_HERMITE);
+         puts(`Hermite pathpair: p0: ${p0}, p1 ${p1}, normb: ${pp.normb}, normt: ${pp.normt}, totalTwist:: ${totalTwist} (${totalTwist * radtodeg} deg`, TRTL_HERMITE);
+
          let pathspline = BABYLON.Curve3.CreateHermiteSpline(
             p0,t0.scale(blen*pp.tm0),p1,pp.t1.scale(blen*pp.tm1),this.ptsPerSegment);
 
@@ -1680,15 +1682,32 @@ class HermiteSpline extends TrackPath {
 
          if ( pp.radiusSpline)  { // recalc pathspline
             let rs = pp.radiusSpline;
-            //let 
+            puts(`${rs}`, TRTL_HERMITE);
+            let bheading = p1.subtract(p0).normalize();
+            let r0, r1, prb, prt, tl0,tl1;
+            tl0 = (rs[1] == 0) ? 1/(pp.rt - pp.rb) : rs[1];
+            tl1 = (rs[3] == 0) ? 1/(pp.rt - pp.rb) : rs[3];
+
             let x = cosd(90 - rs[0]);
             let y = sind(90 - rs[0]);
-            let r0 = pp.normb.scale(x).add(t0.scale(y)).scale(rs[1]);
+            if (old) {
+               r0 = pp.normb.scale(x).add(t0.scale(y)).scale(tl1);
+            } else {
+               prb = newV(pp.rb,0,0);
+               r0 = newV(x,y,0).scale(tl0);
+            }
+
             x = cosd(90 - rs[2]);
             y = sind(90 - rs[2]);
-            let r1 = pp.normb.scale(x).add(t0.scale(y)).scale(rs[3]);
-            let prb = p0.add(pp.normb.scale(pp.rb));
-            let prt = p1.add(pp.normb.scale(pp.rt));
+            if (old) {
+               r1 = pp.normb.scale(x).add(t0.scale(y)).scale(tl1);
+               prb = p0.add(pp.normb.scale(pp.rb));
+               prt = p1.add(pp.normb.scale(pp.rt));
+            } else {
+               //prt = newV(pp.rt,1,0);
+               prt = newV(pp.rt,blen,0);
+               r1 = newV(x,y,0).scale(tl1);
+            }
             let radiusSpline = BABYLON.Curve3.CreateHermiteSpline(
                prb,r0,prt,r1,this.ptsPerSegment);
             
@@ -1705,24 +1724,28 @@ class HermiteSpline extends TrackPath {
             }
             let tmap = [];
             let radii = [];
-            let bheading = p1.subtract(p0).normalize();
             let step = 1/this.ptsPerSegment;
             for (let t = 0; t <= 1 + step/2; t += step) {
-               let rt = radiuspath.getPointAt(t).subtract(p0);
-               let ru = BABYLON.Vector3.Dot(rt, bheading);
-               tmap.push(ru/blen); 
-               radii.push(BABYLON.Vector3.Dot(rt, pp.normb)*2);
+               if (old) {
+                  let rt = radiuspath.getPointAt(t).subtract(p0);
+                  let ru = BABYLON.Vector3.Dot(rt, bheading);
+                  tmap.push(ru/blen); 
+                  radii.push(BABYLON.Vector3.Dot(rt, pp.normb)*2);
+               } else {
+                  radii.push(radiuspath.getPointAt(t).x);
+                  tmap.push(radiuspath.getPointAt(t).y);
+               }
             }
 
             puts(`tmap length: ${tmap.length}`, TRTL_HERMITE); 
             puts(`tmap: ${tmap}`, TRTL_HERMITE);
-            puts(`twistinc: ${twistInc}`, TRTL_HERMITE);
+            puts(`twistinc: ${twistInc} (${twistInc * radtodeg} deg)`, TRTL_HERMITE);
             puts(`radii: ${radii}`, TRTL_HERMITE);
 
             let extpath = new BABYLON.Path3D(pathspline.getPoints());
-            for (let i = 0; i < tmap.length; i++) {
+            for (let i = (ppi > 0) ? 1 : 0; i < tmap.length; i++) {
                this.points.push(extpath.getPointAt(tmap[i]));
-               this.srm.push({s:radii[i], r: twistInc, m: this.material});
+               this.srm.push({s: radii[i]*2, r: twistInc, m: this.material});
             }
             puts(`points: ${this.points}`, TRTL_HERMITE);
          } else {
@@ -1730,7 +1753,7 @@ class HermiteSpline extends TrackPath {
             let radiusInc = (pp.rt - pp.rb)/pts.length; // s.b. this.ptsPerSegment
             for (let i = 0; i < pts.length; i++) {
                this.points.push(pts[i]);
-               this.srm.push({s: pp.rb+ i*radiusInc, r: twistInc, m: this.material});
+               this.srm.push({s: pp.rb + i*radiusInc, r: twistInc, m: this.material});
             }
          }
       }
