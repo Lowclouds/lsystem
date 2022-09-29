@@ -1163,11 +1163,20 @@ ${msg}`;
          //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
          mstring = lsnext.flat();
       }
+      // handle any introduced cut, %, modules
+      clength = mstring.length;
+      for (let n=0; n < mstring.length; n++)   {
+         let node = mstring[n];
+         if (node == '%') {
+            let cut = this.cutInPlace(n,mstring); // this modifies mstring!
+            puts(`cut mstring from ${n}: ${cut}`, LSYS_REWRITE);
+         }
+      }
       ls.current = mstring;
       if (string) {
          ls.dDone += niter;     // step case
       } else {
-         ls.dDone = niter;
+         ls.dDone = niter;      // 
       }
       // this.next = null;
       puts(`Expanded tree has ${this.current.length} nodes after ${ls.dDone} interations`);
@@ -1418,7 +1427,30 @@ ${msg}`;
       } while(! atEnd);
       return i;
    }
-   
+   cutInPlace (start, str) {
+      let i = start;
+      let atEnd=false;
+      let nested = 0;
+      do {
+         i++;
+         if ( i >= str.length ){
+            atEnd = true;
+         } else {
+            switch (str[i]) {
+            case '[':
+               nested++;
+               break;
+            case ']':
+               atEnd = (nested == 0);
+               nested--;
+               break;
+            default:
+               break;
+            }
+         }
+      } while(! atEnd);
+      return str.splice(start,i-start);
+   }
 } /* end Lsystem */
 
 function expandF(scope, name) {
