@@ -1,4 +1,3 @@
-var old = false;
 //
 // provide a 3d turtle with extensions to support lsystem interpretation
 //
@@ -1690,24 +1689,15 @@ class HermiteSpline extends TrackPath {
 
             let x = cosd(90 - rs[0]);
             let y = sind(90 - rs[0]);
-            if (old) {
-               r0 = pp.normb.scale(x).add(t0.scale(y)).scale(tl1);
-            } else {
-               prb = newV(pp.rb,0,0);
-               r0 = newV(x,y,0).scale(tl0);
-            }
+            prb = newV(pp.rb,0,0);
+            r0 = newV(x,y,0).scale(tl0);
 
             x = cosd(90 - rs[2]);
             y = sind(90 - rs[2]);
-            if (old) {
-               r1 = pp.normb.scale(x).add(t0.scale(y)).scale(tl1);
-               prb = p0.add(pp.normb.scale(pp.rb));
-               prt = p1.add(pp.normb.scale(pp.rt));
-            } else {
-               //prt = newV(pp.rt,1,0);
-               prt = newV(pp.rt,blen,0);
-               r1 = newV(x,y,0).scale(tl1);
-            }
+            //prt = newV(pp.rt,1,0);
+            prt = newV(pp.rt,blen,0);
+            r1 = newV(x,y,0).scale(tl1);
+
             let radiusSpline = BABYLON.Curve3.CreateHermiteSpline(
                prb,r0,prt,r1,this.ptsPerSegment);
             
@@ -1726,15 +1716,8 @@ class HermiteSpline extends TrackPath {
             let radii = [];
             let step = 1/this.ptsPerSegment;
             for (let t = 0; t <= 1 + step/2; t += step) {
-               if (old) {
-                  let rt = radiuspath.getPointAt(t).subtract(p0);
-                  let ru = BABYLON.Vector3.Dot(rt, bheading);
-                  tmap.push(ru/blen); 
-                  radii.push(BABYLON.Vector3.Dot(rt, pp.normb)*2);
-               } else {
-                  radii.push(radiuspath.getPointAt(t).x);
-                  tmap.push(radiuspath.getPointAt(t).y);
-               }
+               radii.push(radiuspath.getPointAt(t).x);
+               tmap.push(radiuspath.getPointAt(t).y);
             }
 
             puts(`tmap length: ${tmap.length}`, TRTL_HERMITE); 
