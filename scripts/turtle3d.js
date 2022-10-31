@@ -654,6 +654,11 @@ class Turtle3d {
       this.draw(oldP, pos);
       return this;
    }
+   
+   // 
+   // gotoRelative(h1,l1,u1) {
+      
+   // }
 
    // set heading, i.e. H, parallel to vector (a1,a2,a3),
    //  or if a1 is an array then treat that as the vector,
@@ -694,6 +699,8 @@ class Turtle3d {
    }
 
    // given a mesh, setHeading towards it
+   // or, given a vector, array of x,y,z, or three coordinates 
+   // of a vector, point in the direction of the vector
    lookAt (p, u1, u2) {
       let target;
       switch (arguments.length) {
@@ -1483,7 +1490,8 @@ Turtle3d.prototype.fd = Turtle3d.prototype.forward;
 Turtle3d.prototype.bk = Turtle3d.prototype.back;
 Turtle3d.prototype.lt = Turtle3d.prototype.yaw;
 Turtle3d.prototype.pu = Turtle3d.prototype.penUp;
-Turtle3d.prototype.pd = Turtle3d.prototype.penDown;
+Turtle3d.prototype.seth = Turtle3d.prototype.setHeading;
+
 
 // classConst is in logtag.js
 classConst(Turtle3d, {
@@ -1654,6 +1662,22 @@ class HermiteSpline extends TrackPath {
          this.pointPair = newPair;
       }
    }
+
+   setMultipliers (m0, m1){
+      this.pointPair.tm0 = m0;
+      this.pointPair.tm1 = m1;
+   }
+
+   // angle a wrt to u-axis which is unknown until p1 is defined, so store it
+   setRadiusSpline (a0,len0,a1,len1) {
+      this.pointPair.radiusSpline = [a0, len0, a1, len1];
+   }
+
+   // this applies to all segments, unlike the TABOP strips
+   setNumStrips(n) {
+      this.ptsPerSegment = n; 
+   }
+
    generatePath() {
       this.points = [];
       this.srm = [];
@@ -1740,21 +1764,6 @@ class HermiteSpline extends TrackPath {
             }
          }
       }
-   }
-
-   setMultipliers (m0, m1){
-      this.pointPair.tm0 = m0;
-      this.pointPair.tm1 = m1;
-   }
-
-   // angle a wrt to u-axis which is unknown until p1 is defined, so store it
-   setRadiusSpline (a0,len0,a1,len1) {
-      this.pointPair.radiusSpline = [a0, len0, a1, len1];
-   }
-
-   // this applies to all segments, unlike the TABOP strips
-   setNumStrips(n) {
-      this.ptsPerSegment = n; 
    }
 
 } /* end HermiteSplin*/

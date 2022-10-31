@@ -91,6 +91,7 @@ RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)
 var ParameterizedModule = function(name, parms) {
    this.m = name;
    this.p = parseParens(parms);
+   normalizeStrings(this);
    this.toString = function() {return this.m + '(' + this.p.toString() + ')';}
    this.clone = function() {
       let pm =  new ParameterizedModule(this.m, '');
@@ -119,6 +120,21 @@ var ParameterizedModule = function(name, parms) {
          }
       }
       return p;
+   }
+
+   function normalizeStrings(o) {
+      for (let i=0; i < o.p.length; i++) {
+         let v = o.p[i];
+         let end = v.length-1;
+         let s0 = v[0];
+         let s1 = v[end];
+         if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+            v = v.split('');
+            v[0]='"';
+            v[end] = '"';
+            o.p[i] = v.join('');
+         }
+      }
    }
 }
 
@@ -164,7 +180,7 @@ class LsScope extends Map {
    }
 
    test () {
-      let r;
+      let r = true;
       if (this.preCondition) {
          puts(`test pre: ${this.preCondition}`, LSYS_MATCH);
          this.eval(this.preCondition);
@@ -332,7 +348,7 @@ class Lsystem {
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
       this.needsEnvironment = false;
-      this.locals = new Map(); // from variable assignment statements
+      this.locals = new LsScope(); // Map(); // from variable assignment statements
       this.locals.name = 'locals';
       this.locals._expand_ = expandF(this.locals, 'locals');
       this.globals = Lsystem.globals;
@@ -657,7 +673,7 @@ class Lsystem {
                }
             }         
             ls.show('vars');
-            ls.show('functions');
+            //ls.show('functions');
          } else if (null != ( m = line.match(RE.lsystem))) {
             // this should happen only on the initial lsystem and covers the case
             // of strictly valid lsystems with an 'lsystem: chars' statement
@@ -911,7 +927,7 @@ ${msg}`;
             // rule.postCondition = post;
             puts(`parseProd: condition = ${pre} | ${condition} ${post}`, LSYS_PARSE, LSYS_PARSE_PROD);
          }
-         if (condition) {
+         if (condition || needScope) {
             rule.scope = new LsScope(rule.strictCondition, rule.preCondition, rule.postCondition);
             puts("scope: " + Object.entries(rule.scope), LSYS_PARSE_PROD);
          } 
@@ -1094,15 +1110,17 @@ ${msg}`;
       } else {
          ls.current = string;
       }
-      //ls.current = this.expand([null,null,ls.current, ls.locals]);
+      let genv = new LsScope();
+      genv.init(Lsystem.globals, ls.locals);
       let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
-      let mstring = ls.current;
-      //let mstring = this.expand([null,null,ls.current, ls.locals]);
+      //let mstring = ls.current;
+      let mstring = this.expand(new LsProduction(null,null,ls.current, genv));
       let lsnext;
       let lsLabel = ls.label;
       let rules = ls.rules;
+      let locals = ls.locals;
       let lsStack = [];
       let restrict = ls.restrict;
       // parallelize this later? never if subLsystems are supported
@@ -1131,7 +1149,7 @@ ${msg}`;
                puts(`matching against rule: ${rule}`, LSYS_REWRITE_VERB);
                let scope = rule.scope;
                if (scope) {
-                  scope.init( Lsystem.globals, ls.locals);
+                  scope.init( Lsystem.globals, locals);
                }
                let strictp = rule.strictPredecessor;
                puts(`comparing  ${module} to strictp: ${strictp}`, LSYS_REWRITE_VERB);
@@ -1150,7 +1168,7 @@ ${msg}`;
                   }
                   // See if the condition is valid
                   // this will evaluate preCondition, and, if successful, postCondition
-                  if (scope.test()) {
+                  if (scope == null || scope.test()) {
                      if (bestrule === null) {
                         bestrule = rule;
                         bestruleContextLength = 0;
@@ -1166,7 +1184,7 @@ ${msg}`;
                   } else {
                      puts('failed scope.test_()',LSYS_REWRITE_VERB);
                      if (LogTag.isSet(LSYS_EXPAND)) {
-                        puts("scope bind:");
+                        puts("bound scope:");
                         scope.forEach((v,k) => {puts(`   ${k} == ${v}`);});
                      }
                   }
@@ -1174,14 +1192,11 @@ ${msg}`;
             }
             puts(`bestrule is ${bestrule}`, LSYS_REWRITE);
             if (bestrule) {
-               // todo: evaluate pre-condition expression ??? must go further up the chain
-               // this.formalMatch(bestrule.strictPredecessor(), module, bestscope); // (re)bind formal arguments
                lsnext[n] = this.expand(bestrule);
-               bestscope.upbind(); // pass any changed local or global values up 
-               
-               //doExpand=true;
+               if (bestscope) { 
+                  bestscope.upbind(); // pass any changed local or global values up 
+               }
                puts(`expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
-               // todo: evaluate post-condition expression ???
             }
             //          if (! doExpand) {
             // special case a few module types
@@ -1190,27 +1205,24 @@ ${msg}`;
                let subls = Lsystem.lsystems.get(sublslabel);
                if (subls) {
                   lsStack.push(ls);
-                  //ls = subls;
-                  rules = subls.rules;
                   lsLabel= subls.label;
+                  rules = subls.rules;
+                  locals = subls.locals;
                   restrict = subls.restrict;
-                  // what about lsystem global variables ???
                   puts(`switching to lsystem: ${lsLabel}`, LSYS_REWRITE);
-                  //     continue;
                } else {
                   throw new Error(`lsystem: ${sublslabel} not found in ${module}`); 
                }
             } else if (this.formalMatch(Lsystem.modLsystemEnd, module, null)) {
-               let subls = lsStack.pop()
-               if (! subls) {
+               let upls = lsStack.pop()
+               if (! upls) {
                   throw new Error(`Rewrite: no lsystem found on stack after "$"!`); 
                } else {
-                  //ls = subls;
-                  lsLabel = ls.label;
-                  rules = ls.rules;
-                  restrict = ls.restrict;
+                  lsLabel = upls.label;
+                  rules = upls.rules;
+                  locals = upls.locals
+                  restrict = upls.restrict;
                   puts(`Returning to lsystem: ${lsLabel}`, LSYS_REWRITE);
-                  //   continue;
                }
             }
          }
@@ -1238,7 +1250,7 @@ ${msg}`;
    }
 
    expand(rule) {
-      puts(`expanding rule: ${rule}`);
+      puts(`expanding rule: ${rule}`, LSYS_EXPAND);
       let successor;
       let scope = rule.scope;  // rule[3]; 
       if (scope) {
@@ -1269,12 +1281,15 @@ ${msg}`;
    // nodeA must be a module in the rule with formal parameters
    // nodeB is a module in the axiom/expansion with an actual numeric value which
    // gets bound to the formal parameter from nodeA
+   // TABOP says that parameter length must match exactly, but then allows modules
+   // to have optional parameters - so we check that the number of formal 
+   // parameters is greater than or equal to the number of actual parameters
    formalMatch(nodeA, nodeB, scope=null) {
       puts(`formalMatch ${nodeA} against ${nodeB}`, LSYS_MATCH);
       if (typeof nodeA == typeof nodeB) {
          if (typeof nodeA == 'string') {
             return nodeA == nodeB;
-         } else if ((nodeA.m == nodeB.m) && (nodeA.p.length == nodeB.p.length)) {
+         } else if ((nodeA.m == nodeB.m) && (nodeA.p.length >= nodeB.p.length)) {
             if (scope !== null) {
                for (let fp = 0; fp < nodeB.p.length; fp++) {
                   puts(`scope.bind(${nodeA.p[fp]}, ${nodeB.p[fp]})`, LSYS_MATCH);

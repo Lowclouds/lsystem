@@ -629,7 +629,7 @@ t0.setHeading([0,1,0])`);
                if (isPM) {
                   puts(`insert mesh: ${pmArgs}`, NTRP_TRACKS);
                   turtle.insertMesh(p0,pmArgs[1] ? pmArgs[1] : 1);
-                  idata.gencode(`turtle.insertMesh(${p0},${pmArgs[1] ? pmArgs[1] : 1});`);
+                  idata.gencode(`turtle.insertMesh('${p0}',${pmArgs[1] ? pmArgs[1] : 1});`);
                } else {
                   puts(`insert mesh: needs some arguments, but got none`);
                }
