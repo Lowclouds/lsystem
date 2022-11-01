@@ -1,13 +1,11 @@
-* Splines for paths
-  Maybe rework end path, }, to take parameter specifying 
-  what to do with path, i.e. create path or create contour, 
-  since overlapping paths seems unlikely to be of use
-** Hermite
-<2022-06-11 Sat> open Hermite spline done, including setting radii with spline
-  still need to implement segments/pair of control point - currently #segments
-  applies to entire spline
-** B-spline
-  on back burner
+* Example files
+Create list of current tests to present a choice list
+Organize tests
+* Pre-post condition expressions
+This requires resolution of global/local/parameter variables and
+revision of formalMatch to not pollute local or global variables
+during matching
+done <2022-10-16 Sun>
 * Surfaces/meshes
 Two different TABOP notions, pre-defined by arrays, and L-system generated, 
 in addition to loading pref-defined BABYLON meshes. The first is relatively
@@ -20,30 +18,27 @@ Not sure about cpgf bspline design
 <2022-09-05 Mon> initial handling of mesh instancing done: add/get named mesh, and 
 insertMesh as instance at turtle position. scaling and rotation done - need to work on
 instance specific material. 
-*** Still need to implement surface creation - this works with polygons.
+*** Still need to implement surface creation - this works with polygons, and paths
 *** Need better method for referencing mesh to add
+<2022-10-01 Sat> done 
+  New, breaking, syntax: ~(name, scale), which inserts mesh from Turtle3d.meshes at point 
+  and using turtle orientation, optionally scaling it.
+** Supported Babylonjs types, glb, gltf
+** Export meshes
+<2022-06-20 Mon> gltf export done
 * Splines for paths
   Maybe rework end path, }, to take parameter specifying 
   what to do with path, i.e. create path or create contour, 
   since overlapping paths seems unlikely to be of use
+<2022-10-01 Sat>
+  New syntax: }(type, name), where name is a string or number. The extrusion is
+  added to the Turtle3d.meshes map by name and can be inserted using ~(name,scale)
 ** Hermite
 <2022-06-11 Sat> open Hermite spline done, including setting radii with spline
   still need to implement segments/pair of control point - currently #segments
   applies to entire spline
 ** B-spline
   on back burner
-* Surfaces/meshes
-Two different TABOP notions, pre-defined by arrays, and L-system generated, 
-in addition to loading pref-defined BABYLON meshes. The first is relatively
-easy, the last really appealing from a usability pov
-** Pre-defined Arrays
-** L-system generated
-Extrusions go a long way toward this already, maybe enhance this or look at ribbons.
-Alternatively, directly create meshes from turtle positions
-Not sure about cpgf bspline design
-** Supported Babylonjs types, glb, gltf, ..
-** Export meshes
-<2022-06-20 Mon> gltf export done
 * Homomorphism productions
 Nice to have
 * Decomposition productions
@@ -64,11 +59,6 @@ speed control. Animation, with capture of layers, will need to wait a bit more.
 Attractive from a visualization standpoint, and maybe a cleaner encapsulation
 <2022-08-17 Wed> Initial changes done - move this to animation
 <2022-08-24 Wed> This is done, including UI to toggle between single and multiple turtle drawing.
-* Bugs
-** extrusion orientation of straight paths
- <2022-05-21 Sat> The orientation is fixed, i think, but something is broken with lighting
-<2022-06-11 Sat>  ok, fixed now using added adjustFrame parameter to ExtrudeShapeXXX
-** reference to string parameters in productions is broken
 * UI
 ** <2022-06-20 Mon> show color table and save mesh implemented
 ** To React or not to React????
@@ -77,33 +67,9 @@ Attractive from a visualization standpoint, and maybe a cleaner encapsulation
 ** Supported Babylonjs types, glb, gltf, ..
 ** Export meshes
 <2022-06-20 Mon> gltf export done
-* Homomorphism productions
-Nice to have
-* Decomposition productions
-Back burner
-* Animations
-<2022-06-11 Sat> start working on this
- Step was first part of this, but after implementing multiple turtle drawing, that will be the
- primary focus for animations. That said, the polygon implementation in TABOP where polygons
- ignore branching is not possible using multiple turtles because it depends on left-to-right
- interpretation. Polygons that are contained in single branch are still fine.
- <2022-08-17 Wed> Need to get color/materials set up for multiple turtles
-<2022-08-18 Thu> implement global color table, so MT looks pretty good
-<2022-08-24 Wed> Bailed on animation - step mode is pretty good with multiple turtles and 
-speed control. Animation, with capture of layers, will need to wait a bit more.
-** need layer to step through Lsystem.Rewrite and interp
-** screen capture to 'movie'? what does babylon offer
-* Multiple turtle implementation
-Attractive from a visualization standpoint, and maybe a cleaner encapsulation
-<2022-08-17 Wed> Initial changes done - move this to animation
-<2022-08-24 Wed> This is done, including UI to toggle between single and multiple turtle drawing.
 * Bugs
 ** extrusion orientation of straight paths
  <2022-05-21 Sat> The orientation is fixed, i think, but something is broken with lighting
 <2022-06-11 Sat>  ok, fixed now using added adjustFrame parameter to ExtrudeShapeXXX
- --- and now incorporated into BABYLONJS after about v5.20
 ** reference to string parameters in productions is broken
- <2022-09-05 Mon> done a few weeks ago. quoted strings now retain quotes in parameters
-* UI
-** <2022-06-20 Mon> show color table and save mesh implemented
-** To React or not to React????
+<2022-10-31 Mon> all strings now normalized to "xxx"
