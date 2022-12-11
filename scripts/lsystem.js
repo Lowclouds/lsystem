@@ -79,14 +79,15 @@ RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)
 /* ParameterizedModule class
    {m: <modulename>, p: <parameter array> }
    A module in an L-system is either a bare string of one or more characters, or 
-   a parameterized module, which, carries parameters along with it enclosed in outer
+   a parameterized module, which carries parameters along with it enclosed in
    parentheses. The constructor takes the bare string name of the module and the
    string parameter(s) inside the parentheses. The individual parameters are then
    parsed into an array. Since a parameter can be an arbitrarily complex numeric
    function, containing embedded commas, such as, e.g., (x,atan(y,x)), we need
    to parse the string.
    This accepts modules like A(1), @C(x*rand()), ...
-   Note that parameter expressions are not validated or evaluated here.
+   Note that parameter expressions are not validated or evaluated here, except that
+   matching parentheses
 */ 
 var ParameterizedModule = function(name, parms) {
    this.m = name;
@@ -319,7 +320,6 @@ class Lsystem {
    static lsystems = new Map();
    static modLsystemStart = new  ParameterizedModule('$', 'i,s');
    static modLsystemEnd = '$';
-   static functions = new Map(); // functions also global for all l-systems
    static globals = new Map();
 
    constructor(spec,lbl = '1') {
@@ -348,14 +348,10 @@ class Lsystem {
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
       this.needsEnvironment = false;
-      this.locals = new LsScope(); // Map(); // from variable assignment statements
+      this.locals = new LsScope();
       this.locals.name = 'locals';
       this.locals._expand_ = expandF(this.locals, 'locals');
       this.globals = Lsystem.globals;
-      this.globals._expand_ = expandF(Lsystem.globals, 'globals');
-      // need to rethink globals - s.b. a singleton
-      this.functions = new Map();
-      //this.subLsystems = null;  // only main lsystem, 1, should be a non-null Map
    }
 
    // i read it in a magazine, oh
@@ -477,17 +473,17 @@ class Lsystem {
    }
    // ------------------------------------------------------------
 
-   initParse(isMainLs = true) {
+   initParse(parentLS = null) {
+      if (parentLS) {
+         // inherit locals from parent lsystem
+         this.locals.init(parentLS.locals);
+      }
       this.axiom = [];
       this.rules = [];
       this.homorules = [];
       this.Dlength = 0;
       this.dDone = 0;
       this.stepStart = false;
-      if (! this.isSubLs) {
-         this.globals.clear();
-      }
-      this.locals.clear();
       this.delta = 90;
       this.current=[];
       this.next=[];
@@ -524,7 +520,8 @@ class Lsystem {
       Lsystem.lsystems.set('main', ls0);
       Lsystem.globals.clear();
       let labelSeen = false;    // have we seen the 'lsystem: xxx' label
-
+      
+      ls0.initParse();
       parseHelper(ls0);    // this is the toplevel l-system
 
       if (! ls0.Dlength) {
@@ -584,8 +581,6 @@ class Lsystem {
             puts('nothing to parse');
             return;
          } 
-
-         ls.initParse(isSubLs);
 
          let parseState  = inItems; // initial parse state
          let parseResult;       // {status, nextState}
@@ -663,8 +658,10 @@ class Lsystem {
                      let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or'); //.replaceAll('!', ' not ');
                      if (labelSeen) {
                         math.evaluate(parts[1]+'='+ parts2, ls.locals);
+                        puts(`set local var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
                      } else {
                         math.evaluate(parts[1]+'='+ parts2, ls.globals);
+                        puts(`set global var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
                      }
                      //ls.locals.set(parts[1], parts[2]);
                   }
@@ -822,6 +819,7 @@ class Lsystem {
             } else {
                // create a new lsystem and call parseHelper recursively
                let sls = new Lsystem('', lbl);
+               sls.initParse(ls);
                parseHelper(sls, true);       // this is a subLs
                Lsystem.lsystems.set(lbl, sls); // update sublsystems map
             }
@@ -989,7 +987,7 @@ ${msg}`;
                   re.lastIndex = j;
                   puts(`parms: ${parms}`, LSYS_PARSE_SUCC);
                } else {
-                  let ss = s.substring(m.indices[2][0], s.substring(m.indices[2][1]));
+                  let ss = s.substring(m.indices[2][0], j);
                   throw new Error(`Error: end of input while parsing: ${ss}`);
                   break;
                }
@@ -1519,8 +1517,12 @@ ${msg}`;
       return str.splice(start,i-start);
    }
 } /* end Lsystem */
-Lsystem.globals.name = 'globals';
 
+Lsystem.globals.name = 'globals';
+Lsystem.globals._expand_ = expandF(Lsystem.globals, 'globals');
+
+// return a function that will expand a module in the named scope
+// call it as scope.expand(module)
 function expandF(scope, name) {
    let n = name;
    return function (module) {
