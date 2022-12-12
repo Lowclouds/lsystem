@@ -9,5 +9,5 @@ A(t) : t<=5 ->  #(t*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) : t>=Dlength-5 ->  #((Dlength-t)*STEPW)F(STEPL)&(STEPA)A(t+1)
 A(t) --> F(STEPL)&(STEPA)A(t+1)
 /*A(t) : t > 10 --> * */
-C --> @Ds('leaf')D@De('leaf')@m(0,0,0)
+C --> @Ds(0)D@De('leaf')@m(0,0,0)
 D --> @m(-3,-1,0).@m(-2.7,-0.3,0).@m(-2,0,0).@m(2,0,0).@m(2.7,-0.3,0).@m(3,-1,0).

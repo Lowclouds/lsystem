@@ -590,30 +590,51 @@ t0.setHeading([0,1,0])`);
                break;
             case '@Ds': {
                if (isPM) {
-                  // we're capturing points for a contour, but the contour,
-                  // itself can be a plain path, or a spline of some type
-                  let p1 = pM.p.length > 1 ? pM.p[1] : Turtle3d.PATH_POINTS;
-                  turtle.beginContour(p0, p1);
-                  idata.gencode(`turtle.beginContour('${p0}', ${p1}));\n`);
-                  idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
-                  puts(`beginContour(${p0}, ${p1})`, NTRP_CONTOUR);
+                  // we're capturing points for a contour. can specify
+                  // number of final points, and open, 0, or closed, 1
+                  let p1 = pM.p.length > 1 ? pM.p[1] : 0; // s.b. 0 or 1
+                  if (p0 >= 0 && p0 != 1) {
+                     turtle.beginContour(p0, p1);
+                     idata.gencode(`turtle.beginContour('${p0}', ${p1}));\n`);
+                     idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
+                     puts(`beginContour(${p0}, ${p1})`, NTRP_CONTOUR);
+                  } else {
+                     throw new Error('wrong value of contour numpts: npts >= 0 && != 1');
+                  }
                } else {
-                  throw new Error('@Ds module requires an id/name parameter');
+                  turtle.beginContour();
+                  idata.gencode(`turtle.beginContour();\n`);
+                  idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
+                  puts(`beginContour()`, NTRP_CONTOUR);
                }
                break;
             }
             case '@De': {
                if (isPM) {
-                  let cid = turtle.endContour(p0);
-                  idata.gencode(`turtle.endContour('${p0}');\n`);
-                  puts(`endContour(${cid})`, NTRP_CONTOUR);
+                  let cid;
+                  let p1 = pM.p.length > 1 ? pM.p[1] : null; // 
+                  if (p1 != null && p1 >= 2) {
+                     cid = turtle.endContour(p0, p1);
+                     idata.gencode(`turtle.endContour('${p0}', ${p1});\n`);
+                  } else {
+                     cid = turtle.endContour(p0); // use default number of points = 8
+                     idata.gencode(`turtle.endContour('${p0}');\n`);
+                  }
+                  puts(`endContour(${cid}, ${p1})`, NTRP_CONTOUR);
                   puts(`getTrackShape(${cid}) = ${turtle.getTrackShape(cid)}`, NTRP_CONTOUR)
+                  
                } else {
                   throw new Error('@De end Contour module requires an id parameter');
                }
                idata.ptCaptureMode = Turtle3d.CAPTURE_NONE;
                break;
             }
+            case '@Da':
+               break;
+            case '@Dm':
+               break;
+            case '@Dt':
+               break;
             case '@#': {
                if (isPM) {
                   turtle.setTrackShape(p0);

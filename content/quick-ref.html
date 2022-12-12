@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-09-20 Tue 11:38 -->
+<!-- 2022-12-11 Sun 22:42 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>L-System Modules Quick Guide</title>
@@ -200,23 +200,23 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org8772c60">1. Turtle Motion</a></li>
-<li><a href="#org5378866">2. Turtle Orientation</a></li>
-<li><a href="#org5f52cfe">3. Turtle Settings</a></li>
-<li><a href="#org2f4a377">4. Turtle Geometry</a></li>
-<li><a href="#org67a7a11">5. L-system Geometry and Control</a></li>
-<li><a href="#orgc35252a">6. L-System Syntax</a>
+<li><a href="#org9685dcd">1. Turtle Motion</a></li>
+<li><a href="#org6dd40df">2. Turtle Orientation</a></li>
+<li><a href="#org4bf4b2d">3. Turtle Settings</a></li>
+<li><a href="#org015e463">4. Turtle Geometry</a></li>
+<li><a href="#orga70c986">5. L-system Geometry and Control</a></li>
+<li><a href="#org392519b">6. L-System Syntax</a>
 <ul>
-<li><a href="#org8300447">6.1. Comments</a></li>
-<li><a href="#org4429632">6.2. Defines</a></li>
-<li><a href="#orgb010163">6.3. Settings</a></li>
-<li><a href="#org811b2e0">6.4. Expressions</a></li>
+<li><a href="#org183bb06">6.1. Comments</a></li>
+<li><a href="#orgc541edf">6.2. Defines</a></li>
+<li><a href="#orga0fa728">6.3. Settings</a></li>
+<li><a href="#orgd112c95">6.4. Expressions</a></li>
 </ul>
 </li>
-<li><a href="#orgd08e1b5">7. UI and controls</a>
+<li><a href="#org9c3485b">7. UI and controls</a>
 <ul>
-<li><a href="#orgbd689e5">7.1. Turtle controls</a></li>
-<li><a href="#orge37ff6e">7.2. L-system controls</a></li>
+<li><a href="#orgd0bcc63">7.1. Turtle controls</a></li>
+<li><a href="#org4667476">7.2. L-system controls</a></li>
 </ul>
 </li>
 </ul>
@@ -234,8 +234,8 @@ Modules marked <b>c</b> are <b>changed from TABOP/cpfg</b><br />
 Modules marked <b>n</b> are <b>new for this implementation</b><br />
 </p>
 
-<div id="outline-container-org8772c60" class="outline-2">
-<h2 id="org8772c60"><span class="section-number-2">1.</span> Turtle Motion</h2>
+<div id="outline-container-org9685dcd" class="outline-2">
+<h2 id="org9685dcd"><span class="section-number-2">1.</span> Turtle Motion</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Without a parameter move 'step' amount
@@ -270,21 +270,21 @@ Without a parameter move 'step' amount
 </tr>
 
 <tr>
-<td class="org-left">@M(x,y,z)</td>
-<td class="org-left">goto position, draw or not</td>
+<td class="org-left">@[Mm](x,y,z)</td>
+<td class="org-left">goto position, 'M' draw or 'm' don't draw</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-org5378866" class="outline-2">
-<h2 id="org5378866"><span class="section-number-2">2.</span> Turtle Orientation</h2>
+<div id="outline-container-org6dd40df" class="outline-2">
+<h2 id="org6dd40df"><span class="section-number-2">2.</span> Turtle Orientation</h2>
 <div class="outline-text-2" id="text-2">
 <p class="verse">
 The turtle maintains three unit vectors, heading (<b>H</b>), left (<b>L</b>), and up (<b>U</b>).<br />
-The turtle home position natively is <b>H</b> is +x, <b>L</b> is +z, and <b>U</b> is +y,<br />
-but L-system Explorer pitches up 90 degrees, initially, so <b>H</b> faces up.<br />
+The turtle home orientation is <b>H</b> = +x, <b>L</b> = +z, and <b>U</b> = +y,<br />
+but L-system Explorer pitches up 90 degrees, initially, so <b>H</b> points +y and <b>L</b> points -x.<br />
 <br />
 A positive yaw (left) rotates <b>H</b> towards <b>L</b> around <b>U</b>.<br />
 A positive pitch (down) rotates <b>U</b> towards <b>H</b> around <b>L</b>.<br />
@@ -370,8 +370,8 @@ Without a parameter, a turn is 'delta' degrees; default is 90.<br />
 </div>
 </div>
 
-<div id="outline-container-org5f52cfe" class="outline-2">
-<h2 id="org5f52cfe"><span class="section-number-2">3.</span> Turtle Settings</h2>
+<div id="outline-container-org4bf4b2d" class="outline-2">
+<h2 id="org4bf4b2d"><span class="section-number-2">3.</span> Turtle Settings</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Defaults without a parameter to one
@@ -434,8 +434,8 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org2f4a377" class="outline-2">
-<h2 id="org2f4a377"><span class="section-number-2">4.</span> Turtle Geometry</h2>
+<div id="outline-container-org015e463" class="outline-2">
+<h2 id="org015e463"><span class="section-number-2">4.</span> Turtle Geometry</h2>
 <div class="outline-text-2" id="text-4">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -448,7 +448,7 @@ Defaults without a parameter to one
 <tbody>
 <tr>
 <td class="org-left">@o(d)</td>
-<td class="org-left">circle of diameter d</td>
+<td class="org-left">circle of diameter d, centered at turtle position</td>
 </tr>
 
 <tr>
@@ -467,13 +467,48 @@ Defaults without a parameter to one
 </tr>
 
 <tr>
-<td class="org-left">@Ds(id) <b>n</b></td>
-<td class="org-left">start a contour with tag id</td>
+<td class="org-left">@Ds(n[,t]) <b>n</b></td>
+<td class="org-left">start contour with n final pts. t = 0 =&gt; open(default), 1 = closed</td>
 </tr>
 
 <tr>
 <td class="org-left">@De(id) <b>n</b></td>
-<td class="org-left">end contour id and save it</td>
+<td class="org-left">end contour and save it as id (number or string)</td>
+</tr>
+
+<tr>
+<td class="org-left">@Da(t[,a]) <b>n</b></td>
+<td class="org-left">if t=0, create arc between previous 3 pts</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">if t=1, create arc from previous two points, w/ctr at p0,</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">start at p1, with angle a</td>
+</tr>
+
+<tr>
+<td class="org-left">@Dt(m1,m2) <b>n</b></td>
+<td class="org-left">create Hermite spline from previous two points, with optional</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">length multipliers m1 and m2</td>
+</tr>
+
+<tr>
+<td class="org-left">@Db</td>
+<td class="org-left">Create a cubic Bezier spline segment from prior four points</td>
+</tr>
+
+<tr>
+<td class="org-left">@Dm(m) <b>n</b></td>
+<td class="org-left">create contour of multiplicity m, default 1, only if closed type</td>
 </tr>
 
 <tr>
@@ -517,21 +552,57 @@ Defaults without a parameter to one
 </tr>
 
 <tr>
-<td class="org-left">} <b>p</b></td>
-<td class="org-left">end current path of any type and extrude contour</td>
+<td class="org-left">}[(id)] <b>p</b></td>
+<td class="org-left">end current path of any type and extrude contour, With</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">parameter, id, save path as mesh</td>
+</tr>
+
+<tr>
+<td class="org-left">@Gs</td>
+<td class="org-left">start Hermite spline path, same as '{(1).', i.e. saves point</td>
+</tr>
+
+<tr>
+<td class="org-left">@Ge(n,id) <b>c</b></td>
+<td class="org-left">close path started with @Gs. if n, set # intermediate points.</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">If 'id', save extrusion as mesh</td>
 </tr>
 
 <tr>
 <td class="org-left">.</td>
 <td class="org-left">add current position to path, polygon, or contour</td>
 </tr>
+
+<tr>
+<td class="org-left">@Gt(m1,m2)</td>
+<td class="org-left">Set tangent length multipliers - default is 1.2</td>
+</tr>
+
+<tr>
+<td class="org-left">@Gr(a1,l1,a2,l2)</td>
+<td class="org-left">Set slope and length of tangent vectors for radius curve</td>
+</tr>
+
+<tr>
+<td class="org-left">@Gc(n)       <b>p</b></td>
+<td class="org-left">Store control point. Optionally set number of interpolated strips</td>
+</tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<div id="outline-container-org67a7a11" class="outline-2">
-<h2 id="org67a7a11"><span class="section-number-2">5.</span> L-system Geometry and Control</h2>
+
+<div id="outline-container-orga70c986" class="outline-2">
+<h2 id="orga70c986"><span class="section-number-2">5.</span> L-system Geometry and Control</h2>
 <div class="outline-text-2" id="text-5">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -571,12 +642,12 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-orgc35252a" class="outline-2">
-<h2 id="orgc35252a"><span class="section-number-2">6.</span> L-System Syntax</h2>
+<div id="outline-container-org392519b" class="outline-2">
+<h2 id="org392519b"><span class="section-number-2">6.</span> L-System Syntax</h2>
 <div class="outline-text-2" id="text-6">
 </div>
-<div id="outline-container-org8300447" class="outline-3">
-<h3 id="org8300447"><span class="section-number-3">6.1.</span> Comments</h3>
+<div id="outline-container-org183bb06" class="outline-3">
+<h3 id="org183bb06"><span class="section-number-3">6.1.</span> Comments</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
 C-style comments, '/​* stuff, including newline */​' are supported.<br />
@@ -584,8 +655,8 @@ Single-line '//' style comments are not - they conflict with L-system syntax.
 </p>
 </div>
 </div>
-<div id="outline-container-org4429632" class="outline-3">
-<h3 id="org4429632"><span class="section-number-3">6.2.</span> Defines</h3>
+<div id="outline-container-orgc541edf" class="outline-3">
+<h3 id="orgc541edf"><span class="section-number-3">6.2.</span> Defines</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
    Lines that start with '#define macro value', 'macro' being some word, create
@@ -594,8 +665,8 @@ the L-system before parsing starts.
 </p>
 </div>
 </div>
-<div id="outline-container-orgb010163" class="outline-3">
-<h3 id="orgb010163"><span class="section-number-3">6.3.</span> Settings</h3>
+<div id="outline-container-orga0fa728" class="outline-3">
+<h3 id="orga0fa728"><span class="section-number-3">6.3.</span> Settings</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
    Before the axiom is specified, variables can be set for the L-system. 
@@ -717,8 +788,8 @@ shouldn't conflict with any module parameters.
 </p>
 </div>
 </div>
-<div id="outline-container-org811b2e0" class="outline-3">
-<h3 id="org811b2e0"><span class="section-number-3">6.4.</span> Expressions</h3>
+<div id="outline-container-orgd112c95" class="outline-3">
+<h3 id="orgd112c95"><span class="section-number-3">6.4.</span> Expressions</h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
    Expressions occur in tests, parameters, and pre/post test <b>u</b>. They 
@@ -759,15 +830,15 @@ e.g. (t &gt; 0) and not u
 </div>
 </div>
 </div>
-<div id="outline-container-orgd08e1b5" class="outline-2">
-<h2 id="orgd08e1b5"><span class="section-number-2">7.</span> UI and controls</h2>
+<div id="outline-container-org9c3485b" class="outline-2">
+<h2 id="org9c3485b"><span class="section-number-2">7.</span> UI and controls</h2>
 <div class="outline-text-2" id="text-7">
 <ul class="org-ul">
 <li>subject to constant change -</li>
 </ul>
 </div>
-<div id="outline-container-orgbd689e5" class="outline-3">
-<h3 id="orgbd689e5"><span class="section-number-3">7.1.</span> Turtle controls</h3>
+<div id="outline-container-orgd0bcc63" class="outline-3">
+<h3 id="orgd0bcc63"><span class="section-number-3">7.1.</span> Turtle controls</h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
 At the top are the turtle controls. To the right of the label, "Turtle Controls" is a widget
@@ -788,8 +859,8 @@ is used.
 </ul>
 </div>
 </div>
-<div id="outline-container-orge37ff6e" class="outline-3">
-<h3 id="orge37ff6e"><span class="section-number-3">7.2.</span> L-system controls</h3>
+<div id="outline-container-org4667476" class="outline-3">
+<h3 id="org4667476"><span class="section-number-3">7.2.</span> L-system controls</h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
 Below the Turtle controls are the L-system controls. There is a link to this *Quick Ref*erence.
@@ -838,7 +909,7 @@ is simpler in single turtle mode.</li>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2022-09-20 Tue 11:38</p>
+<p class="date">Created: 2022-12-11 Sun 22:42</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

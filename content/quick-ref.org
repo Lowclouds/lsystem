@@ -14,17 +14,17 @@ Modules marked *n* are *new for this implementation*
 
 * Turtle Motion
    Without a parameter move 'step' amount
-|F(d) | move d units w/pen down, records track point
-|f(d) | move d units w/pen up, records track point
-|G(d) | ==== F(d), but does not record track points
-|g(d) | ==== f(d), w/o recording track points
-|@M(x,y,z) | goto position, draw or not|
+|F(d) | move d units w/pen down, records track point|
+|f(d) | move d units w/pen up, records track point|
+|G(d) | ==== F(d), but does not record track points|
+|g(d) | ==== f(d), w/o recording track points|
+|@[Mm](x,y,z) | goto position, 'M' draw or 'm' don't draw |
 
 * Turtle Orientation
 #+BEGIN_VERSE
   The turtle maintains three unit vectors, heading (*H*), left (*L*), and up (*U*).
-  The turtle home position natively is *H* is +x, *L* is +z, and *U* is +y,
-  but L-system Explorer pitches up 90 degrees, initially, so *H* faces up.
+  The turtle home orientation is *H* = +x, *L* = +z, and *U* = +y,
+  but L-system Explorer pitches up 90 degrees, initially, so *H* points +y and *L* points -x.
 
   A positive yaw (left) rotates *H* towards *L* around *U*.
   A positive pitch (down) rotates *U* towards *H* around *L*.
@@ -59,22 +59,37 @@ Modules marked *n* are *new for this implementation*
 | @Di(f) *u* | multiply scale factor by f                     |
 
 * Turtle Geometry
-| @o(d)    | circle of diameter d                              |
-| @C(d) *u* | circle of diameter d in HL plane                  |
-| @O(d)    | sphere of diameter d                              |
-| ~(S,s) *c* | insert predefined surface S, with optional scale, s |
-| @Ds(id) *n* | start a contour with tag id                       |
-| @De(id) *n* | end contour id and save it                        |
-| @#(id)   | set contour(id) as current track shape            |
-| {      | start polygon                                     |
-| }(n,S)   | end polygon of type n (possibly empty), optional save as mesh S |
-| {(0)  *c*  | start path with stepwise control pts, not polygon |
-| {(1)     | start open path with Hermite spline control pts   |
-| {(2) *u* | start closed path with Hermite spline control pts |
-| {(3) *u* | start open path with B-spline control pts         |
-| {(4) *u* | start closed path with B-spline control pts       |
-| } *p*    | end current path of any type and extrude contour   |
-| .        | add current position to path, polygon, or contour |
+| @o(d)            | circle of diameter d, centered at turtle position                 |
+| @C(d) *u*        | circle of diameter d in HL plane                                  |
+| @O(d)            | sphere of diameter d                                              |
+| ~(S,s) *c*       | insert predefined surface S, with optional scale, s               |
+| @Ds(n[,t]) *n*   | start contour with n final pts. t = 0 => open(default), 1 = closed  |
+| @De(id) *n*      | end contour and save it as id (number or string)                  |
+| @Da(t[,a]) *n*   | if t=0, create arc between previous 3 pts                         |
+|                  | if t=1, create arc from previous two points, w/ctr at p0,         |
+|                  | start at p1, with angle a                                         |
+| @Dt(m1,m2) *n*   | create Hermite spline from previous two points, with optional |
+|                  | length multipliers m1 and m2                                            |
+| @Db              | Create a cubic Bezier spline segment from prior four points       |
+| @Dm(m) *n*       | create contour of multiplicity m, default 1, only if closed type  |
+| @#(id)           | set contour(id) as current track shape                            |
+| {                | start polygon                                                     |
+| }(n,S)           | end polygon of type n (possibly empty), optional save as mesh S   |
+| {(0)  *c*        | start path with stepwise control pts, not polygon                 |
+| {(1)             | start open path with Hermite spline control pts                   |
+| {(2) *u*         | start closed path with Hermite spline control pts                 |
+| {(3) *u*         | start open path with B-spline control pts                         |
+| {(4) *u*         | start closed path with B-spline control pts                       |
+| }[(id)] *p*      | end current path of any type and extrude contour, With            |
+|                  | parameter, id, save path as mesh                                  |
+| @Gs              | start Hermite spline path, same as '{(1).', i.e. saves point      |
+| @Ge(n,id) *c*    | close path started with @Gs. if n, set # intermediate points.     |
+|                  | If 'id', save extrusion as mesh                                   |
+| .                | add current position to path, polygon, or contour                 |
+| @Gt(m1,m2)       | Set tangent length multipliers - default is 1.2                   |
+| @Gr(a1,l1,a2,l2) | Set slope and length of tangent vectors for radius curve          |
+| @Gc(n)       *p* | Store control point. Optionally set number of interpolated strips |
+
 
 * L-system Geometry and Control
 | [               | start branch, pushing state onto stack    |
