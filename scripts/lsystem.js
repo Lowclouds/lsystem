@@ -34,7 +34,7 @@
 const RE = {};
 
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%\~]|@D[eimos]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|@H|\\?[PHLU]?";
+var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%\~]|@D[aeimfst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|@H|\\?[PHLU]?";
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 /* test for module RE string
@@ -154,15 +154,24 @@ class LsScope extends Map {
       this.name = 'rules'
       this.expand = expandF(this, 'rules');
    }
+
    // order of the maps determines scoping of the variables
-   // later maps will shadow earlier maps
+   // earlier maps will shadow earlier maps
    init(...maps) {
       this.clear();
       maps.forEach((vmap) => {
-         vmap.forEach((v,k) => {
+         this.dynamicBind(vmap);
+      });
+   }
+   // dynamic binding part 1
+   // set variables from enclosing scope and
+   // keep track of where they came from
+   dynamicBind(enclosingScope) {
+      enclosingScope.forEach((v,k) => {
+         if (! this.has(k)) {
             this.set(k,v);
-            this.scopeMap.set(k,vmap);
-         });
+            this.scopeMap.set(k,enclosingScope);
+         }
       });
    }
 
@@ -201,6 +210,7 @@ class LsScope extends Map {
       return math.evaluate(expr, this); // really just need this for side-effect
    }
 
+   // dynamic binding  part 2
    // reset any variables in containing scopes
    // for rule scope, map is set to null in bind
    upbind () {
@@ -1109,7 +1119,7 @@ ${msg}`;
          ls.current = string;
       }
       let genv = new LsScope();
-      genv.init(Lsystem.globals, ls.locals);
+      genv.init(ls.locals, Lsystem.globals);
       let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
@@ -1147,7 +1157,7 @@ ${msg}`;
                puts(`matching against rule: ${rule}`, LSYS_REWRITE_VERB);
                let scope = rule.scope;
                if (scope) {
-                  scope.init( Lsystem.globals, locals);
+                  scope.init( locals, Lsystem.globals);
                }
                let strictp = rule.strictPredecessor;
                puts(`comparing  ${module} to strictp: ${strictp}`, LSYS_REWRITE_VERB);
@@ -1192,7 +1202,8 @@ ${msg}`;
             if (bestrule) {
                lsnext[n] = this.expand(bestrule);
                if (bestscope) { 
-                  bestscope.upbind(); // pass any changed local or global values up 
+                  // pass any changed local or global values up from rule scope
+                  bestscope.upbind(); 
                }
                puts(`expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
             }
@@ -1205,6 +1216,7 @@ ${msg}`;
                   lsStack.push(ls);
                   lsLabel= subls.label;
                   rules = subls.rules;
+                  subls.locals.dynamicBind(locals); // dynamic parent ls local bindings
                   locals = subls.locals;
                   restrict = subls.restrict;
                   puts(`switching to lsystem: ${lsLabel}`, LSYS_REWRITE);
@@ -1218,6 +1230,7 @@ ${msg}`;
                } else {
                   lsLabel = upls.label;
                   rules = upls.rules;
+                  upls.locals.upbind(); // pass values up to parent scope
                   locals = upls.locals
                   restrict = upls.restrict;
                   puts(`Returning to lsystem: ${lsLabel}`, LSYS_REWRITE);
@@ -1602,20 +1615,6 @@ function listtostr(l) {
 
 
 
-var LSScope = function(map) {
-   let s = {}
-   if ( map) {
-      map.forEach((v,k) => s[k] = v)
-   }
-   return s;
-}
-
-function initScope(s, ...maps) {
-   s.clear();
-   maps.forEach((vmap) => {
-      vmap.forEach((v,k) => s.set(k,v)); // map as map
-   });
-}
 
 function substitute(defs, expr ) {
    let didSub, nexpr;

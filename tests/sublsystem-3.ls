@@ -13,29 +13,35 @@
 #define BSCALE 0.5
 #define CS 3
 #define CSCALE 0.75
+cstep=2
+step=0
 ignore: $
 lsystem: 1
 derivation length: 7
-axiom: ABC
+step=1
+axiom: ABCD
 A < B -> $(2,BSCALE)B$
 B < C --> $(3,CSCALE)C$
-A > M --> FF
+A > M --> F(step)
+D < D --> +;(cstep^cstep^cstep)F(step)
 endlsystem
 
 lsystem: 2
+step=2
 axiom: B
 B -> E(CS)U(CS)
 U(n) : n > 0 -> WU(n-1)W
 U(n) : n == 0 -> *
 E(n) : n>0 --> E(n-1)
-E(n) : n < 1 --> M
+E(n) : n < 1 --> M;(cstep*step)F(step)
 M -> *
 endlsystem
 
 lsystem: 3
+step=3
 derivation length: 3
 axiom: C
 C -> DE(4)
 D > E(n)-> DD
 E(n) : n>0 --> E(n-1)
-E(n) : n < 1 --> *
+E(n) : n < 1 --> ;(cstep*step)F(step)
