@@ -1,5 +1,5 @@
 view = {position: [5.5, 4, -5], target: [1, 1, 2]};
-n=4
+n=5
 stemsize=0.4
 axiom: P(5)
 P(n) --> @m(n % 5 ,0,n < 5? 0 : 2)@R(0,1,0,-1,0,0) T(n) P(n+1)

@@ -41,6 +41,8 @@ class Turtle3d {
       return t;
    };
 
+   #defaultSphere = `__sphere_1_32_1`;
+
    constructor (scene=null, opts = {noturtle: false, shape: null, globalPolygons: false}) {
       this.Turtle = `${Turtle3d.basename}${Turtle3d.counter++}`;
       this.turtleShape =  null,
@@ -79,6 +81,7 @@ class Turtle3d {
       this.polygonVerts = null,   // array of vertices on edge of polygon, in order
       this.useGlobalPolygons = globalPolygons;
       this.scene = null;
+
 
       this.initDone = initAll.call(this, scene, noturtle, shape);
 
@@ -1128,27 +1131,38 @@ class Turtle3d {
       return this;
    }
 
-   drawSphere(d=1, arc=1, qual=32, slice=1, scaling=1) {
-      let mesh, opts = {};
-      let mname = `__sphere_${arc}_${qual}_${slice}`;
-      if (! Turtle3d.getMesh(mname)) {
-         opts.diameter = 1;
-         opts.segments = qual;
-         opts.arc = arc;
-         opts.slice = slice;
-         opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
-         opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
-         opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
-         // opts.updatable = true;
+   #makeSphere(mname, opts={}) {
+      opts.diameter = opts?.diameter ?? 1;
+      opts.segments = opts?.segments ?? 32;
+      opts.arc = opts?.arc ?? 1;
+      opts.slice = opts?.slice ?? 1;
+      opts.sideOrientation = opts?.sideOrientation ?? BABYLON.Mesh.DOUBLESIDE;
+      opts.frontUVs = opts?.frontUVs ?? new BABYLON.Vector4(0.5,0,1,1);
+      opts.backUVs = opts?.backUVs ?? new BABYLON.Vector4(0,0,0.5,1);
+      // opts.updatable = true;
+      let mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
+      Turtle3d.addMesh(mname, mesh);
 
-         mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
-         Turtle3d.addMesh(mname, mesh);
+      return mesh;
+   }
+
+   drawSphere(d=1, arc=1, qual=32, slice=1, scaling=1) {
+      let opts = {};
+      opts.diameter = d;
+      opts.segments = qual;
+      opts.arc = arc;
+      opts.slice = slice;
+      let mname = `__sphere_${opts.arc}_${opts.segments}_${opts.slice}`;
+      let mesh = Turtle3d.getMesh(mname); 
+      if (! mesh) {
+         mesh = this.makeSphere(mname, opts);
       }
       if (typeof scaling === 'number') {
          scaling *= d;
       } else {                  // assume vector3
          scaling.scaleInPlace(d);
       }
+
       this.insertMesh(mname, scaling);
       //this.meshCommonSetup(mesh, {scaling: scaling, setmaterial: true, pos: this.TurtleState.P, rotate: true});
       return this;
@@ -1439,7 +1453,28 @@ class Turtle3d {
       }
       return this;
    }
-   
+
+   plotPoints(ptset, opts = {meshID: null, line: false, ptsize: 0.1, color: 'black', }) {
+      let mesh = Turtle3d.getMesh(opts.meshID);
+      let mname;
+      if ( mesh) {
+         mname = opts.meshID;
+      } else {
+         mname = this.#defaultSphere;
+         this.#makeSphere(mname);
+      }
+      let oldState = this.getState();
+      
+      this.setColor(opts.color);
+      this.penUp();
+      ptset.forEach((pt) => {
+         this.goto(pt);
+         this.insertMesh(mname, opts.ptsize);
+      });
+
+      this.setState(oldState);
+   }
+
    // insert instance of named mesh at provided scale
    insertMesh(name, scale=1) {
       let mobj = Turtle3d.getMesh(name);
@@ -1568,7 +1603,7 @@ class Contour {
       this.id = null;
       this.closed = isclosed;
       this.#multiplicity = opts?.multiplicity ?? 1;
-      this.#numPts = (npts < 0 || npts == 1) ? 8 : npts;
+      this.#numPts = (npts < 1) ? 8 : npts;
       this.ptsPerSegment = 80; 
       this.multipliers = [1.2, 1.2];
       this.cpts = [];           // control points
@@ -1621,15 +1656,17 @@ class Contour {
       case Turtle3d.CONTOUR_ARC_CENTER: // arc center-radius-angle
          let angle = opts?.angle ?? 90; // default arc angle
          i=this.cpts.length-1;
-         p0 = this.cpts[i-1].pos; // first point on arc
-         p1 = this.cpts[i].pos.clone(); // center of arc
-         let rv = p0 - p1;              // radius vector 
-         let arcaxis = this.cpts[i].hdg.cross(rv); // perp axis for rotation
-
+         p0 = this.cpts[i-1].pos.clone(); // center of arc
+         p1 = this.cpts[i].pos.clone(); // first point on arc
+         let rv = p1.subtract(p0);      // radius vector 
+         let arcaxis = newV(0,0,-1);  // BABYLON.Axis.Z; //hdg.cross(rv); // perp axis for rotation
          let rotQuat = BABYLON.Quaternion.RotationAxis(arcaxis, degtorad*angle/this.ptsPerSegment);
-         this.cpts.pop();                          // remove arc center
-         for (let p = 1; p < this.ptsPerSegment; p++) {
-            this.cpts.push(p0.clone().rotateByQuaternionAroundPointToRef(rotQuat, p1, newV(0,0,0)));
+         this.cpts.splice(i-1,1); // remove arc center, add at end
+         rv = p1;
+         for (let p = 1; p < this.ptsPerSegment; p++, i++) {
+            rv.rotateByQuaternionAroundPointToRef(rotQuat, p0, rv);
+            let ncp = {pos: rv.clone()};
+            this.cpts.push(ncp);
          }
          break;
       case Turtle3d.CONTOUR_HERMITE:                   // hermite spline
@@ -1679,24 +1716,24 @@ class Contour {
       this.cpts.forEach(p => pts.push(p.pos));
 
       if (this.closed) {
-         let p0 = this.pts[0];
-         let pn = this.pts[this.pts.length-1];
+         let p0 = pts[0];
+         let pn = pts[pts.length-1];
          if (this.#multiplicity > 1) {
             let chordP = BABYLON.Vector3.Distance(p0, pn); // distance between endpoints
             let chordU = sind(180/this.#multiplicity); // chord on half-unit circle
             let scale = chordU/chordP;
-            let tpts = this.#contract(p0, this.pts, scale);
+            let tpts = this.#contract(p0, pts, scale);
             tpts = this.#rotateToHome(tpts);
             tpts = this.#doMultiplicty(tpts, this.#multiplicity);
             let d = BABYLON.Vector3.Distance(tpts[0], tpts[tpts.length-1]);
-            if (BABYLON.Vector3.Distance(d) > Number.Epsilon) {
+            if (d > Number.Epsilon) {
                console.warn('Multiplicity endpoints are too far apart, patching up');
                tpts[tpts.length - 1] = tpts[0];
             }
          } else {
             // if numPts == 0 and closed is true and the pts don't close, oh well.
             if( this.#numPts != 0 && 
-                this.cpts.length > 2 && 
+                pts.length > 2 && 
                 (p0.x != pn.x || p0.y != pn.y || p0.z != pn.z)) {
                pts.push[p0];
             }
@@ -2420,3 +2457,4 @@ function supershapeContour(ssf, q=36, alpha=2*Math.PI) {
    }
    return pts;
 }
+

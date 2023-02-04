@@ -7,7 +7,7 @@ pitch = 12.5
 derivation length: 9
 ignore: &^
 axiom: CA(9)
-C --> @m(0.25,0,0)@Ds('a').^f(1)^f(0.5)^f(1)^f(0.5)@De('a')@#('a')
+C --> @m(0.25,0,0)@Ds.^f(1)^f(0.5)^f(1)^f(0.5)@De('a')@#('a')
 A(n) : n > 0 --> F&(pitch)A(n-1)
 R(n) : n > 0 --> F&(pitch)R(n-1)
 L(n) : n > 0 --> F&(pitch)L(n-1)

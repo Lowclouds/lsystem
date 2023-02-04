@@ -10,6 +10,7 @@ view = {auto: '-Z'};
 #define BSCALE 1
 
 lsystem: 1
+
 cstep = CSTEP
 hgt = HGT
 stemsize= 0.01
@@ -17,7 +18,7 @@ ignore:
 derivation length: 19
 
 axiom: C
-C --> &(90)g&(90)@Ds(0)D@De(1)
+C --> &(90)g&(90)@DsD@De(1)
 D --> A(2*QSTEPS-1)
 A(n) : n > 0 --> .&(CANGLE)G(cstep)A(n-1)
 A(n) < @De(s) : n == 0 --> @De(s)$(2,BSCALE)B$
@@ -45,3 +46,5 @@ U(d,a) : d>0 ->
 U(d,a) : d<=0 -> *
 L(d,a) : d>0 ->
 L(d,a) : d<=0 -> *
+
+endlsystem

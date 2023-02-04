@@ -593,13 +593,13 @@ t0.setHeading([0,1,0])`);
                   // we're capturing points for a contour. can specify
                   // number of final points, and open, 0, or closed, 1
                   let p1 = pM.p.length > 1 ? pM.p[1] : 0; // s.b. 0 or 1
-                  if (p0 >= 0 && p0 != 1) {
+                  if (p0 > 1) {
                      turtle.beginContour(p0, p1);
                      idata.gencode(`turtle.beginContour('${p0}', ${p1}));\n`);
                      idata.ptCaptureMode = Turtle3d.CAPTURE_CONTOUR;
                      puts(`beginContour(${p0}, ${p1})`, NTRP_CONTOUR);
                   } else {
-                     throw new Error('wrong value of contour numpts: npts >= 0 && != 1');
+                     throw new Error('wrong value of contour numpts: npts > 1');
                   }
                } else {
                   turtle.beginContour();
@@ -613,6 +613,7 @@ t0.setHeading([0,1,0])`);
                if (isPM) {
                   let cid;
                   let p1 = pM.p.length > 1 ? pM.p[1] : null; // 
+                  puts(`endContour(${cid}, ${p1})`, NTRP_CONTOUR);
                   if (p1 != null && p1 >= 2) {
                      cid = turtle.endContour(p0, p1);
                      idata.gencode(`turtle.endContour('${p0}', ${p1});\n`);
@@ -630,10 +631,43 @@ t0.setHeading([0,1,0])`);
                break;
             }
             case '@Da':
+               if (isPM) {
+                  switch (p0) {
+                  case 0:       // arc through 3 last pts
+                     turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_3PT);
+                     idata.gencode(`turtle.generateContourSegment(${Turtle3d.CONTOUR_ARC_3PT});`);
+                     break;
+                  case 1: // arc center at pt1, start at pt2, radius-angle = p1
+                     let opts = pM.p.length > 1 ? {angle: pM.p[1]} : null;
+                     turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_CENTER, opts);
+                     idata.gencode(`turtle.generateContourSegment(${Turtle3d.CONTOUR_ARC_CENTER}, opts);`);
+                     break;
+                  default:
+                     throw new Error('@Da: unsupported arc type: ' + p0);
+                  }
+               } else {
+                  throw new Error('@Da arc requires 1 or 2 args, p0=0 => arc btw 3 pts ');
+               }
                break;
             case '@Dm':
+               if (isPM && p0 >= 1) {
+                  turtle.setContourMultiplicity(p0);
+                  idata.gencode(`turtle.setContourMultiplicity(${p0};\n`);
+               } else {
+                  throw new Error('@Dm(n) requires a parameter n >= 1 specifying multiplicity');
+               }
                break;
             case '@Dt':
+               if (isPM) {
+                  if (pM.p.length == 2) {
+                     turtle.setContourSegmentMultipliers(p0,pM.p[1]);                     
+                     idata.gencode(`turtle.setContourSegmentMultipliers(${p0},${pM.p[1]});\n`);
+                  } else {
+                     throw new Error('@Dt hermite spline segment takes 0 or 2 arguments');  
+                  }
+               }
+               turtle.generateContourSegment(Turtle3d.CONTOUR_HERMITE);
+               idata.gencode(`turtle.generateContourSegment(${Turtle3d.CONTOUR_HERMITE});`);
                break;
             case '@#': {
                if (isPM) {
