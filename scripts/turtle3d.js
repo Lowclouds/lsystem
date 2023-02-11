@@ -398,7 +398,7 @@ class Turtle3d {
       }
    }
 
-   // some internal setter functions that I'd like to hide
+   // some private setters
    #setPos (val) {
       try {
          if (betterTypeOf(val) == 'array'){
@@ -479,12 +479,11 @@ class Turtle3d {
     */
    addTrackShape(id, val,as_vectors=false) {
       if (val.length >= 2) {
-         let pts;
+         let pts = [];
          if (as_vectors) {
-            pts = val;
+            val.forEach((v) => pts.push(v.clone()));
          } else {
-            pts = [];
-            val.forEach((e) => {pts.push(newV(e[0],e[1]));});
+            val.forEach((e) => {pts.push(newV(e[0],e[1],e[2]));});
          }
          Turtle3d.trackContours.set(id, pts);
       } else {
@@ -654,7 +653,7 @@ class Turtle3d {
       let oldP = this.TurtleState.P.clone();
       this.#setPos(pos);
       //console.log(`oldP=${oldP}, newP=${this.TurtleState.P}`);
-      this.draw(oldP, pos);
+      this.draw(oldP, pos.clone());
       return this;
    }
    
@@ -1134,11 +1133,11 @@ class Turtle3d {
    #makeSphere(mname, opts={}) {
       opts.diameter = opts?.diameter ?? 1;
       opts.segments = opts?.segments ?? 32;
-      opts.arc = opts?.arc ?? 1;
-      opts.slice = opts?.slice ?? 1;
-      opts.sideOrientation = opts?.sideOrientation ?? BABYLON.Mesh.DOUBLESIDE;
+      opts.arc      = opts?.arc ?? 1;
+      opts.slice    = opts?.slice ?? 1;
       opts.frontUVs = opts?.frontUVs ?? new BABYLON.Vector4(0.5,0,1,1);
-      opts.backUVs = opts?.backUVs ?? new BABYLON.Vector4(0,0,0.5,1);
+      opts.backUVs  = opts?.backUVs ?? new BABYLON.Vector4(0,0,0.5,1);
+      opts.sideOrientation = opts?.sideOrientation ?? BABYLON.Mesh.DOUBLESIDE;
       // opts.updatable = true;
       let mesh = BABYLON.MeshBuilder.CreateSphere("sphere", opts, this.Scene );
       Turtle3d.addMesh(mname, mesh);
@@ -1454,7 +1453,11 @@ class Turtle3d {
       return this;
    }
 
-   plotPoints(ptset, opts = {meshID: null, line: false, ptsize: 0.1, color: 'black', }) {
+   plotPoints(ptset, opts = {}) {
+      opts.meshID = opts?.meshID ?? null;
+      opts.line   = opts?.line ?? false;
+      opts.ptsize = opts?.ptsize ?? 0.1;
+      opts.color  = opts?.color ?? 'black';
       let mesh = Turtle3d.getMesh(opts.meshID);
       let mname;
       if ( mesh) {
@@ -1468,7 +1471,7 @@ class Turtle3d {
       this.setColor(opts.color);
       this.penUp();
       ptset.forEach((pt) => {
-         this.goto(pt);
+         this.goto(pt); // should not have to clone this
          this.insertMesh(mname, opts.ptsize);
       });
 
@@ -1719,17 +1722,7 @@ class Contour {
          let p0 = pts[0];
          let pn = pts[pts.length-1];
          if (this.#multiplicity > 1) {
-            let chordP = BABYLON.Vector3.Distance(p0, pn); // distance between endpoints
-            let chordU = sind(180/this.#multiplicity); // chord on half-unit circle
-            let scale = chordU/chordP;
-            let tpts = this.#contract(p0, pts, scale);
-            tpts = this.#rotateToHome(tpts);
-            tpts = this.#doMultiplicty(tpts, this.#multiplicity);
-            let d = BABYLON.Vector3.Distance(tpts[0], tpts[tpts.length-1]);
-            if (d > Number.Epsilon) {
-               console.warn('Multiplicity endpoints are too far apart, patching up');
-               tpts[tpts.length - 1] = tpts[0];
-            }
+            pts = this.#doMultiplicty(pts, this.#multiplicity);
          } else {
             // if numPts == 0 and closed is true and the pts don't close, oh well.
             if( this.#numPts != 0 && 
@@ -1760,78 +1753,119 @@ class Contour {
       return cclone;
    }
  
-  // contract (or explode) contour around origin so that endpoints are slen apart
-   #contract(origin, pts, scale) {
-      let cpts = [];
-      // let scale = slen/BABYLON.Vector3.Distance(pts[0], pts[pts.length-1]);
-      // puts(`contraction scale: ${scale}`);
-      for (let p = 0; p < pts.length; p++) {
-         cpts.push(pts[p].subtract(origin).scale(scale));
-      }
-      puts(`scale: ${scale}, dist P0,Pn: ${BABYLON.Vector3.Distance(cpts[0], cpts[cpts.length-1])}`);
-      return cpts;
+   // get side length of ngon inscribed in circle of radius r
+   #ngonSideLength(n, r) {
+      n = Math.floor(n);
+      if (n < 2) {return 0;}
+      if (n == 2) {return 2*r;}
+      
+      let extangle = 360/n;
+      let intangle = 180-extangle;
+      let alpha = intangle/2;
+      let beta = 180-2*alpha;
+
+      return r*sind(beta)/sind(alpha);
    }
 
-   // assume pts[0] is at origin and contour is mostly in xy plane.
-   // rotate contour around z-axis so endpoints are on x-axis (or p.y = 0)
-   #rotateToHome(pts) {
+   /*
+     Contract the contour about the midpoint of the segment through its endpoints
+     so that final distance between them is the length a side of an inscribed m-gon 
+     c is the set of points in the contour
+     m is the multiplicity
+     r is the radius of the inscribed circle
+     return the array of munged points
+   */
+   #contractContourForMultiplicity(c, m, r=0.5) {
       let rpts = [];
-      let p0 = pts[0];
-      let pn = pts[pts.length - 1];
-      let radius = BABYLON.Vector3.Distance(p0,pn);
-      if (radius < Number.EPSILON) {
+      let p0, pn, d0, B0, MP0,sidelen, scale, Tv;
+      let n = c.length - 1;
+      let idx=0, inc = 1;
+      if (c[0].x > c[n].x) {
+         p0 = c[0];
+         pn = c[n];
+      } else {
+         p0 = c[n];
+         pn = c[0]; 
+         idx = n;                  // to reverse the pt order if needed;
+         inc = -1;
+      }
+      B0 = pn.subtract(p0);
+      d0  = B0.length();
+      if (d0  <  0.01 /*Number.EPSILON*/) {
          console.warn('End points of contour are too close together!');
          return null;
       }
-      let rotangle = 0;
-      let rotQuat;
-      let pny = pn.y;
-      rpts.push(p0);
-      if (pny != 0) {
-         // this will rotate the contour so both endpoints have y = 0
-         rotangle = -1 * Math.asin(pny/radius);
-         rotQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, rotangle);
+      MP0 = p0.add(pn.subtract(p0).scale(0.5));
+
+      sidelen = ngonSideLength(m,r);
+      scale = sidelen/d0;
+
+
+      for (let i = 0; i <= n; i++, idx += inc ) {
+         // puts(`counter i: ${i}, index: ${idx}`);
+         rpts.push(MP0.add(c[idx].subtract(MP0).scale(scale)));
       }
-      // rotate contour, if necessary
-      for (let p = 1; p< pts.length; p++) {
-         if (pny != 0) {
-            rpts.push(pts[p].rotateByQuaternionAroundPointToRef(rotQuat, p0, newV(0,0,0)));
-         } else {
-            rpts.push(pts[p].clone());
-         }
+
+      //Tv = newV(sidelen/2, 0, 0).subtract(rpts[0]);  // where we want p0 to end up;
+      Tv = newV(r, 0, 0).subtract(rpts[0]);  // where we want p0 to end up;
+      rpts.forEach((p) => {p.addInPlace(Tv);});
+
+      return rpts;
+   }
+
+   // at the end of contractContourFor Multiplictity, the contour s.b.
+   // the right length with it's first point at (r,0,z)
+   // this simply rotates it so it's in the correct position
+   #doFirstSide(pts, m, r=0.5) {
+      let rpts = contractContourForMultiplicity(pts, m, r);
+      let n = rpts.length-1;
+      let y = rpts[n].y;
+      let x = rpts[n].x - rpts[0].x;
+      if (y == 0 && x == 0) {
+         throw new Error('Contour must not be closed!');
+      }
+      let theta = 180 - atan2d(y,x);     // angle of original contour
+      let extangle = 360/m;
+      let intangle = 180-extangle;
+      let alpha = 90-180/m;        // (180 - 360/n)/2; 
+      
+      let rotationAngle = (theta - alpha);
+      puts(`theta: ${theta}, alpha: ${alpha}, rotationAngle: ${rotationAngle}`);
+      rotationAngle *= degtorad;
+      let rotQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, rotationAngle);
+      for (let p = 1; p <= n; p++) {
+         rpts[p].rotateByQuaternionAroundPointToRef(rotQuat, rpts[0], rpts[p]);
       }
       return rpts;
    }
 
-   // given output of rotateToHome, rotate and displace pts m times around
-   // circle of radius 0.5
-   #doMultiplicty(pts, m) {
+   /*
+     The first side is in place at the end of doFirstSide. 
+     This function copies that and then translates and rotates that first side
+     m-1 times to construct the other sides.
+   */ 
+   #doMultiplicty(pts, m, r=0.5) {
       if (m < 2 || m > 32) {return null;}
+      let fpts = doFirstSide(pts,m, r);
+      let n = fpts.length;
       let opts = [];
-      let beta = 180/m;
-      let gamma = 90+beta;
-      let theta = 2*beta;
-      let rotateQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z,gamma*degtorad);
-      let p0 = pts[0];
-      let pn = pts[pts.length-1];
-      let sidelen = BABYLON.Vector3.Distance(p0,pn);
-      // first side
-      let offset = newV(0.5,0,0);
-      opts.push(p0.addInPlace(offset).clone());
-      for (let p = 1; p < pts.length; p++) {
-         pts[p].addInPlace(offset).rotateByQuaternionAroundPointToRef(rotateQuat, opts[0], pts[p]);
-         opts.push(pts[p].clone());
-      }
-      // 
-      rotateQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, theta*degtorad);
+      fpts.forEach((p) => {opts.push(p.clone());});
+      let extAngle = 360/m;
+      let rotateQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z,extAngle*degtorad);
+
       for (let i = 1; i < m; i++) {
-         p0 = pts[0];
-         pn = pts[pts.length-1].clone();
-         offset = pn.subtract(p0);
-         pts[0].addInPlace(offset);
-         for (let p = 1; p < pts.length; p++) {
-            pts[p].addInPlace(offset).rotateByQuaternionAroundPointToRef(rotateQuat, pn, pts[p]);
-            opts.push(pts[p].clone())
+         let p0 = fpts[n-1].clone();       // center of rotation for this side
+         let tvec = p0.subtract(fpts[0]);
+         // for each remaining side, translate and rotate fpts
+         fpts.forEach((p) => {
+            p.addInPlace(tvec).rotateByQuaternionAroundPointToRef(rotateQuat, p0,p);
+            //p.rotateByQuaternionAroundPointToRef(rotateQuat, p0,p);
+         });
+         // copy points to output
+         for (let j = 1; j < n; j++) { 
+            if ( j < n-1 || i < m - 1) {
+               opts.push(fpts[j].clone());
+            }
          }
       }
       return opts;
@@ -2355,78 +2389,136 @@ function  getbi (meshes) {
    return new BABYLON.BoundingInfo(min, max);
 }
 
+
+
 // contract (or explode) contour around origin so that endpoints are slen apart
 function contract(origin, pts, slen) {
    let cpts = [];
    let scale = slen/BABYLON.Vector3.Distance(pts[0], pts[pts.length-1]);
    puts(`contraction scale: ${scale}`);
-   for (let p = 0; p < pts.length; p++) {
-      cpts.push(pts[p].subtract(origin).scale(scale));
+   //for (let p = 0; p < pts.length; p++) {
+   pts.forEach((pt,p) => {
+      cpts.push(pt.subtract(origin).scale(scale).add(origin));
+      puts(`pt(${pt.x}, ${pt.y}) --> ${cpts[p].x}, ${cpts[p].x})`);
    }
+   );
 //   puts(`scale: ${scale}, dist P0,Pn: ${BABYLON.Vector3.Distance(cpts[0], cpts[cpts.length-1]}`);
    return cpts;
 }
 
-// assume pts[0] is at origin and contour is mostly in xy plane.
-// 
-function rotateToHome(pts) {
+// get side length of ngon inscribed in circle of radius r
+function ngonSideLength(n, r) {
+   n = Math.floor(n);
+   if (n < 2) {return 0;}
+   if (n == 2) {return 2*r;}
+   
+   let extangle = 360/n;
+   let intangle = 180-extangle;
+   let alpha = intangle/2;
+   let beta = 180-2*alpha;
+
+   return r*sind(beta)/sind(alpha);
+}
+
+/*
+  Contract the contour about the midpoint of the segment through its endpoints
+  so that final distance between them is the length a side of an inscribed m-gon 
+  c is the set of points in the contour
+  m is the multiplicity
+  r is the radius of the inscribed circle
+  return the array of munged points
+*/
+function contractContourForMultiplicity(c, m, r=0.5) {
    let rpts = [];
-   let p0 = pts[0];
-   let pn = pts[pts.length - 1];
-   let radius = BABYLON.Vector3.Distance(p0,pn);
-   if (radius < Number.EPSILON) {
+   let p0, pn, d0, B0, MP0,sidelen, scale, Tv;
+   let n = c.length - 1;
+   let idx=0, inc = 1;
+   if (c[0].x > c[n].x) {
+      p0 = c[0];
+      pn = c[n];
+   } else {
+      p0 = c[n];
+      pn = c[0]; 
+      idx = n;                  // to reverse the pt order if needed;
+      inc = -1;
+   }
+   B0 = pn.subtract(p0);
+   d0  = B0.length();
+   if (d0  <  0.01 /*Number.EPSILON*/) {
       console.warn('End points of contour are too close together!');
       return null;
    }
-   let rotangle = 0;
-   let rotQuat;
-   let pny = pn.y;
-   rpts.push(p0);
-   if (pny != 0) {
-      // this will rotate the contour so both endpoints have y = 0
-      rotangle = -1 * Math.asin(pny/radius);
-      rotQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, rotangle);
+   MP0 = p0.add(pn.subtract(p0).scale(0.5));
+
+   sidelen = ngonSideLength(m,r);
+   scale = sidelen/d0;
+
+
+   for (let i = 0; i <= n; i++, idx += inc ) {
+      // puts(`counter i: ${i}, index: ${idx}`);
+      rpts.push(MP0.add(c[idx].subtract(MP0).scale(scale)));
    }
-   // rotate contour, if necessary
-   for (let p = 1; p< pts.length; p++) {
-      if (pny != 0) {
-         rpts.push(pts[p].rotateByQuaternionAroundPointToRef(rotQuat, p0, newV(0,0,0)));
-      } else {
-         rpts.push(pts[p].clone());
-      }
+
+   //Tv = newV(sidelen/2, 0, 0).subtract(rpts[0]);  // where we want p0 to end up;
+   Tv = newV(r, 0, 0).subtract(rpts[0]);  // where we want p0 to end up;
+   rpts.forEach((p) => {p.addInPlace(Tv);});
+
+   return rpts;
+}
+
+// at the end of contractContourFor Multiplictity, the contour s.b.
+// the right length with it's first point at (r,0,z)
+// this simply rotates it so it's in the correct position
+function doFirstSide(pts, m, r=0.5) {
+   let rpts = contractContourForMultiplicity(pts, m, r);
+   let n = rpts.length-1;
+   let y = rpts[n].y;
+   let x = rpts[n].x - rpts[0].x;
+   if (y == 0 && x == 0) {
+      throw new Error('Contour must not be closed!');
+   }
+   let theta = 180 - atan2d(y,x);     // angle of original contour
+   let extangle = 360/m;
+   let intangle = 180-extangle;
+   let alpha = 90-180/m;        // (180 - 360/n)/2; 
+   
+   let rotationAngle = (theta - alpha);
+   puts(`theta: ${theta}, alpha: ${alpha}, rotationAngle: ${rotationAngle}`);
+   rotationAngle *= degtorad;
+   let rotQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, rotationAngle);
+   for (let p = 1; p <= n; p++) {
+      rpts[p].rotateByQuaternionAroundPointToRef(rotQuat, rpts[0], rpts[p]);
    }
    return rpts;
 }
 
-// given output of rotateToHome, rotate and displace pts m times around
-// circle of radius 0.5
-function doMultiplicty(pts, m) {
+/*
+  The first side is in place at the end of doFirstSide. 
+  This function copies that and then translates and rotates that first side
+  m-1 times to construct the other sides.
+*/ 
+function doMultiplicty(pts, m, r=0.5) {
    if (m < 2 || m > 32) {return null;}
+   let fpts = doFirstSide(pts,m, r);
+   let n = fpts.length;
    let opts = [];
-   let beta = 180/m;
-   let gamma = 90+beta;
-   let theta = 2*beta;
-   let rotateQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z,gamma*degtorad);
-   let p0 = pts[0];
-   let pn = pts[pts.length-1];
-   let sidelen = BABYLON.Vector3.Distance(p0,pn);
-   // first side
-   let offset = newV(0.5,0,0);
-   opts.push(p0.addInPlace(offset).clone());
-   for (let p = 1; p < pts.length; p++) {
-      pts[p].addInPlace(offset).rotateByQuaternionAroundPointToRef(rotateQuat, opts[0], pts[p]);
-      opts.push(pts[p].clone());
-   }
-   // 
-   rotateQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, theta*degtorad);
+   fpts.forEach((p) => {opts.push(p.clone());});
+   let extAngle = 360/m;
+   let rotateQuat = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z,extAngle*degtorad);
+
    for (let i = 1; i < m; i++) {
-      p0 = pts[0];
-      pn = pts[pts.length-1].clone();
-      offset = pn.subtract(p0);
-      pts[0].addInPlace(offset);
-      for (let p = 1; p < pts.length; p++) {
-         pts[p].addInPlace(offset).rotateByQuaternionAroundPointToRef(rotateQuat, pn, pts[p]);
-         opts.push(pts[p].clone())
+      let p0 = fpts[n-1].clone();       // center of rotation for this side
+      let tvec = p0.subtract(fpts[0]);
+      // for each remaining side, translate and rotate fpts
+      fpts.forEach((p) => {
+         p.addInPlace(tvec).rotateByQuaternionAroundPointToRef(rotateQuat, p0,p);
+         //p.rotateByQuaternionAroundPointToRef(rotateQuat, p0,p);
+      });
+      // copy points to output
+      for (let j = 1; j < n; j++) { 
+         if ( j < n-1 || i < m - 1) {
+            opts.push(fpts[j].clone());
+         }
       }
    }
    return opts;
