@@ -89,6 +89,15 @@
                 white-space: pre;
             }
             
+            .dropdown { 
+                position: relative;
+            }
+            .ddmenu {
+                position: absolute;
+                top:  10px;
+                left: 42%;
+                width 50%;
+            }
             .styled:disabled {
                 background-color: rgba(160,160,160,1);
             }
@@ -135,8 +144,16 @@
       <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
       
       <div class="right-side">
-        <label for="btns1" id="btnlbl">Turtle Controls </label>
-        <button id="tcbtn">v</button>
+        <div class="dropdown">
+          <label for="tcbtn" id="btntc">Turtle Controls </label>
+          <button id="tcbtn">v</button>
+          <label for="scbtn">Scene Controls</label>
+          <button id="scbtn">&#x2B9E;</button>
+          <div class="ddmenu" id = "scmenu0">
+            <button id = "sc-propa">PropA</button><br>
+            <button id = "sc-propb">PropB</button><br>
+          </div>
+        </div>
         <div id="turtleall">
 	  <p>
             <menu class="buttonbar" id="turtlectrls">

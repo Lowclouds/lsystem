@@ -2,8 +2,62 @@
 
 var turtleCtrlBtn = document.getElementById('tcbtn');
 var turtleInfoBtn = document.getElementById('tinfoctrlbtn');
-turtleInfoBtn.textContent = ">";
+turtleInfoBtn.textContent = '\u2B9E'; //">";
 document.getElementById("turtleinfo").style.display='none'; // turn off turtle info
+
+var sceneCtrlDD = document.getElementById('scbtn');
+sceneCtrlDD.textContent = '\u2B9E'; //">";
+var sceneCtrlMenu = document.getElementById('scmenu0');
+var sceneCtrlGround = document.getElementById('sc-propa');
+sceneCtrlGround.textContent = 'Hide Ground';
+var sceneCtrlAxes = document.getElementById('sc-propb');
+sceneCtrlAxes.textContent = 'Hide Axes';
+
+sceneCtrlMenu.style.display = 'none';
+
+sceneCtrlDD.addEventListener('click', () => {
+   let state = sceneCtrlDD.textContent;
+   if (state == '\u2B9F') {
+      sceneCtrlMenu.style.display = 'none';
+      sceneCtrlDD.textContent = '\u2B9E';
+   } else {
+      sceneCtrlMenu.style.display = '';
+      sceneCtrlDD.textContent = '\u2B9F';
+   }
+});
+
+sceneCtrlMenu.addEventListener('pointerleave', () => {
+   sceneCtrlMenu.style.display = 'none';
+   sceneCtrlDD.textContent = '\u2B9E';
+});
+
+sceneCtrlGround.addEventListener('click', () => {
+   let state = sceneCtrlGround.textContent;         
+   console.log(state);
+   if (state == 'Hide Ground') {
+      sceneCtrlGround.textContent = 'Show Ground';
+      ground.isVisible = false;
+   } else {
+      sceneCtrlGround.textContent = 'Hide Ground';
+      ground.isVisible = true;
+   }
+});
+
+sceneCtrlAxes.addEventListener('click', () => {
+   let state = sceneCtrlAxes.textContent;         
+   console.log(state);
+   if (state == 'Hide Axes') {
+      sceneCtrlAxes.textContent = 'Show Axes';
+      showHideAxes(false);
+   } else {
+      sceneCtrlAxes.textContent = 'Hide Axes';
+      showHideAxes(true);
+   }
+});
+
+var sceneInfoBtn = document.getElementById('infoctrlbtn');
+// sceneInfoBtn.textContent = ">";
+// document.getElementById("sceneinfo").style.display='none'; // turn off scene info
 
 var showhidebtn = document.getElementById('btn1');
 showhidebtn.textContent = "Hide";
@@ -24,7 +78,7 @@ var drawSpeedCtrl = document.getElementById('drawspeed');
 drawSpeedCtrl.value = 200;
 
 drawSpeedCtrl.addEventListener('input', () => {
-   drawSpeedCtrl.checkValidity();
+   drawSpeedCtrl.checkValidity();c
 });
 
 drawSpeedCtrl.addEventListener('invalid', () => {
@@ -487,6 +541,7 @@ const cameraHomePosition = new BABYLON.Vector3(35, 10 ,-5);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
 var light;
+var ground;
 const skysize = 5000;
 
 // Add your code here matching the playground format
@@ -511,7 +566,7 @@ const createScene = function () {
    // light.groundColor = new BABYLON.Color3(1, 1, 1);
    // scene.ambientColor = new BABYLON.Color3(1, 1, 1);
 
-   var ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
+   ground = BABYLON.MeshBuilder.CreateGround("ground", {width:skysize, height:skysize});
    //ground.position.y = -1;
    var gmaterial = new BABYLON.StandardMaterial("gmaterial", scene);
    var gtexture = new BABYLON.GrassProceduralTexture('grass', 256, scene, {groundColor: new BABYLON.Vector3(0.8,0.6,0.50), grassColor: newV(.9,.0,.0)});
@@ -601,9 +656,16 @@ function makeAxes (size=10) {
    ], scene);
    zaxis.color = BABYLON.Color3.Blue();
    BABYLON.Tags.AddTagsTo(zaxis, `axes`); 
+   return scene.getMeshesByTags('axes');
+}
+function showHideAxes(which=true) {
+   which = which ? true : false;
+   for (var index = 0; index < axes.length; index++) {
+      axes[index].isVisible = which;
+   }
 }
 
-makeAxes();
+var axes = makeAxes();
 
 //Turtle3d.initColorTable();
 var t = new Turtle3d(scene);
@@ -695,8 +757,6 @@ function loadUserCode(event) {
       reader.readAsText(file);
     }
 }
-
-
 
 function createScriptElement(stxt) {
    if (document.createElement && document.getElementsByTagName) {
