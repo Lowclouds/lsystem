@@ -1,3 +1,9 @@
+/*
+    TABOP Figure 1.25 again, using the view statement to place the camera
+    For this version, we create one polygon in production D, and save it as the mesh, 'leaf', using the parameterized version of the module, '}', i.e. {....}(type, name). Note that leaf is quoted, otherwise the name would have been the value of a variable, leaf.
+    Then, in production L, instead of creating a new polygon, we insert it using the ~('leaf') module. This is much faster and less memory intensive for large trees.
+*/ 
+
 /*view = {position: [35,10,-5], target: [0,10,0]};*/
 
 delta=22.5

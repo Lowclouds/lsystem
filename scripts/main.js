@@ -55,10 +55,6 @@ sceneCtrlAxes.addEventListener('click', () => {
    }
 });
 
-var sceneInfoBtn = document.getElementById('infoctrlbtn');
-// sceneInfoBtn.textContent = ">";
-// document.getElementById("sceneinfo").style.display='none'; // turn off scene info
-
 var showhidebtn = document.getElementById('btn1');
 showhidebtn.textContent = "Hide";
 
@@ -78,7 +74,7 @@ var drawSpeedCtrl = document.getElementById('drawspeed');
 drawSpeedCtrl.value = 200;
 
 drawSpeedCtrl.addEventListener('input', () => {
-   drawSpeedCtrl.checkValidity();c
+   drawSpeedCtrl.checkValidity();
 });
 
 drawSpeedCtrl.addEventListener('invalid', () => {
@@ -122,7 +118,7 @@ turtleCtrlBtn.addEventListener("click", () => {
          tall.style.display = 'none';
          turtleCtrlBtn.textContent = '>';
       }
-   } catch (error) {}
+   } catch (error) {console.log();}
 });
 
 turtleInfoBtn.addEventListener("click", () => {
@@ -136,7 +132,7 @@ turtleInfoBtn.addEventListener("click", () => {
          tctrls.style.display = 'none';
          turtleInfoBtn.textContent = '>';
       }
-   } catch (error) {}
+   } catch (error) {console.log();}
 });
 
 showhidebtn.addEventListener("click", () => {
@@ -145,33 +141,27 @@ showhidebtn.addEventListener("click", () => {
          t.hide();
          showhidebtn.textContent = "Show";
 
-         if (t1) {t1.show();}
+         // if (t1) {t1.show();} need to rethink multiple turtles
       } else {
          t.show();
          showhidebtn.textContent = "Hide";
 
-         if (t1) {t1.hide();}
+         // if (t1) {t1.hide();} rethink multiple turtles
       }
-   } catch (error) { }// ignore
-})
+   } catch (error) {console.log(); } // ignore
+});
 
 clearbtn.addEventListener("click", () => {
    try {
       t.clear();
-   } catch (error) {}
-   try {
       Turtle3d.clearTracksByTag('lsystem');
-      t1.clear();
-   } catch (error) {}
+   } catch (error) {console.log();}
 });
 
 homebtn.addEventListener("click", () => {
    try {
       t.home();
-   } catch (error) {}
-   try {
-      t1.home();
-   } catch (e) {}
+   } catch (error) {console.log();}
 });
 
 resetbtn.addEventListener("click", () => {
@@ -181,7 +171,7 @@ resetbtn.addEventListener("click", () => {
       // initCtable(t);
       camera.position.subtractInPlace(camera.position.subtract(cameraHomePosition));
       camera.setTarget(t.getPos());
-   } catch (error) {}
+   } catch (error) {console.log();}
 });
 
 
@@ -195,7 +185,7 @@ cameraTargetbtn.addEventListener("click", () => {
 showColorTablebtn.addEventListener("click", () => {
    let tracks = t.getColorTableMeshes();
    if (tracks.length == 0) {
-      showColorTable(t);
+      Turtle3d.showColorTable(t);
       showColorTablebtn.textContent = 'Hide Color Table';
    } else {
       let toggle = ! tracks[0].isVisible;
@@ -229,7 +219,7 @@ const btnDraw = document.getElementById('btnDraw');
 const btnRPRD = document.getElementById('btnRPRD');
 //const btnAllTracks = document.getElementById('btnAllTracks');
 const btnSingleStep =  document.getElementById('btnSingleStep');
-//const btnAnimate =  document.getElementById('btnAnimate');
+const btnAnimate =  document.getElementById('btnAnimate');
 const btnMSave = document.getElementById('btnMSave');
 const btnMT = document.getElementById('btnMT');
 btnMT.checked = true;
@@ -267,7 +257,7 @@ function uiDoRewrite() {
    let ipromise = new Promise((resolve,reject) => {
       if (lsys && lsResult.textContent != 'Empty') {
          try {
-            lsResult.value =listtostr(lsys.Rewrite()); //.toString();
+            lsResult.value = listtostr(lsys.Rewrite()); //.toString();
             lblNumIterations.textContent = lsys.dDone;
             lblNumNodes.textContent=lsys.current.length;
             lblNumDrawn.textContent=0;
@@ -296,7 +286,7 @@ function uiDoDraw () {
          btnDraw.disabled = true;
          btnRPRD.disabled = true;
          interpOpts.miCount = drawSpeedCtrl.value;
-         turtleInterp(t, lsys, interpOpts)
+         turtleInterp(t, lsys, interpOpts) // from 
             .then(value => {
                if (Turtle3d.getTracksByTag('lsystem').length == 0) {
                   btnMSave.disabled = true;
@@ -358,7 +348,7 @@ function saveasLSfile(event) {
       var blob = new Blob( [lsSrc.value], {type: "text/plain;charset=utf-8"});
       saveAs.saveAs(blob, file);
    } else {
-      puts(`failed saving: ${lsSrce.value} to ${file}`);
+      puts(`failed saving: ${lsSrc.value} to ${file}`);
    }
 }
 
@@ -369,7 +359,7 @@ lsSaveCode.addEventListener("click", () => {
    if (lsCode.value != "") {
       var blob = new Blob( [lsCode.value], {type: "text/plain;charset=utf-8"});
       saveAs.saveAs(blob, file);
-   };
+   }
 });
 
 lsSaveCodeEnable.addEventListener("click", () => {
@@ -387,34 +377,25 @@ lsSaveCodeEnable.addEventListener("click", () => {
 
 });
 
+btnParse.addEventListener("click", uiDoParse);
+btnRewrite.addEventListener("click", uiDoRewrite);
+btnDraw.addEventListener("click", uiDoDraw);
 
-btnParse.onclick = function() {
-   uiDoParse();
-}
-
-btnRewrite.onclick = function() {
-   uiDoRewrite();
-}
-
-btnDraw.addEventListener("click", function () {
-   uiDoDraw();
-});
-
-btnRPRD.addEventListener("click", () => {
+btnRPRD.addEventListener("click", () => 
    /* --------- reparse ---------*/
    uiDoParse()
-      .then(value => {
+      .then(value => 
          /* --------- rewrite ---------*/
-         uiDoRewrite()
-            .then (value => {
-               /* --------- reset ---------*/
-               t.reset(true);
-               Turtle3d.clearTracksByTag('lsystem');
-               /* --------- draw ---------*/
-               uiDoDraw();
-            });
-      }).catch (error => {puts(error);});
-});
+         uiDoRewrite())
+      .then (value => {
+         /* --------- reset ---------*/
+         t.reset(true);
+         Turtle3d.clearTracksByTag('lsystem');
+         /* --------- draw ---------*/
+         uiDoDraw();
+      })
+      .catch (error => {puts(error);})
+);
 
 
 btnSingleStep.addEventListener('click', ()=> {
@@ -540,7 +521,7 @@ const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engi
 const cameraHomePosition = new BABYLON.Vector3(35, 10 ,-5);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
-var light;
+// var light;
 var ground;
 const skysize = 5000;
 
@@ -606,6 +587,7 @@ window.addEventListener("resize", function () {
    engine.resize();
 });
 
+
 function markSky(t,axis='x', r=skysize/2) {
    var savedState = t.getState();
    let s = 10000,
@@ -637,7 +619,7 @@ function markSky(t,axis='x', r=skysize/2) {
    
    t.setState(savedState);
 }
-      
+
 
 function makeAxes (size=10) {
    var xaxis = BABYLON.Mesh.CreateLines('xaxis',[

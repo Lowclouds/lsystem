@@ -234,8 +234,8 @@ class LsProduction extends Array {
          this[1] = [[],[],[]];
          this[2] = [];
          this[3] = null;
-         while (this.length > 3) {
-            this.pop();
+         if (this.length > 4) {
+            this.splice(4);
          }
       }
    }
@@ -321,7 +321,7 @@ class LsProduction extends Array {
    - @Ds() and @De() start user defined contours
    - stemsize is the variable for setting the diameter/size of a drawn line
    - it accepts all of 'n=<number>, 'derivation length: <number>' and 
-     'dlength: <number>' are all acceptable ways to define iteration length
+     'dlength: <number>' as acceptable ways to define iteration length
    - view and 
  */
 class Lsystem {

@@ -1,11 +1,9 @@
 /*
-  This variant of TABOP Fig 1.25 uses L-system defined contours and surface meshes
-  for the leaves, instead of polygons.
+  This variant of TABOP Fig 1.25 uses L-system defined contours and surface meshes for the leaves, instead of polygons.
   Production L inserts the defined surface, 'leaf', with a random scale
-  Production C creates the contour, 'lc' in the XZ plane; B initiates an extrusion of the contour
-  along a Hermite spline path, also in the XZ plane. Production E ends the extrusion, storing
-  it as surface mesh 'leaf', and then restores the contour, position, orientation, and size
-  context, and inserting a marker that initiates expansion of the bush with production A.
+  Production C creates the contour, 'lc' in the XZ plane.
+  Production B initiates an extrusion of the contour along a Hermite spline path, also in the XZ plane.
+  Production E ends the extrusion, storing it as surface mesh 'leaf', and then restores the contour, position, orientation, and size context, and inserting a marker that initiates expansion of the bush with production A.
  */
 delta=22.5
 stemsize=0.2

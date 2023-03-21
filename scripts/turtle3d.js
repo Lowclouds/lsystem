@@ -710,7 +710,7 @@ class Turtle3d {
          if (betterTypeOf(a1) == 'array') {
             target = BABYLON.Vector3.FromArray(a1);
          } else { // assume vector3 or mesh
-            if (a1._isMesh) {
+            if (a1?._isMesh) {
                target = a1.position;
             } else {
                target = a1;
@@ -1154,7 +1154,7 @@ class Turtle3d {
       let mname = `__sphere_${opts.arc}_${opts.segments}_${opts.slice}`;
       let mesh = Turtle3d.getMesh(mname); 
       if (! mesh) {
-         mesh = this.makeSphere(mname, opts);
+         mesh = this.#makeSphere(mname, opts);
       }
       if (typeof scaling === 'number') {
          scaling *= d;
@@ -1541,6 +1541,41 @@ class Turtle3d {
       Turtle3d.polygonStack = [];
       Turtle3d.polygonVerts = null;
       Turtle3d.clearMeshes();
+   }
+
+   static showColorTable(tu) {
+      let tstate = tu.getState();
+      tu.penUp();
+      tu.home();
+      tu.goto(0,1,0);
+      let size = tu.materialList.length;
+      let rows = Math.round(Math.sqrt(size) + 0.5);
+      puts (`ct size: ${size}, rows: ${rows}`);
+      let m = 0;
+      tu.setTag('colortable')
+      tu.setSize(0.025, true);
+      tu.penDown();
+      for (let r = 0; r < rows; r++) {
+         let c; let pos;
+         for (c = 0; m < size && c < rows; c++, m++) {
+            tu.setMaterial(254);   // black
+            tu.newPolygon();
+            tu.updatePolygon();
+            for (let s=0; s<4; s++) {
+               tu.fd(1, s<3);
+               tu.yaw((s % 2 == 1) ?120 : 60);
+            }
+            tu.setMaterial(m);
+            tu.endPolygon();
+            tu.fd(1);
+         }
+         tu.bk(c);                 // go back
+         tu.yaw(90);
+         tu.fd(1);                 // goto next row
+         tu.yaw(-90);
+      }
+      tu.removeTag('colortable');
+      tu.setState(tstate);
    }
 }
 
@@ -2195,6 +2230,7 @@ function generateMint(r=1, d=0.2, q=8) {
    return p;
 }
 
+/*
 function showColorTable(tu) {
    let tstate = tu.getState();
    tu.penUp();
@@ -2229,6 +2265,7 @@ function showColorTable(tu) {
    tu.removeTag('colortable');
    tu.setState(tstate);
 }
+*/
 // some helper functions
 //var puts = console.log;          // nod to TCL
 function betterTypeOf (o) {

@@ -1,3 +1,6 @@
+/*
+    TABOP Figure 1.25 again, using the view statement to place the camera
+*/ 
 view = {position: [35,10,-5], target: [0,10,0]};
 
 delta=22.5

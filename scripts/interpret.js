@@ -385,7 +385,7 @@ t0.setHeading([0,1,0])`);
                idata.gencode(`turtle.setSize(${idata.stemsize});\n`);
                break;
             }
-            case ',': {            // increment color table index
+            case ',': {            // decrement color table index
                let mi;
                if (isPM) {
                   mi = p0;
@@ -400,7 +400,7 @@ t0.setHeading([0,1,0])`);
                // turtle.setColor(idata.ctable[idata.ci]);
                break;
             }
-            case ';': {
+            case ';': {             // increment color table index
                let mi;
                if (isPM) {
                   mi = p0;
@@ -811,13 +811,14 @@ function resetView(tag, view) {
          let bx = target.x;
          let by = target.y;
          let bz = target.z;
-         let distance = 2.0 * bi.boundingSphere.radius;
-         let campos = newV(bx + distance, by, bz);
+         let distance = 3 * bi.boundingSphere.radius;
+         let campos;
          if ('object' == typeof view.auto ) {
             // assume it's a vector specifying direction from camera to center
-            campos = BABYLON.Vector3.FromArray(view.auto.toArray());
-            campos.normalize().scaleInPlace(distance).addInPlace(target);
+            campos = BABYLON.Vector3.FromArray(view.auto.toArray()).normalize();
+            campos.scaleInPlace(distance).addInPlace(target);
          } else {         // assume string
+            campos = newV(bx + distance, by, bz);
             switch (view.auto.toUpperCase()) {
             case 'Y':
                campos.x = bx;
