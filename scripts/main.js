@@ -234,7 +234,7 @@ const lblNumDrawn = document.getElementById('numDrawn');
 
 var animationState =  {stepStart: false};
 function uiDoParse () {
-   let ipromise = new Promise((resolve, reject) => {
+   return new Promise((resolve, reject) => {
       let spec = lsSrc.value;
       lblNumIterations.textContent = 0;
       lblNumNodes.textContent = 0;
@@ -250,11 +250,10 @@ function uiDoParse () {
          reject(error);
       }
    });
-   return ipromise;
 }
 
 function uiDoRewrite() {
-   let ipromise = new Promise((resolve,reject) => {
+   return new Promise((resolve,reject) => {
       if (lsys && lsResult.textContent != 'Empty') {
          try {
             lsResult.value = listtostr(lsys.Rewrite()); //.toString();
@@ -274,13 +273,12 @@ function uiDoRewrite() {
       lblNumDrawn.textContent=0;
       animationState.stepStart = true;
    });
-   return ipromise;
 }
 
 var interpOpts = {gencode: false, miCount: drawSpeedCtrl.value, useMT: btnMT.checked};
 
 function uiDoDraw () {
-   let ipromise = new Promise((resolve,reject) => {
+   return new Promise((resolve,reject) => {
       try {
          btnMSave.disabled = true;
          btnDraw.disabled = true;
@@ -297,7 +295,8 @@ function uiDoDraw () {
                btnRPRD.disabled = false;
                t.show();
                resolve(true);
-            }).catch(error => {
+            })
+            .catch(error => {
                puts(error);
                btnMSave.disabled = true;
                btnDraw.disabled = false;
@@ -319,6 +318,91 @@ function uiDoDraw () {
    return ipromise;
 }
 
+btnParse.addEventListener("click", uiDoParse);
+btnRewrite.addEventListener("click", uiDoRewrite);
+btnDraw.addEventListener("click", uiDoDraw);
+
+btnRPRD.addEventListener("click", () => 
+   /* --------- reparse ---------*/
+   uiDoParse()
+      .then(value => 
+         /* --------- rewrite ---------*/
+         uiDoRewrite())
+      .then (value => {
+         /* --------- reset ---------*/
+         t.reset(true);
+         Turtle3d.clearTracksByTag('lsystem');
+         /* --------- draw ---------*/
+         uiDoDraw();
+      })
+      .catch (error => {puts(error);})
+);
+
+btnSingleStep.addEventListener('click', ()=> {
+   if (lsys && lsys.axiom.length != 0) {
+      if (lsys.current.length == 0 && lsys.dDone == 0) {
+         lsys.current = lsys.axiom.slice();
+         lsResult.value = listtostr(lsys.current); // lsys.axiom startString
+      } else {
+         lsResult.value =listtostr(lsys.Rewrite(lsys, 1, lsys.current)); //.toString();         
+      }
+      lblNumIterations.textContent = lsys.dDone;
+      lblNumNodes.textContent=lsys.current.length;
+      lblNumDrawn.textContent=0;
+      Turtle3d.clearTracksByTag('lsystem');
+      t.reset(true);
+      uiDoDraw()
+         .catch ((error) => {
+            lsResult.value = `Rewrite failed: ${error}`;
+         });
+   } else {
+      if (!lsys) {
+         lsResult.value = 'Lsystem undefined: load or enter one and click parse';
+      } else {
+         lsResult.value = 'Lsystem axiom is empty: nothing to do';
+      }
+   }
+});
+
+// btnAnimate.addEventListener('click', ()=> {
+//    if (lsys && lsys.axiom.length != 0) {
+//       let str;
+//       try {
+//          if (lsys.dDone == 0) {
+//             if (! animationState.stepStart) {
+//                animationState.stepStart = true;
+//                lsResult.value = listtostr(lsys.axiom);
+//                lblNumIterations.textContent = 0;
+//                lblNumDrawn.textContent=0;
+//                lblNumNodes.textContent=lsys.axiom.length;
+//                return;
+//             } else  {
+//                str = lsys.axiom;
+//             }
+//          } else {
+//             str = lsys.current;
+//          }
+//          lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
+//          lblNumIterations.textContent = lsys.dDone;
+//          lblNumNodes.textContent=lsys.current.length;
+//          lblNumDrawn.textContent=0;
+//          Turtle3d.clearTracksByTag('lsystem');
+//          t.reset();
+//          uiDoDraw();
+// //       resolve(true);
+//       } catch (error) {
+//          lsResult.value = `Rewrite failed: ${error}`;
+// //       reject(`Rewrite failed: ${error}`);
+//       }
+//    } else {
+//       if (!lsys) {
+//          lsResult.value = 'Lsystem undefined: load or enter one and click parse';
+//       } else {
+//          lsResult.value = 'Lsystem axiom is empty: nothing to do';
+//       }
+//    }
+// });
+
 function loadLSfile(event) {
    let file = lsFile.files.item(0);
    if (file != null) {
@@ -326,8 +410,9 @@ function loadLSfile(event) {
       
       reader.onload = function() {
          lsSrc.value = reader.result;
-         //lsResult.value = '';
+         lsResult.value = '';
          lsState='Start';
+         return uiDoParse();
          // btnCpp.textContent = 'Show CPP';
       }
       reader.readAsText(file);
@@ -377,107 +462,6 @@ lsSaveCodeEnable.addEventListener("click", () => {
 
 });
 
-btnParse.addEventListener("click", uiDoParse);
-btnRewrite.addEventListener("click", uiDoRewrite);
-btnDraw.addEventListener("click", uiDoDraw);
-
-btnRPRD.addEventListener("click", () => 
-   /* --------- reparse ---------*/
-   uiDoParse()
-      .then(value => 
-         /* --------- rewrite ---------*/
-         uiDoRewrite())
-      .then (value => {
-         /* --------- reset ---------*/
-         t.reset(true);
-         Turtle3d.clearTracksByTag('lsystem');
-         /* --------- draw ---------*/
-         uiDoDraw();
-      })
-      .catch (error => {puts(error);})
-);
-
-
-btnSingleStep.addEventListener('click', ()=> {
-   if (lsys && lsys.axiom.length != 0) {
-      try {
-         let str;
-         let doRewrite = true;
-         if (lsys.dDone == 0) {
-            if (! animationState.stepStart) {
-               animationState.stepStart = true;
-               lsys.current = lsys.axiom.slice();
-               doRewrite = false;
-            } else  {
-               str = lsys.axiom;
-            }
-         } else {
-            str = lsys.current;
-         }
-         if (doRewrite) {
-            lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
-         } else {
-            lsResult.value = listtostr(lsys.axiom);
-         }
-         lblNumIterations.textContent = lsys.dDone;
-         lblNumNodes.textContent=lsys.current.length;
-         lblNumDrawn.textContent=0;
-         Turtle3d.clearTracksByTag('lsystem');
-         t.reset(true);
-         uiDoDraw();
-//       resolve(true);
-      } catch (error) {
-         lsResult.value = `Rewrite failed: ${error}`;
-//       reject(`Rewrite failed: ${error}`);
-      }
-   } else {
-      if (!lsys) {
-         lsResult.value = 'Lsystem undefined: load or enter one and click parse';
-      } else {
-         lsResult.value = 'Lsystem axiom is empty: nothing to do';
-      }
-   }
-});
-
-// btnAnimate.addEventListener('click', ()=> {
-//    if (lsys && lsys.axiom.length != 0) {
-//       let str;
-//       try {
-//          if (lsys.dDone == 0) {
-//             if (! animationState.stepStart) {
-//                animationState.stepStart = true;
-//                lsResult.value = listtostr(lsys.axiom);
-//                lblNumIterations.textContent = 0;
-//                lblNumDrawn.textContent=0;
-//                lblNumNodes.textContent=lsys.axiom.length;
-//                return;
-//             } else  {
-//                str = lsys.axiom;
-//             }
-//          } else {
-//             str = lsys.current;
-//          }
-//          lsResult.value =listtostr(lsys.Rewrite(lsys, 1, str)); //.toString();
-//          lblNumIterations.textContent = lsys.dDone;
-//          lblNumNodes.textContent=lsys.current.length;
-//          lblNumDrawn.textContent=0;
-//          Turtle3d.clearTracksByTag('lsystem');
-//          t.reset();
-//          uiDoDraw();
-// //       resolve(true);
-//       } catch (error) {
-//          lsResult.value = `Rewrite failed: ${error}`;
-// //       reject(`Rewrite failed: ${error}`);
-//       }
-//    } else {
-//       if (!lsys) {
-//          lsResult.value = 'Lsystem undefined: load or enter one and click parse';
-//       } else {
-//          lsResult.value = 'Lsystem axiom is empty: nothing to do';
-//       }
-//    }
-// });
-
 btnMSave.toggleAttribute('disabled');
 btnMSave.addEventListener("click", () => {
    let meshes =Turtle3d.getTracksByTag('lsystem'); // t.getTrackMeshes();
@@ -507,12 +491,12 @@ function saveLsystemMeshes(filename, meshes) {
       },
    };
    
-   // BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
-   //    glb.downloadFiles();
-   // });
-   BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
-     gltf.downloadFiles();
+   BABYLON.GLTF2Export.GLBAsync(scene, filename, options).then((glb) => {
+      glb.downloadFiles();
    });
+   // BABYLON.GLTF2Export.GLTFAsync(scene, filename, options).then((gltf) => {
+   //   gltf.downloadFiles();
+   // });
 }
 
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
@@ -687,6 +671,7 @@ var tracksAlways = false;
 
 
 // load an example file
+if (false) {
 fetch('./tests/3d-a3.ls')
    .then( response => {
       if (! response.ok) {
@@ -719,7 +704,7 @@ fetch('./tests/3d-a3.ls')
       }
    })
    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
-
+}
 // ------------------------------------------------------------
 //  end of UI
 // ------------------------------------------------------------
@@ -732,9 +717,8 @@ function loadUserCode(event) {
       
       reader.onload = function() {
          lsSrc.value = reader.result;
-         //lsResult.value = '';
          lsState='Start';
-         // btnCpp.textContent = 'Show CPP';
+         return uiDoParse();
       }
       reader.readAsText(file);
     }
