@@ -246,7 +246,7 @@ function uiDoParse () {
          animationState.stepStart = false;
          resolve(true)
       } catch(error) {
-         lsResult.value = `Parse failed: ${error}`;
+         lsResult.value = `Rewrite failed: ${error}\n\n` + lsResult.value;
          reject(error);
       }
    });
@@ -262,7 +262,7 @@ function uiDoRewrite() {
             lblNumDrawn.textContent=0;
             resolve(true);
          } catch (error) {
-            lsResult.value = `Rewrite failed: ${error}`;
+            lsResult.value = `Rewrite failed: ${error}\n\n` + lsResult.value;
             reject(`Rewrite failed: ${error}`);
          }
       } else {
@@ -279,8 +279,7 @@ var interpOpts = {gencode: false, miCount: drawSpeedCtrl.value, useMT: btnMT.che
 
 function uiDoDraw () {
    return new Promise((resolve,reject) => {
-      try {
-         btnMSave.disabled = true;
+      btnMSave.disabled = true;
          btnDraw.disabled = true;
          btnRPRD.disabled = true;
          interpOpts.miCount = drawSpeedCtrl.value;
@@ -297,23 +296,14 @@ function uiDoDraw () {
                resolve(true);
             })
             .catch(error => {
-               puts(error);
+               puts('uiDoDraw: ' + error);
+               lsResult.value = `Rewrite failed: ${error}\n\n` + lsResult.value;
                btnMSave.disabled = true;
                btnDraw.disabled = false;
                btnRPRD.disabled = false;
                t.show();
-               reject(error);
-     })
-      } catch (error) {
-         puts(error);
-         if (Turtle3d.getTracksByTag('lsystem').length == 0) {
-            btnMSave.disabled = true;
-            btnRPRD.disabled = false;
-            btnDraw.disabled = false;
-            t.show();
-            reject(error);
-         }
-      }
+               //reject(error);
+            })
    });
    return ipromise;
 }
@@ -322,7 +312,7 @@ btnParse.addEventListener("click", uiDoParse);
 btnRewrite.addEventListener("click", uiDoRewrite);
 btnDraw.addEventListener("click", uiDoDraw);
 
-btnRPRD.addEventListener("click", () => 
+btnRPRD.addEventListener("click", () => {
    /* --------- reparse ---------*/
    uiDoParse()
       .then(value => 
@@ -333,10 +323,16 @@ btnRPRD.addEventListener("click", () =>
          t.reset(true);
          Turtle3d.clearTracksByTag('lsystem');
          /* --------- draw ---------*/
-         uiDoDraw();
+         uiDoDraw()
+            .catch((error) => {
+               puts('Muffling uiDoDraw error in btnRPRD');
+            });
       })
-      .catch (error => {puts(error);})
-);
+      .catch (error => {
+         lsResult.value = `Rewrite failed: ${error}\n\n` + lsResult.value;
+         puts('btnRPRD: ' + error);
+      })
+});
 
 btnSingleStep.addEventListener('click', ()=> {
    if (lsys && lsys.axiom.length != 0) {
@@ -353,7 +349,7 @@ btnSingleStep.addEventListener('click', ()=> {
       t.reset(true);
       uiDoDraw()
          .catch ((error) => {
-            lsResult.value = `Rewrite failed: ${error}`;
+            lsResult.value =  `Rewrite failed: ${error}\n\n` + lsResult.value;
          });
    } else {
       if (!lsys) {

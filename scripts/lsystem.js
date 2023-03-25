@@ -1473,6 +1473,7 @@ ${msg}`;
          }
       } else {
          puts(`ill-formed branch at ${start}: ${l[start]}`);
+         throw new Error(`ill-formed branch at ${start}: ${l[start]}`);
       }
       return [c, n];
    }
