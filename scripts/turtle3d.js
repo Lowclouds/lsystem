@@ -624,7 +624,7 @@ class Turtle3d {
             //    this.updatePolygon(newP);
             // break;              
          case Turtle3d.CAPTURE_CONTOUR:
-            this.tempContour?.addPoint(this, newP); // add contour pt if initialized
+            this.tempContour?.addPoint(ts, newP); // add contour pt if initialized
             break;
          }
          puts(`forward: adding pt ${newP} to polygon`, TRTL_CAPTURE, TRTL_POLYGON);
@@ -1502,7 +1502,8 @@ class Turtle3d {
 
    // add/get meshes for instancing
    static addMesh(name, mesh, opts=null) {
-      mesh.setEnabled(false);
+      //mesh.setEnabled(false);
+      mesh.isVisible = false;
       if (BABYLON.Tags.HasTags(mesh)) {
          mesh.removeTags(BABYLON.Tags.GetTags(mesh));
       } else {
