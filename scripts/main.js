@@ -10,7 +10,9 @@ sceneCtrlDD.textContent = '\u2B9E'; //">";
 var sceneCtrlMenu = document.getElementById('scmenu0');
 var sceneCtrlGround = document.getElementById('sc-propa');
 sceneCtrlGround.textContent = 'Hide Ground';
-var sceneCtrlAxes = document.getElementById('sc-propb');
+var sceneCtrlSky = document.getElementById('sc-propb');
+sceneCtrlSky.textContent = 'Hide Sky';
+var sceneCtrlAxes = document.getElementById('sc-propc');
 sceneCtrlAxes.textContent = 'Hide Axes';
 
 sceneCtrlMenu.style.display = 'none';
@@ -40,6 +42,17 @@ sceneCtrlGround.addEventListener('click', () => {
    } else {
       sceneCtrlGround.textContent = 'Hide Ground';
       ground.isVisible = true;
+   }
+});
+
+sceneCtrlSky.addEventListener('click', () => {
+   let state = sceneCtrlSky.textContent;         
+   if (state == 'Hide Sky') {
+      sceneCtrlSky.textContent = 'Show Sky';
+      sky.isVisible = false;
+   } else {
+      sceneCtrlSky.textContent = 'Hide Sky';
+      sky.isVisible = true;
    }
 });
 
@@ -329,12 +342,44 @@ btnRPRD.addEventListener("click", () => {
             });
       })
       .catch (error => {
-         lsResult.value = `Rewrite failed: ${error}\n\n` + lsResult.value;
+         lsResult.value = `Reset|Parse|Rewrite|Draw failed: ${error}\n\n` + lsResult.value;
          puts('btnRPRD: ' + error);
       })
 });
 
-btnSingleStep.addEventListener('click', ()=> {
+function uiDoSingleStep() {
+   return new Promise((resolve, reject) => {
+      if (lsys && lsys.axiom.length != 0) {
+         if (lsys.current.length == 0 && lsys.dDone == 0) {
+            lsys.current = lsys.axiom.slice();
+            lsResult.value = listtostr(lsys.current); // lsys.axiom startString
+         } else {
+            lsResult.value =listtostr(lsys.Rewrite(lsys, 1, lsys.current)); //.toString();         
+         }
+         lblNumIterations.textContent = lsys.dDone;
+         lblNumNodes.textContent=lsys.current.length;
+         lblNumDrawn.textContent=0;
+         Turtle3d.clearTracksByTag('lsystem');
+         t.reset(true);
+         uiDoDraw()
+            .then ((result) => resolve(true))
+            .catch ((error) => {
+               lsResult.value =  `Rewrite failed: ${error}\n\n` + lsResult.value;
+            });
+      } else {
+         if (!lsys) {
+            lsResult.value = 'Lsystem undefined: load or enter one and click parse';
+         } else {
+            lsResult.value = 'Lsystem axiom is empty: nothing to do';
+         }
+         reject('no Lsystem');
+      }
+   });
+}
+
+btnSingleStep.addEventListener('click', ()=> uiDoSingleStep());
+
+/*
    if (lsys && lsys.axiom.length != 0) {
       if (lsys.current.length == 0 && lsys.dDone == 0) {
          lsys.current = lsys.axiom.slice();
@@ -359,6 +404,7 @@ btnSingleStep.addEventListener('click', ()=> {
       }
    }
 });
+*/
 
 // btnAnimate.addEventListener('click', ()=> {
 //    if (lsys && lsys.axiom.length != 0) {
@@ -502,7 +548,7 @@ const cameraHomePosition = new BABYLON.Vector3(35, 10 ,-5);
 const cameraHomeTarget = BABYLON.Vector3.Zero();
 var camera;
 // var light;
-var ground;
+var ground, sky;
 const skysize = 5000;
 
 // Add your code here matching the playground format
@@ -541,7 +587,7 @@ const createScene = function () {
    
    var skyOpts = {
       diameter: skysize, slice: 0.5, sideOrientation: BABYLON.Mesh.DOUBLESIDE };
-   var sky = BABYLON.MeshBuilder.CreateSphere("sky", skyOpts, scene);
+   sky = BABYLON.MeshBuilder.CreateSphere("sky", skyOpts, scene);
    var skyMaterial = new BABYLON.StandardMaterial("skyMaterial", scene);
    skyMaterial.backFaceCulling = false;
    skyMaterial.diffuseColor = new BABYLON.Color3(93/255, 173/255, 220/255); //206/255, 227/255, 240/255);
