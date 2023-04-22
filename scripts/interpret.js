@@ -138,8 +138,53 @@ t0.setHeading([0,1,0])`);
    puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${t0.branchStack.length}`); // , NTRP_INIT
    //idata.lastTime = performance.now();
 
+   function removeBranch(branch, turtle) {
+      let shouldKeep = branches[branch].keep;
+      branches.splice(branch,1); // remove this branch - could be first
+      idata.gencode(`branches.splice(${branch},1);\n`);
+      if (! shouldKeep) {
+         turtle.dispose(false); // don't dispose tracks, though
+         idata.gencode('turtle.dispose(false);\n');
+      }
+      puts(`deleted branch: ${branch} moving on; branches.length: ${branches.length}`, NTRP_PROGRESS);
+   }
+
    let ipromise = new Promise((resolve, reject) => {
       //console.log('in Promise');
+      
+      doModule();
+
+      function packItUp(turtle) {
+         let ts = turtle.getState()
+         if (turtle.branchStack.length > 0) {
+            puts(' done with lstring'); // , NTRP_INIT
+            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${turtle.branchStack.length}`); // , NTRP_PROGRESS
+            //   puts(`tp.shape is: ${turtle.getState().trackPath.shape}`);
+            if (ts.trackPath != null) {
+               if (idata.useTrackAlways) {
+                  turtle.endTrack();
+                  idata.gencode('turtle.endTrack();\n');
+               } else {
+                  ts.trackPath = null;
+                  console.warn('trackPath not null at end of interpretation');
+               }
+            }
+         } else {
+            if (idata.useTrackAlways && ts.trackPath != null) {
+               turtle.endTrack();
+               idata.gencode('turtle.endTrack();\n');
+            }
+            puts('done with lstring and turtle.branchStack.length == 0', NTRP_PROGRESS);
+         }
+
+         resetView(idata.trackTag, idata.view);
+
+         updateTurtleInfo(ti,0);
+         lblNumDrawn.style.backgroundColor = 'lightgreen';
+         lsCode.value = idata.code;
+         resolve(true);
+      }
+
       function doModule () {
          if (branches.length == 0) {
             packItUp(t0);
@@ -176,7 +221,10 @@ t0.setHeading([0,1,0])`);
                   puts(pM.toString(), NTRP_PROGRESS);
                } else {
                   console.error(`Walked off end of lstring: branchpos: ${branchpos}, branch: ${branch}, branches length: ${branches.length}`);
+
                   reject(`Walked off end of lstring: branchpos: ${branchpos}, branch: ${branch}, branches length: ${branches.length}`);
+                  // return `Walked off end of lstring: branchpos: ${branchpos}, branch: ${branch}, branches length: ${branches.length}`;
+                  return;
                }
 
                let m;
@@ -739,65 +787,26 @@ t0.setHeading([0,1,0])`);
             } catch (error) {
                puts('Caught error in doModule');
                reject(error);
-               return;
+               //return error;
+               return
             }
             idata.mi++;         // for UI
          } while (i < idata.miCount && branches.length>0);
+
          lblNumDrawn.textContent = idata.mi;
          //lblNumNodes.textContent= lstring.length - i;
          if (branches.length == 0) {
             packItUp(t0);
+            return;
          } else {
             let rAF = requestAnimationFrame(doModule);
          }
       }
+   });
 
-      doModule();
-
-      function removeBranch(branch, turtle) {
-         let shouldKeep = branches[branch].keep;
-         branches.splice(branch,1); // remove this branch - could be first
-         idata.gencode(`branches.splice(${branch},1);\n`);
-         if (! shouldKeep) {
-            turtle.dispose(false); // don't dispose tracks, though
-            idata.gencode('turtle.dispose(false);\n');
-         }
-         puts(`deleted branch: ${branch} moving on; branches.length: ${branches.length}`, NTRP_PROGRESS);
-      }
-
-      function packItUp(turtle) {
-         let ts = turtle.getState()
-         if (turtle.branchStack.length > 0) {
-            puts(' done with lstring'); // , NTRP_INIT
-            puts(`turtleMode: track=${ts.track}, drawMode=${ts.drawMode}, branchStacklength: ${turtle.branchStack.length}`); // , NTRP_PROGRESS
-            //   puts(`tp.shape is: ${turtle.getState().trackPath.shape}`);
-            if (ts.trackPath != null) {
-               if (idata.useTrackAlways) {
-                  turtle.endTrack();
-                  idata.gencode('turtle.endTrack();\n');
-               } else {
-                  ts.trackPath = null;
-                  console.warn('trackPath not null at end of interpretation');
-               }
-            }
-         } else {
-            if (idata.useTrackAlways && ts.trackPath != null) {
-               turtle.endTrack();
-               idata.gencode('turtle.endTrack();\n');
-            }
-            puts('done with lstring and turtle.branchStack.length == 0', NTRP_PROGRESS);
-         }
-
-         resetView(idata.trackTag, idata.view);
-
-         updateTurtleInfo(ti,0);
-         lblNumDrawn.style.backgroundColor = 'lightgreen';
-         lsCode.value = idata.code;
-         resolve(true);
-      }
-   })
    return ipromise;
 }
+
 
 function otoa (o) {
    let a = new Array();

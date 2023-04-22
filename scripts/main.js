@@ -308,6 +308,7 @@ function uiDoDraw () {
                t.show();
                resolve(true);
             })
+      /*
             .catch(error => {
                puts('uiDoDraw: ' + error);
                lsResult.value = `Rewrite failed: ${error}\n\n` + lsResult.value;
@@ -317,6 +318,7 @@ function uiDoDraw () {
                t.show();
                //reject(error);
             })
+            */
    });
    return ipromise;
 }
