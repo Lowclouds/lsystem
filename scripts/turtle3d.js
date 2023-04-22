@@ -331,7 +331,7 @@ class Turtle3d {
          this.TurtleState.lastSize = this.TurtleState.size;
       }
       this.TurtleState.size = v;
-      puts(`setSize: new size == ${v}`, TRTL_SETGET);
+      puts(`setSize: new size == ${v}, lastSize: ${this.TurtleState.lastSize}`, TRTL_SETGET);
       return this;
    }
 
@@ -470,6 +470,15 @@ class Turtle3d {
       }
       puts(`set track shape to: ${id}, size == ${this.getSize()}`, TRTL_SETGET);
       return this;
+   }
+   // is the provided shape closed - i.e. is last point == first point
+   // we need the array of points here
+   static isShapeClosed(shape) {
+      if (shape?.length > 1) {
+         return shape[0] == shape[shape.length-1];
+      } else {
+         return undefined;
+      }
    }
    /**
     * addTrackShape add a shape to the contours map
@@ -614,10 +623,10 @@ class Turtle3d {
       if (addpathpt) {
          switch ( ts.drawMode ) {
          case Turtle3d.CAPTURE_PATH:
-            if (ts.trackPath.type == Turtle3d.PATH_POINTS &&
-               ts.trackPath.points.length == 0) {
-               ts.trackPath.addPathPt(ts, oldP);
-            }
+            // if (ts.trackPath.type == Turtle3d.PATH_POINTS &&
+            //    ts.trackPath.points.length == 0) {
+            //    ts.trackPath.addPathPt(ts, oldP);
+            // }
             ts.trackPath.addPathPt(ts, newP);
             break;
             // case Turtle3d.CAPTURE_POLYGON:
@@ -886,6 +895,12 @@ class Turtle3d {
          let pathpts = [oldPos, newPos];
          let s = ts.size/2;
          let ls = ts.lastSize/2;
+         let sidedness = BABYLON.Mesh.DOUBLESIDE;
+         let cap = BABYLON.Mesh.NO_CAP; 
+         if (Turtle3d.isShapeClosed(ts.trackShape)) {
+            sidedness = BABYLON.Mesh.DEFAULTSIDE;
+            cap = BABYLON.Mesh.CAP_ALL;
+         }
 
          function getscale(i,distance) {
             return (i == 0) ? ls : s;
@@ -902,14 +917,15 @@ class Turtle3d {
                                           scaleFunction: getscale,
                                           rotationFunction: getrotation,
                                           closePath: false,
-                                          sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                                          sideOrientation: sidedness,
+                                          cap: cap,
                                           firstNormal: ts.lastNormal
                                          });
          // segment.isVisible=true;
          // segment.material = this.materialList[ts.trackMaterial];
          // BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
          ts.accumRoll = 0;
-         ts.lastSize = ts.size;
+         // ts.lastSize = ts.size;
          break;
       }
       puts(`drawImmediate: mesh type: ${type}, position: ${segment.position}`, TRTL_DRAW);
@@ -923,6 +939,14 @@ class Turtle3d {
          return;
       }
       puts(`drawTrack: using shape ${tp.shape}`, TRTL_TRACK);
+
+      let sidedness = BABYLON.Mesh.DOUBLESIDE;
+      let cap = BABYLON.Mesh.CAP_ALL;
+      if (Turtle3d.isShapeClosed(tp.shape)) {
+         sidedness = BABYLON.Mesh.DEFAULTSIDE;
+         cap = BABYLON.Mesh.NO_CAP;
+      }
+
       let pathpts = tp.points;
       let doSetMaterial = true;
 
@@ -932,7 +956,7 @@ class Turtle3d {
       //puts(`srm: ${srm.toString()}`, TRTL_TRACK);
 
       function getscale(i,distance) {
-         return srm[i].s;
+         return srm[i].s/2;
       }
       function getrotation(i,distance) {
          return srm[i].r;
@@ -946,7 +970,8 @@ class Turtle3d {
                                                scaleFunction: getscale,
                                                rotationFunction: getrotation,
                                                closePath: false,
-                                               sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                                               sideOrientation: sidedness,
+                                               cap: cap,
                                                firstNormal: tp.firstNormal,
                                                adjustFrame: true});
       /*
@@ -1021,32 +1046,34 @@ class Turtle3d {
             // position the turtle at end of path
       let tmesh = this.turtleShape;
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
+      this.TurtleState.lastSize = this.TurtleState.size;
    }
 
    
    newTrack(ctype='p0') {
       let ptype;
       let tp;
-      if (this.TurtleState.trackShape == null) {
-         this.TurtleState.trackShape = Turtle3d.trackContours.get(this.TurtleState.trackShapeID);
+      let ts = this.TurtleState;
+      if (ts.trackShape == null) {
+         ts.trackShape = Turtle3d.trackContours.get(ts.trackShapeID);
       }
 
-      this.TurtleState.trackType = Turtle3d.TRACK_EXT;
-      this.TurtleState.drawMode = Turtle3d.CAPTURE_PATH;
-      this.TurtleState.accumRoll = 0; // keep track of twist
+      ts.trackType = Turtle3d.TRACK_EXT;
+      ts.drawMode = Turtle3d.CAPTURE_PATH;
+      ts.accumRoll = 0; // keep track of twist
 
       switch (ctype) {
       case 'p0':
          ptype = Turtle3d.PATH_POINTS;
-         tp = new TrackPath({s: this.TurtleState.trackShape, type: ptype});
+         tp = new TrackPath({s: ts.trackShape, type: ptype});
          break;
       case 'p1':
          ptype = Turtle3d.PATH_HERMITE_OPEN;
-         tp = new HermiteSpline(this, {s: this.TurtleState.trackShape, type: ptype});
+         tp = new HermiteSpline(this, {s: ts.trackShape, type: ptype});
          break;
       case 'p2':
          ptype = Turtle3d.PATH_HERMITE_CLOSED;
-         tp = new HermiteSpline(this, {s: this.TurtleState.trackShape, type: ptype});
+         tp = new HermiteSpline(this, {s: ts.trackShape, type: ptype});
          break;
       case 'p3':
          ptype = Turtle3d.PATH_BSPLINE_OPEN;
@@ -1059,8 +1086,9 @@ class Turtle3d {
          return;
       }
 
-      this.TurtleState.trackPath = tp;
-      puts(`trackshape is: ${this.TurtleState.trackShape}`, TRTL_TRACK);
+      ts.trackPath = tp;
+      ts.trackPath.addPathPt(ts, ts.P.clone());
+      puts(`trackshape is: ${ts.trackShape}`, TRTL_TRACK);
       puts(`tp.shape is: ${tp.shape}`, TRTL_TRACK);
 
       return this;
