@@ -214,6 +214,9 @@ class Turtle3d {
          return Turtle3d.trackContours(id);
       }
    }
+   getDrawMode() {
+      return this.TurtleState.drawMode;
+   }
    getTrack() { return this.TurtleState.trackType;}
    getTurtle() {return this.Turtle;}
    getScene() {return this.scene;}
@@ -1097,7 +1100,7 @@ class Turtle3d {
    endTrack(id = null) {
       let ts = this.TurtleState;
       let tp = ts.trackPath;
-      puts(`endTrack, type: ${tp.type}`, TRTL_TRACK);
+      puts(`endTrack, type: ${tp?.type}`, TRTL_TRACK);
       if (tp) {
          switch (tp.type) {
          case Turtle3d.PATH_POINTS:

@@ -228,7 +228,7 @@ t0.setHeading([0,1,0])`);
                }
 
                let m;
-               let pmArgs, p0;         // most functions have only one parameter
+               let pmArgs, p0;         // most modules that have parameters have only one
                if (typeof pM === 'string') {
                   m = pM
                   isPM = false;
@@ -542,34 +542,35 @@ t0.setHeading([0,1,0])`);
                   }
                   break;}
                case '}': {
-                  if (!isPM || p0 == '""') {
-                     if ( idata.inPolygon > 0) {
-                        if (pmArgs.length < 2) {
-                           puts('ending polygon', NTRP_TRACKS);
-                           turtle.endPolygon();
-                           idata.gencode(`turtle.endPolygon();\n`);
-                        } else {
-                           puts('ending polygon as mesh ' + pmArgs[1], NTRP_TRACKS);
-                           turtle.endPolygon(pmArgs[1]);
-                           idata.gencode(`turtle.endPolygon(${pmArgs[1]});\n`);
-                        }
-                        idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
-                        if (idata.inPolygon < 1) {
-                           idata.ptCaptureMode = Turtle3d.CAPTURE_NONE; // turn off polygon capture
-                        }
+                  if ( idata.inPolygon > 0) {
+                     if (!isPM || p0 == '""') {
+                        puts('ending polygon', NTRP_TRACKS);
+                        turtle.endPolygon();
+                        idata.gencode(`turtle.endPolygon();\n`);
                      } else {
-                        puts('end polygon attempted when no polygon started', NTRP_TRACKS);
+                        puts('ending polygon as mesh ' + p0, NTRP_TRACKS);
+                        turtle.endPolygon(p0);
+                        idata.gencode(`turtle.endPolygon(${p0});\n`);
+                     }
+                     idata.inPolygon = idata.inPolygon > 0 ? idata.inPolygon - 1 : 0;
+                     if (idata.inPolygon == 0) {
+                        idata.ptCaptureMode = Turtle3d.CAPTURE_NONE; // turn off polygon capture
                      }
                   } else {
-                     puts(`end track: pmArgs: ${pmArgs}`);
-                     if (pmArgs.length < 2) {
-                        turtle.endTrack();
-                        idata.gencode(`turtle.endTrack(${p0});\n`);
-                        puts('ending track, type:' + p0, NTRP_TRACKS);
+                     let tt = turtle.getDrawMode();
+                     if (tt > Turtle3d.CAPTURE_NONE) {
+                        puts(`end track: ${pmArgs}`);
+                        if (!isPM) {
+                           turtle.endTrack();
+                           idata.gencode(`turtle.endTrack(});\n`);
+                           puts('ending track, type:' + tt, NTRP_TRACKS);
+                        } else {
+                           turtle.endTrack(p0);
+                           idata.gencode(`turtle.endTrack(${p0});\n`);
+                           puts('ending track, type:' + tt + ' to mesh: ' + p0, NTRP_TRACKS);
+                        }
                      } else {
-                        turtle.endTrack(pmArgs[1]);
-                        idata.gencode(`turtle.endTrack(${pmArgs[1]});\n`);
-                        puts('ending track, type:' + p0 + ' to mesh: ' + pmArgs[1], NTRP_TRACKS);
+                        console.warn('Tried to end track when track capture not started!');
                      }
                   }
                   break;

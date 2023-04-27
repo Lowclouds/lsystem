@@ -1,7 +1,7 @@
 #define STEPL 0.5
 #define STEPA 3
 #define LEAFL 30
-#define STEPW 0.1
+#define STEPW 0.2
 #define STEM 0.7
 #define ISTEM 0.1
 derivation length:40
