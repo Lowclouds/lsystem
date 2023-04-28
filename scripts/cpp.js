@@ -37,334 +37,334 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 function cpp_js(settings) {
-	"use strict";
+        "use strict";
 
-	var trim = function (str) {
-		// http://blog.stevenlevithan.com/archives/faster-trim-javascript
-		str = str.replace(/^\s+/, '');
-		for (var i = str.length - 1; i >= 0; i--) {
-			if (/\S/.test(str.charAt(i))) {
-				str = str.substring(0, i + 1);
-				break;
-			}
-		}
-		return str;
-	};
-	
-	var strip_cpp_comments = function(str) {
-		// very loosely based on http://james.padolsey.com/javascript/removing-comments-in-javascript/,
-		// but removed JS-specific stuff and added handling of line continuations. Also, newlines
-		// are generally preserved to keep line numbers intact.
-		str = ('__' + str.replace(/\r\n/g,'\n') + '__').split('');
-		var block_comment = false, line_comment = false, quote = false, lines_lost = 0;
-		for (var i = 0, l = str.length; i < l; i++) {
-	
-			if (quote) {
-				if ((str[i] === "'" || str[i] === '"') && str[i-1] !== '\\') {
-					quote = false;
-				}
-				continue;
-			}
-	 
-			if (block_comment) {
-				if (str[i] === '*' && str[i+1] === '/') {
-					str[i+1] = '';
-					block_comment = false;
-				}
-				str[i] = '';
-				
-				if (str[i] === '\n') {
-					++lines_lost;
-				}
-				continue;
-			}
-	 
-			if (line_comment) {
-				if (str[i+1] === '\n') {
-					line_comment = false;
-				}
-				str[i] = '';
-				continue;
-			}
-			
-			if (str[i] === '\n') {
-	                   // dcd mod for lsystem
-		           if (settings.want_line_continuation && str[i-1] == '\\') {
-					// line continuation, replace by whitespace
-					str[i-1] = '';
-					str[i] = '';
-					++lines_lost;
-				}
-				else {
-					while(lines_lost > 0) {
-						str[i] += '\n';
-						--lines_lost;
-					}
-				}
-			}
-	 
-			quote = str[i] === "'" || str[i] === '"';
-			if (str[i] === '/') {
-	 
-				if (str[i+1] === '*') {
-					str[i] = '';
-					block_comment = true;
-					continue;
-				}
+        var trim = function (str) {
+                // http://blog.stevenlevithan.com/archives/faster-trim-javascript
+                str = str.replace(/^\s+/, '');
+                for (var i = str.length - 1; i >= 0; i--) {
+                        if (/\S/.test(str.charAt(i))) {
+                                str = str.substring(0, i + 1);
+                                break;
+                        }
+                }
+                return str;
+        };
+        
+        var strip_cpp_comments = function(str) {
+                // very loosely based on http://james.padolsey.com/javascript/removing-comments-in-javascript/,
+                // but removed JS-specific stuff and added handling of line continuations. Also, newlines
+                // are generally preserved to keep line numbers intact.
+                str = ('__' + str.replace(/\r\n/g,'\n') + '__').split('');
+                var block_comment = false, line_comment = false, quote = false, lines_lost = 0;
+                for (var i = 0, l = str.length; i < l; i++) {
+        
+                        if (quote) {
+                                if ((str[i] === "'" || str[i] === '"') && str[i-1] !== '\\') {
+                                        quote = false;
+                                }
+                                continue;
+                        }
+                   
+                        if (block_comment) {
+                                if (str[i] === '*' && str[i+1] === '/') {
+                                        str[i+1] = '';
+                                        block_comment = false;
+                                }
+                                str[i] = '';
+                                
+                                if (str[i] === '\n') {
+                                        ++lines_lost;
+                                }
+                                continue;
+                        }
+         
+                        if (line_comment) {
+                                if (str[i+1] === '\n') {
+                                        line_comment = false;
+                                }
+                                str[i] = '';
+                                continue;
+                        }
+                        
+                        if (str[i] === '\n') {
+                           // dcd mod for lsystem
+                           if (settings.want_line_continuation && str[i-1] == '\\') {
+                                        // line continuation, replace by whitespace
+                                        str[i-1] = '';
+                                        str[i] = '';
+                                        ++lines_lost;
+                                }
+                                else {
+                                        while(lines_lost > 0) {
+                                                str[i] += '\n';
+                                                --lines_lost;
+                                        }
+                                }
+                        }
+         
+                        quote = str[i] === "'" || str[i] === '"';
+                        if (str[i] === '/') {
+         
+                                if (str[i+1] === '*') {
+                                        str[i] = '';
+                                        block_comment = true;
+                                        continue;
+                                }
                                 if (!settings['traditional'] && str[i+1] === '/') {
-					str[i] = '';
-					line_comment = true;
-					continue;
-				}
-			}
-		}
-		return str.join('').slice(2, -2);
-	};
-	
-	var is_string_boundary = function(text, idx) {
-		return (text[idx] == '"' || text[idx] == "'") && 
-			(!idx || text[idx-1] != '\\' ||
-			(idx > 1 && text[idx-2] == '\\'));
-	};
+                                        str[i] = '';
+                                        line_comment = true;
+                                        continue;
+                                }
+                        }
+                }
+                return str.join('').slice(2, -2);
+        };
+        
+        var is_string_boundary = function(text, idx) {
+                return (text[idx] == '"' || text[idx] == "'") && 
+                        (!idx || text[idx-1] != '\\' ||
+                        (idx > 1 && text[idx-2] == '\\'));
+        };
 
-	// dictionary of default settings, including default error handlers
-	var default_settings = {
-		signal_char : '#',
-		
-		warn_func : function(s) {
-			console.log(s);
-		},
-		
-		error_func : function(s) {
-			console.log(s);
-			throw s;
-		},
-		
-		comment_stripper : strip_cpp_comments,
-		
-		include_func : null,
+        // dictionary of default settings, including default error handlers
+        var default_settings = {
+                signal_char : '#',
+                
+                warn_func : function(s) {
+                        console.log(s);
+                },
+                
+                error_func : function(s) {
+                        console.log(s);
+                        throw s;
+                },
+                
+                comment_stripper : strip_cpp_comments,
+                
+                include_func : null,
                 completion_func : null,
            traditional : true,            // dcd mod for lsystem
            want_line_continuation : false // dcd mod for lsystem
-	};
-	
-	// apply default settings
-	if (settings) {
-		for(var k in default_settings) {
-			if (!(k in settings)) {
-				settings[k] = default_settings[k];
-			}
-		}
-	}
-	else {
-		settings = default_settings;
-	}
-	
-	if (settings.include_func && !settings.completion_func) {
-		settings.error_func("include_func but not completion_func specified");
-	}
-	
-	// generate a 3 tuple (command, arguments, code_block)
-	var block_re = new RegExp("^"+settings.signal_char+
-		"(\\w+)[ \t]*(.*?)[ \t]*$","m"
-	);
-	
-	// match identifiers according to 6.4.2.1, do not match 'defined',
-	// do not match quote strings either
-	var is_identifier_re = /\b(d(?!efined)|[a-ce-zA-Z_])\w*(?![\w"])/g;
-	
-	// same, but checks if the entire string is an identifier
-	var is_identifier_only_re = /^(d(?!efined)|[a-ce-zA-Z_])\w*$/g;
-	
-	// same, but checks if the entire string is a macro
-	var is_macro_only_re = /^((?:d(?!efined)|[a-ce-zA-Z_])\w*)\s*\((.*)\)$/g;
-	
-	// defined <identifier>
-	var defined_no_parens_re = /defined\s+([a-zA-Z_]\w*)/g;
-	
-	// defined (<identifier>)
-	var defined_re = /defined\s*\((\s*[a-zA-Z_]\w*\s*)\)/g;
-	
-	// __defined_magic_<identifier>_ (a special sentinel value used to
-	// temporarily exclude operands to defined from macro substitution.
-	var defined_magic_sentinel_re = /__defined_magic_([a-zA-Z_]\w*)_/;
-	
-	// Match hexadecimal, octal and decimal integer literals with or
-	// without L,l,U,u suffix and separate all components.
-	var is_integer_re = /\b(\+|-|)(0|0x|)([1-9a-f][0-9a-f]*|0)([ul]*)\b/ig;
-	
-	// Grab doubly quoted strings
-	var is_string_re = /"(.*?)"/g;
-	
-	// Grab compound assignments. Extra fix for !=, ==, <=, >= needed
-	var is_assignment_re = /[+\-*%\/&^|]?=/g; 
-	
-	// Grab instances of the increment/decrement operators
-	var is_increment_re = /--|\+\+/g;
-	
-	// Grav <included_file> or "included_file"
-	var include_re = /(?:(<)(.*)>|"(.*)")(.*)/;
-	
-	// Magic token to signify the '##' token (to keep it from being
-	// treated as the operator of the same signature).
-	var pseudo_token_doublesharp = '__doublesharp_magic__';
-	var is_pseudo_token_doublesharp = new RegExp(pseudo_token_doublesharp,'g');
-	
-	// Magic token to signify the ' ' token (to keep it from being
-	// treated as token boundary).
-	var pseudo_token_space = '__whitespace_magic__';
-	var is_pseudo_token_space = new RegExp(pseudo_token_space,'g');
-	
-	var pseudo_token_empty = '__empty_magic__';
-	var is_pseudo_token_empty = new RegExp(pseudo_token_empty,'g');
-	
-	var pseudo_token_nosubs = '__nosubs__';
-	var is_pseudo_token_nosubs = new RegExp(pseudo_token_nosubs,'g');
-	
-	// List of preprocessing tokens.
-	var pp_special_token_list = {
-		'==':1,
-		'!=':1,
-		'+':1,
-		'-':1,
-		'*':1,
-		'/':1,
-		'%':1,
-		'<=':1,
-		'>=':1,
-		'<':1,
-		'>':1,
-		'=':1,
-		'+=':1,
-		'*=':1,
-		'/=':1,
-		'&=':1,
-		'|=':1,
-		'^=':1,
-		'#':1,
-		'##':1,
-		'->':1
-	};
-	
-	
-	var state = {};
-	var macro_cache = {};
-	
-	var eval_mask = null;
-	
-	var max_macro_length = 0;
-	var macro_counts_by_length = {};
-	
-	return {
-	
-		// ----------------------
-		// (public) Clear the current status code. i.e. reset all defines.
-		clear : function() {
-			state = {};
-			macro_counts_by_length = {};
-			macro_cache = {};
-			max_macro_length = 0;
-		},
-		
-		// ----------------------
-		// (public) Check if macro `k` is defined.
-		defined : function(k) {
-			return k in state;
-		},
-	
-		// ----------------------
-		// (public) Define macro `k` with replacement value `v`. To define macros with
-		// parameters, include the parameter list in the macro name, i.e. 
-		// k <= "foo(a,b)", v <= "a ## b". The function invokes the error
-		// callback if the macro contains syntax errors.
-		define : function(k,v) {
-			var macro = this._get_macro_info(k);
-			if (!this._is_identifier(k) && !macro) {
-				settings.error_func("not a valid preprocessor identifier: '" + k + "'");
-			}
-			
-			if (typeof v === 'number') {
-				v = v.toString(10);
-			}
-	
-			if (macro) {
-				k = macro.name;
-				this.undefine(k);
-				
-				// This inserts the macro into the macro cache, which
-				// holds pre-parsed data to simplify substitution.
-				macro_cache[k] = macro;
-			}
-			else {
-				this.undefine(k);
-			}
-			
-			state[k] = v || '';
-			
-			// macro length table housekeeping
-			macro_counts_by_length[k.length] = (macro_counts_by_length[k.length] || 0 ) + 1;
-			if (k.length > max_macro_length) {
-				max_macro_length = k.length;
-			}
-		},
-		
-		// ----------------------
-		// (public) Undefine `k`. A no-op if `k` is not defined.
-		undefine : function(k) {
-			if(k in state) {
-				delete state[k];
-				
-				// update macro length table
-				var nl = macro_counts_by_length[k.length] - 1;
-				if (k.length === max_macro_length && !nl) {
-					max_macro_length = 0;
-					for (var i = k.length-1; i >= 0; --i) {
-						if (macro_counts_by_length[i]) {
-							max_macro_length = i;
-							break;
-						}
-					}
-				}
-				
-				macro_counts_by_length[k.length] = nl;
-				delete macro_cache[k];
-			}
-			else {
-			
-				// this happens if the user includes the parameter list
-				// in the name. This is not part of the specification,
-				// but implemented for reasons of API symmetry.
-				var macro = this._get_macro_info(k);
-				if (macro) {
-					this.undefine(macro.name);
-				}
-			}
-		},
-		
-		// ----------------------
-		// (public) Given a dictionary of macro_name, replacement pairs, invoke
-		// `define` on all of them.
-		define_multiple : function(dict) {
-			for(var k in dict) {
-				this.define(k,dict[k]);
-			}
-		},
-	
-		// ----------------------
-		// (public) Preprocess `text` and return the preprocessed text (or receive
-		// a completion callback if asynchronous processing is enabled). `name` is 
-		// an optional string that is used in error messages as file name.
-		run : function(text, name) {
-			name = name || '<unnamed>';
-			
-			text = settings.comment_stripper(text);
-			var blocks = text.split(block_re);
-			
-			var out = new Array(Math.floor(blocks.length/3) + 2), outi = 0;
-			for (var i = 0; i < out.length; ++i) {
-				out[i] = '';
-			}
-			
+        };
+        
+        // apply default settings
+        if (settings) {
+                for(var k in default_settings) {
+                        if (!(k in settings)) {
+                                settings[k] = default_settings[k];
+                        }
+                }
+        }
+        else {
+                settings = default_settings;
+        }
+        
+        if (settings.include_func && !settings.completion_func) {
+                settings.error_func("include_func but not completion_func specified");
+        }
+        
+        // generate a 3 tuple (command, arguments, code_block)
+        var block_re = new RegExp("^"+settings.signal_char+
+                "(\\w+)[ \t]*(.*?)[ \t]*$","m"
+        );
+        
+        // match identifiers according to 6.4.2.1, do not match 'defined',
+        // do not match quote strings either
+        var is_identifier_re = /\b(d(?!efined)|[a-ce-zA-Z_])\w*(?![\w"])/g;
+        
+        // same, but checks if the entire string is an identifier
+        var is_identifier_only_re = /^(d(?!efined)|[a-ce-zA-Z_])\w*$/g;
+        
+        // same, but checks if the entire string is a macro
+        var is_macro_only_re = /^((?:d(?!efined)|[a-ce-zA-Z_])\w*)\s*\((.*)\)$/g;
+        
+        // defined <identifier>
+        var defined_no_parens_re = /defined\s+([a-zA-Z_]\w*)/g;
+        
+        // defined (<identifier>)
+        var defined_re = /defined\s*\((\s*[a-zA-Z_]\w*\s*)\)/g;
+        
+        // __defined_magic_<identifier>_ (a special sentinel value used to
+        // temporarily exclude operands to defined from macro substitution.
+        var defined_magic_sentinel_re = /__defined_magic_([a-zA-Z_]\w*)_/;
+        
+        // Match hexadecimal, octal and decimal integer literals with or
+        // without L,l,U,u suffix and separate all components.
+        var is_integer_re = /\b(\+|-|)(0|0x|)([1-9a-f][0-9a-f]*|0)([ul]*)\b/ig;
+        
+        // Grab doubly quoted strings
+        var is_string_re = /"(.*?)"/g;
+        
+        // Grab compound assignments. Extra fix for !=, ==, <=, >= needed
+        var is_assignment_re = /[+\-*%\/&^|]?=/g; 
+        
+        // Grab instances of the increment/decrement operators
+        var is_increment_re = /--|\+\+/g;
+        
+        // Grav <included_file> or "included_file"
+        var include_re = /(?:(<)(.*)>|"(.*)")(.*)/;
+        
+        // Magic token to signify the '##' token (to keep it from being
+        // treated as the operator of the same signature).
+        var pseudo_token_doublesharp = '__doublesharp_magic__';
+        var is_pseudo_token_doublesharp = new RegExp(pseudo_token_doublesharp,'g');
+        
+        // Magic token to signify the ' ' token (to keep it from being
+        // treated as token boundary).
+        var pseudo_token_space = '__whitespace_magic__';
+        var is_pseudo_token_space = new RegExp(pseudo_token_space,'g');
+        
+        var pseudo_token_empty = '__empty_magic__';
+        var is_pseudo_token_empty = new RegExp(pseudo_token_empty,'g');
+        
+        var pseudo_token_nosubs = '__nosubs__';
+        var is_pseudo_token_nosubs = new RegExp(pseudo_token_nosubs,'g');
+        
+        // List of preprocessing tokens.
+        var pp_special_token_list = {
+                '==':1,
+                '!=':1,
+                '+':1,
+                '-':1,
+                '*':1,
+                '/':1,
+                '%':1,
+                '<=':1,
+                '>=':1,
+                '<':1,
+                '>':1,
+                '=':1,
+                '+=':1,
+                '*=':1,
+                '/=':1,
+                '&=':1,
+                '|=':1,
+                '^=':1,
+                '#':1,
+                '##':1,
+                '->':1
+        };
+        
+        
+        var state = {};
+        var macro_cache = {};
+        
+        var eval_mask = null;
+        
+        var max_macro_length = 0;
+        var macro_counts_by_length = {};
+        
+        return {
+        
+                // ----------------------
+                // (public) Clear the current status code. i.e. reset all defines.
+                clear : function() {
+                        state = {};
+                        macro_counts_by_length = {};
+                        macro_cache = {};
+                        max_macro_length = 0;
+                },
+                
+                // ----------------------
+                // (public) Check if macro `k` is defined.
+                defined : function(k) {
+                        return k in state;
+                },
+        
+                // ----------------------
+                // (public) Define macro `k` with replacement value `v`. To define macros with
+                // parameters, include the parameter list in the macro name, i.e. 
+                // k <= "foo(a,b)", v <= "a ## b". The function invokes the error
+                // callback if the macro contains syntax errors.
+                define : function(k,v) {
+                        var macro = this._get_macro_info(k);
+                        if (!this._is_identifier(k) && !macro) {
+                                settings.error_func("not a valid preprocessor identifier: '" + k + "'");
+                        }
+                        
+                        if (typeof v === 'number') {
+                                v = v.toString(10);
+                        }
+        
+                        if (macro) {
+                                k = macro.name;
+                                this.undefine(k);
+                                
+                                // This inserts the macro into the macro cache, which
+                                // holds pre-parsed data to simplify substitution.
+                                macro_cache[k] = macro;
+                        }
+                        else {
+                                this.undefine(k);
+                        }
+                        
+                        state[k] = v || '';
+                        
+                        // macro length table housekeeping
+                        macro_counts_by_length[k.length] = (macro_counts_by_length[k.length] || 0 ) + 1;
+                        if (k.length > max_macro_length) {
+                                max_macro_length = k.length;
+                        }
+                },
+                
+                // ----------------------
+                // (public) Undefine `k`. A no-op if `k` is not defined.
+                undefine : function(k) {
+                        if(k in state) {
+                                delete state[k];
+                                
+                                // update macro length table
+                                var nl = macro_counts_by_length[k.length] - 1;
+                                if (k.length === max_macro_length && !nl) {
+                                        max_macro_length = 0;
+                                        for (var i = k.length-1; i >= 0; --i) {
+                                                if (macro_counts_by_length[i]) {
+                                                        max_macro_length = i;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                
+                                macro_counts_by_length[k.length] = nl;
+                                delete macro_cache[k];
+                        }
+                        else {
+                        
+                                // this happens if the user includes the parameter list
+                                // in the name. This is not part of the specification,
+                                // but implemented for reasons of API symmetry.
+                                var macro = this._get_macro_info(k);
+                                if (macro) {
+                                        this.undefine(macro.name);
+                                }
+                        }
+                },
+                
+                // ----------------------
+                // (public) Given a dictionary of macro_name, replacement pairs, invoke
+                // `define` on all of them.
+                define_multiple : function(dict) {
+                        for(var k in dict) {
+                                this.define(k,dict[k]);
+                        }
+                },
+        
+                // ----------------------
+                // (public) Preprocess `text` and return the preprocessed text (or receive
+                // a completion callback if asynchronous processing is enabled). `name` is 
+                // an optional string that is used in error messages as file name.
+                run : function(text, name) {
+                        name = name || '<unnamed>';
+                        
+                        text = settings.comment_stripper(text);
+                        var blocks = text.split(block_re);
+                        
+                        var out = new Array(Math.floor(blocks.length/3) + 2), outi = 0;
+                        for (var i = 0; i < out.length; ++i) {
+                                out[i] = '';
+                        }
+                        
 			var ifs_nested = 0, ifs_failed = 0, if_done = false, line = 1, command;
 			var if_stack = [];
 			

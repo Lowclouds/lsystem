@@ -1,5 +1,6 @@
-#+TITLE: L-System Modules Quick Guide
+#+TITLE: L-System Explorer Quick Guide
 
+* Modules
 #+BEGIN_VERSE
 Why are they called modules and not commands or something else?
 Because module is an old term used by botanists for a unit of
@@ -12,7 +13,7 @@ Modules marked *c* are *changed from TABOP/cpfg*
 Modules marked *n* are *new for this implementation*
 #+END_VERSE
 
-* Turtle Motion
+** Turtle Motion
    Without a parameter move 'step' amount
 |F(d) | move d units w/pen down, records track point|
 |f(d) | move d units w/pen up, records track point|
@@ -20,7 +21,7 @@ Modules marked *n* are *new for this implementation*
 |g(d) | ==== f(d), w/o recording track points|
 |@[Mm](x,y,z) | goto position, 'M' draw or 'm' don't draw |
 
-* Turtle Orientation
+** Turtle Orientation
 #+BEGIN_VERSE
   The turtle maintains three unit vectors, heading (*H*), left (*L*), and up (*U*).
   The turtle home orientation is *H* = +x, *L* = +z, and *U* = +y,
@@ -31,6 +32,11 @@ Modules marked *n* are *new for this implementation*
   A positive roll rotates *L* towards *U* around *H*.
 
   Without a parameter, a turn is 'delta' degrees; default is 90.
+
+  *Note* We make the turtle behave as if it were in a right-handed system, but all the 
+  underlying Babylonjs is left-handed. This has some odd consequences when comparing 
+  models with TABOP. (If I'd known I could just tell Babylonjs to use a RHS, things 
+  would have been simpler.)
 #+END_VERSE
 | +(a)                    | yaw left a degrees                           |
 | -(a)                    | yaw right degrees                            |
@@ -46,7 +52,7 @@ Modules marked *n* are *new for this implementation*
 |                         | if optional h is not 0, then set H to +x,    |
 |                         | otherwise, H is +y. Does not draw or record point |
 
-* Turtle Settings
+** Turtle Settings
   Defaults without a parameter to one
 | ;(i)       | increase or set color/material index           |
 | ,(i)       | decrease or set color/material index           |
@@ -58,7 +64,7 @@ Modules marked *n* are *new for this implementation*
 | @D(s) *u*  | set scale factor of subsequent geometry        |
 | @Di(f) *u* | multiply scale factor by f                     |
 
-* Turtle Geometry
+** Turtle Geometry
 | @o(d)            | circle of diameter d, centered at turtle position                 |
 | @C(d) *u*        | circle of diameter d in HL plane                                  |
 | @O(d)            | sphere of diameter d                                              |
@@ -91,7 +97,7 @@ Modules marked *n* are *new for this implementation*
 | @Gc(n)       *p* | Store control point. Optionally set number of interpolated strips |
 
 
-* L-system Geometry and Control
+** L-system Geometry and Control
 | [               | start branch, pushing state onto stack    |
 | ]               | end branch, popping branch state stack    |
 | % *p*           | cut modules to end of branch              |
@@ -160,6 +166,8 @@ follow mathjs syntax: [[https://mathjs.org/docs/expressions/syntax.html][Express
  - *Look at Turtle* orients the camera so the turtle is in the center of view.
  - *Show/Hide Color Table* displays the current color/material table
  - *>* is a widget to expand a table that shows the position and heading of the turtle
+** Scene Controls   
+   Here you can toggle visibility of the Ground, Sky, and coordinate axes
 ** L-system controls
   Below the Turtle controls are the L-system controls. There is a link to this *Quick Ref*erence.
   The buttonbar and controls below that display and manipulate the lsystem and rendering of it.
@@ -167,11 +175,11 @@ follow mathjs syntax: [[https://mathjs.org/docs/expressions/syntax.html][Express
   button, or use the Browse button to find a local L-system file. [Details later]
 
  - *Parse* this button will parse whatever text is in the L-system source area and show the result in the
-   L-Ssytem Expansion text box. 
+   L-Ssytem Expansion text box. If you make changes to the L-system, choose this first.
  - *Rewrite* will rewrite the parsed L-system, and, again, place the result in the L-system Expansion box.
  - *Draw* will interpret the expanded system and draw the geometry on the canvas. Note, that *Draw* neither
   clears, homes, or resets any previously drawn geometry.
- - *Reset-and-Draw* will clear, and reset the turtle before drawing
+ - *Reset-and-Draw* will clear, and reset the turtle before drawing. It does not re-parse.
  - *Step* will do one interation step of the the L-system, no matter how many interations are specified in
   the L-system spec. As a special case, if the *Parse* button is used to clear and reparse the L-system, 
  - *Step* will initially write and interpret the axiom; subsequent steps will clear the previous geometry,

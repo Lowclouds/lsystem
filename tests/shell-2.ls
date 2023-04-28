@@ -1,7 +1,7 @@
 #define R 1.02
 #define Ang1 -15
 #define Ang2 -4
-#define Wid 6.2
+#define Wid 12.4
 n=117
 axiom: f(175)&(90)#(Wid)@Gs@Gt(1.1,1.2)A(0.9,0)@Ge
 p1: A(s,n) --> +(Ang1)/(Ang2)E(s,n)A(s*R,n+1)

@@ -7,17 +7,18 @@ module.exports = {
     "overrides": [
     ],
     "parserOptions": {
-        "ecmaVersion": "latest",
-        "sourceType": "module"
+        "ecmaVersion": "latest"
     },
     "rules": {
     },
-
     "globals": {
        "BABYLON": "readonly",
        "Turtle3d":  "readonly",
-       "Lsystem;":  "readonly",
+       "Lsystem":  "readonly",
+       "turtleInterp": "readonly",
        "puts":  "readonly",
+       "newV":   "readonly",
+       "math": "readonly",
        "LOGTAG_MORE":   "readonly",
        "LOGTAG_MOST":   "readonly",
        "MAIN_ALL":   "readonly",

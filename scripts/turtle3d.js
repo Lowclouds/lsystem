@@ -1777,7 +1777,7 @@ class Contour {
          throw new Error(`Unsupported contour segment type: ${type}`);
       }
    }
-
+   // Contour
    generatePath () {
       let pts = [];
       if (this.cpts.length < 2) {
@@ -2094,6 +2094,7 @@ class HermiteSpline extends TrackPath {
       this.ptsPerSegment = n; 
    }
 
+   // HermiteSpline
    generatePath() {
       this.points = [];
       this.srm = [];
