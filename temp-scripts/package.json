@@ -1,7 +1,6 @@
 {
    "scripts": {
-      "compile": "babel --plugins=babel-plugin-macros",
-      "examples": "node scripts/examples.mjs"
+      "compile": "babel --plugins=babel-plugin-macros"
    },
    "dependencies": {
       "babylonjs": "^5.4.0",
