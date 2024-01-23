@@ -715,39 +715,43 @@ var tracksAlways = false;
 
 
 // load an example file
-if (false) {
-fetch('./tests/3d-a3.ls')
-   .then( response => {
+
+if (! (window.location.protocol==='file:')) {
+  console.log('loading initial example');
+  fetch('./assets/examples/3d-b.ls')
+    .then( response => {
       if (! response.ok) {
-         throw new Error(`${response.status}`);
+        throw new Error(`${response.status}`);
       }
       return response.text();
-   })
-   .then(text => {
+    })
+    .then(text => {
       lsSrc.value = text;
       lsys = Lsystem.Parse(lsSrc.value);
       lsResult.value = lsys.serialize();
       lsState = 'Parsed';
       if (lsResult.textContent != 'Empty') {
-      uiDoRewrite()
-         .then(value => {
+        uiDoRewrite()
+          .then(value => {
             //lsResult.value = lsys.Rewrite(); //.toString();
-               /* --------- reset ---------*/
-               t.reset();
-               /* --------- draw ---------*/
-               turtleInterp(t, lsys, interpOpts)
-               .then(value => {
-                  btnMSave.disabled = false;
-                  t.show();
-               }).catch(error => {
-                  puts(error);
-                  btnMSave.disabled = true;
-                  t.show();
-               })
-         });
+            /* --------- reset ---------*/
+            t.reset();
+            /* --------- draw ---------*/
+            turtleInterp(t, lsys, interpOpts)
+              .then(value => {
+                btnMSave.disabled = false;
+                t.show();
+              }).catch(error => {
+                puts(error);
+                btnMSave.disabled = true;
+                t.show();
+              })
+          });
       }
-   })
-   .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
+    })
+    .catch(error => lsSrc.textContent = `couldn't load example: ${error}`);
+} else {
+  console.log("can't load example because of CORS");
 }
 // ------------------------------------------------------------
 //  end of UI
