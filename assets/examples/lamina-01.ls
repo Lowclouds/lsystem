@@ -1,4 +1,8 @@
-/* lamina. demonstrate branching siblings to the side of a 'cell' */
+/* lamina. demonstrate branching siblings to the side of a 'cell' 
+    rule C creates a rectangular extrusion shape
+    rule A creates the central brown 'rib'
+    rules R and L create the  ribs on the  sides
+*/
 view = {position: [15, 6, -2], target: [0,5,0]};
 
 #define offset stemsize/2
@@ -7,7 +11,7 @@ pitch = 12.5
 derivation length: 9
 ignore: &^
 axiom: CA(9)
-C --> @m(0.25,0,0)@Ds.^f(1)^f(0.5)^f(1)^f(0.5)@De('a')@#('a')
+C --> @m(0.25,0,0)@Cs.^f(1)^f(0.5)^f(1)^f(0.5)@Ce('a')@#('a')
 A(n) : n > 0 --> F&(pitch)A(n-1)
 R(n) : n > 0 --> F&(pitch)R(n-1)
 L(n) : n > 0 --> F&(pitch)L(n-1)
