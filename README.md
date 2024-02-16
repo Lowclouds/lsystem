@@ -1,7 +1,7 @@
 # L-system Explorer
 ## Overview
 
-  Implements much of the system described in 'The Algorithmic Beauty of Plants' by Przemyslaw Prusinkiewicz and Aristid Lindenmayer, as well as parts of the system described in the CPFG user manual for their version of the system, which was the primary source for reverse-engineering the L-Studio functionality. Many great references for L-systems can be found here: [AlgorithmicBotany](http://algorithmicbotany.org/papers/ "Algorithmic Botany"). The best reference for this implementation, and it is far more complete than what is here, is the CPFG manual in the L-Studio package available from the algorithmicbotany site. This paper by Prusinkiewicz, Mech, and Hanan,[Mech Dissertation ](https://prism.ucalgary.ca/bitstream/handle/1880/45607/1997-599-01.pdf?sequence=2 "Mech dis
+  L-system Explorer mplements much of the system described in 'The Algorithmic Beauty of Plants' by Przemyslaw Prusinkiewicz and Aristid Lindenmayer, as well as most of the system described in the CPFG user manual for their version of the system, which was the primary source for reverse-engineering the L-Studio functionality. Many great references for L-systems can be found here: [Algorithmic Botany](http://algorithmicbotany.org/papers/ "Algorithmic Botany"). The best reference for this implementation, and it is far more complete than what is here, is the CPFG manual in the L-Studio package available from the algorithmicbotany site. This paper by Prusinkiewicz, Mech, and Hanan, [Mech Dissertation ](https://prism.ucalgary.ca/bitstream/handle/1880/45607/1997-599-01.pdf?sequence=2 "Mech dis
   sertation"), is also a useful reference - and the best for understanding the splined paths.
 
  [Babylonjs](https://babylonjs.com) is a major reason this exists at all, since all of the underlying geometry is built on top of it. The 3D turtle extrudes configurable shapes as it moves around, and uses the underlying scene, camera, lighting, materials, and textures. You can save generated meshes to disk and open them in Blender, and someday, may be able to import gltf meshes as turtle shapes or as surfaces. Thank you, Babylonjs team. 
@@ -9,34 +9,35 @@
  It uses mathjs for interpreting parameter values and expressions, so pretty much anything the mathjs expression evaluator can do is possible in expressions and parameters. Likewise, things that mathjs can't do are, for the most part, also not possible.
 
 ## What is an L-System?
-   This is best explained by referring you to the source, [AlgorithmicBotany](http://algorithmicbotany.org/papers/#abop), but, in a nutshell, it is a system for modeling branching structures, like plants. It turns out that many interesting real and theoretical objects, fractals, e.g., can be modeled using the notion of an L-System. L-System Explorer is broken into three parts: the parsing and rewriting of the L-System description/model, an underlying 3D turtle that can draw the geometry, and an interpreter that reads the expanded model and executes the appropriate turtle commands. 
-   The model is a string (implemented here as an array) of modules, where a module is a single or multi-character word. A number of modules are reserved for the underlying geometry operations, while all remaining characters are available for writing model productions (see above.) 
+   This is best explained by referring you to the source, [Algorithmic Botany](http://algorithmicbotany.org/papers/#abop), but, in a nutshell, it is a system for modeling branching structures, such as, say, plants. It turns out that many interesting real and theoretical objects, fractals, e.g., can be modeled using the notion of an L-System. L-System Explorer is broken into three parts: the parsing and rewriting of the L-System description/model, an underlying 3D turtle that can draw the geometry, and an interpreter that reads the expanded(rewritten) model and executes the appropriate turtle functions. 
+   The model is a string (implemented here as an array) of modules, where a module is a single or multi-character word. A number of modules(characters) are reserved for the underlying geometry operations, while all remaining characters are available for writing model productions. 
    
 ## Features
-  * Most of the basic turtle geometry:
+  * Most of the basic turtle control, motion, and geometry, with associated reserved modules. 
       * Motion
 
-        Forward with/without drawing, and with/without capturing control point, global goto with/without drawing
+        Forward with/without drawing, and with/without capturing control point, global goto with/without drawing.
 
-        FfGg@M(x,y,z)@m(x,y,z) 
+        F f G g @M(x,y,z) @m(x,y,z)
       * Orientation
 
-        Yaw, pitch, roll, reverse direction, set up, set heading  
+        Yaw, pitch, roll, reverse direction, set up, set heading
 
-    	+-&^/\|@v@R(hx,hy,hz[,ux,uy,uz])
+    	+ - & ^ / \ | @v @R(hx,hy,hz[,ux,uy,uz])
       * Settings
 
     	Increase/decrease/set color/material, increase/decrease/set line width/stemsize
 
-        ;,#!
+        ; , # !
       * Geometry
 
         Create circle/sphere; define start/define end/use contour, start/end polygon, start/end path, capture control point. These elements are implicitly instanced for performance.
 
-        @o@O@Ds@De@#{}{([01]}.
+        @o @O @Ds @De @#{} {([0-4]}.
       * Hermite Splines.
 
         These work, but adjustment of tangents is not fully implemented, and may never be. An extension of TABOP allows you to save an extrusion as a single mesh and then instantiate it by name. This greatly improves performance.
+      
       *	Contours.
         It is possible to define and use L-System generated contours for path shapes, which is not supported in L-Studio. 
       * Piecewise path.
