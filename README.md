@@ -1,3 +1,5 @@
+# Note: a new, svelte-based version is coming as soon as I can de-louse it well enough. It has some cool new features, too.
+
 # L-system Explorer
 ## Overview
 
