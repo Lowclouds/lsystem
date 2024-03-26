@@ -1,4 +1,5 @@
-# L-system Explorer v1.0.0
+# L-system Explorer
+     v1.0.0
 ## Overview
 
   L-system Explorer mplements much of the system described in 'The Algorithmic Beauty of Plants' by Przemyslaw Prusinkiewicz and Aristid Lindenmayer, as well as most of the system described in the CPFG user manual for their version of the system, which was the primary source for reverse-engineering the L-Studio functionality. Many great references for L-systems can be found here: [Algorithmic Botany](http://algorithmicbotany.org/papers/ "Algorithmic Botany"). The best reference for this implementation, and it is far more complete than what is here, is the CPFG manual in the L-Studio package available from the algorithmicbotany site. This paper by Prusinkiewicz, Mech, and Hanan, [Mech Dissertation ](https://prism.ucalgary.ca/bitstream/handle/1880/45607/1997-599-01.pdf?sequence=2 "Mech dis
@@ -16,7 +17,7 @@
   * Most of the basic turtle control, motion, and geometry, with associated reserved modules. 
       * Motion
 
-        Forward with/without drawing, and with/without capturing control point, global goto with/without drawing.
+        Forward with/without drawing, and with/without capturing control point, global goto with/without drawing.f
 
         F f G g @M(x,y,z) @m(x,y,z)
       * Orientation
