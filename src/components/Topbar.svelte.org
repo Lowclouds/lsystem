@@ -1,0 +1,96 @@
+<script >
+  import {getContext} from 'svelte';
+  import {
+    Button,
+    Collapse,
+    Container,
+    Navbar,
+    NavbarBrand,
+    NavbarToggler,
+    Nav,
+    NavItem,
+    NavLink,
+    Dropdown,
+    DropdownToggle,
+    DropdownMenu,
+    DropdownItem,
+    Icon
+  } from 'sveltestrap';
+
+  let doSaveCode = getContext('doSaveCode');
+  let genCode = getContext('genCode');
+  let canSave = getContext('canSave');
+
+  let genCodeIcon = 'square';
+  let multiTurtleIcon = 'square';
+
+  function openLS(event) {
+    alert('open L-System');
+    $canSave=true;
+  }
+
+  function genCodeToggle(event){
+    if ($genCode ) {
+      genCodeIcon = 'square';
+    } else {
+      genCodeIcon = 'check-square';
+    }
+    $genCode = !$genCode;
+  }
+</script>
+
+<div id='topnavbar'>
+  <Navbar >
+    <Nav size="sm">
+      <NavItem>
+        <Dropdown nav inNavbar>
+          <DropdownToggle nav caret>L-System</DropdownToggle>
+          <DropdownMenu end>
+            <DropdownItem on:click={openLS}>Open</DropdownItem>
+            <DropdownItem disabled={!$canSave} >Save</DropdownItem>
+            <DropdownItem divider />
+            <DropdownItem>Multi Turtle <Icon name={multiTurtleIcon}/></DropdownItem>
+            <DropdownItem disabled>Model Save</DropdownItem>
+            <DropdownItem divider />
+            <DropdownItem on:click={genCodeToggle}>Gen Code <Icon name={genCodeIcon}/>
+            </DropdownItem>
+            <DropdownItem disabled>Save Code</DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+      </NavItem>
+      <NavItem>
+        <Dropdown nav inNavbar >
+          <DropdownToggle nav caret>Turtle</DropdownToggle>
+          <DropdownMenu end>
+            <DropdownItem>Hide Ctrls</DropdownItem>
+            <DropdownItem>Show Turtle Status</DropdownItem>
+            <DropdownItem>Show Color Table</DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+      </NavItem>
+      <NavItem>
+        <Dropdown nav inNavbar>
+          <DropdownToggle nav caret>Scene</DropdownToggle>
+          <DropdownMenu end>
+            <DropdownItem>Hide Axes</DropdownItem>
+            <DropdownItem>Hide Ground</DropdownItem>
+            <DropdownItem>Hide Sky</DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+      </NavItem>
+    </Nav>
+    <Nav pills size="sm">
+      <NavItem>
+        <NavLink href="./quick-ref.html">Help</NavLink>
+      </NavItem>
+    </Nav>
+  </Navbar>
+</div>
+
+<style>
+  #topnavbar {
+    border: 1px solid black;
+    padding: 0;
+    margin: 0;
+  }
+</style>
