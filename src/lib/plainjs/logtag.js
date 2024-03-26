@@ -1,46 +1,3 @@
-/*
-  A tagged logging class.
-  A tag is a bignum with 1 bit set in its binary value, 
-  and which you need to define somewhere. 
-  You can set multiple tags and then configure LogTag to
-  log if any tags are set, or only if all tags are set.
-  You can query a particular tag or a list of tags to see
-  if they are set.
-  All the methods are static, so there's no log object you
-  need to create, but your app will need to choose one
-  mode, LOG_ANYOF or LOG_ALLOF, to operate reasonably.
-  LOG_ANYOF is the default, meaning that if any of the 
-  tags for the app is set, and the log message contains
-  the tag, the log will happen. 
-
-  Tags are specific to each log message.
-  
-  LogTag.log(logmessage, ...tags) is the primary interface.
-
-  Example:
-  - the following lines are in the code:
-
-  let x = x+y;
-  LogTag.log(`x is ${x}, y is ${y}`, FILEX_TRACK_X);
-
-  - in the console, enter:
-
-  LogTag.set(FILEX_TRACK_X);
-
-  - now when you hit the LogTag.log line, it will 
-  - output to the console.
-  - turn off the log with
-
-  LogTag.clear()  or LogTag.clear(FILEX_TRACK_X)
-  
-  - If you really don't want to evaluate logmessage
-  - unnecessarily or want to do lots of fancy calculations,
-  - do something like this:
-
-  if (LogTag.isSet(FILEX_TRACK_X)) {
-     LogTag.log(logmessage);
-  }
-*/
 class LogTag {
    static tagSet = 0n;
    static mode = 0n;
@@ -93,7 +50,7 @@ class LogTag {
       }
    }
 
-   // doesn't seem to ybe a way to avoid evaluating o. oh well
+   // doesn't seem to be a way to avoid evaluating o. oh well
    static log(o, ...tags) {
       if (tags.length == 0) {
          console.log(o);
@@ -130,16 +87,11 @@ function classConst (obj, map) {
 }
 
 classConst(LogTag, {
-   LOG_ANYOF: 0,
-   LOG_ALLOF: 1,
+   LOG_ANYOF: 0,                // log if any of tags are set
+   LOG_ALLOF: 1,                // log only if all tags are set
 });
+
 const  puts = LogTag.log;
-
-/* LogTag.defTags([
-   
-   ]);
-*/
-
 
 // define your tags here or elsewhere
 // we use BigInt to allow for more than 32 tags
@@ -179,3 +131,4 @@ const TRTL_POLYGON       = 2n**32n;
 const TRTL_SETGET        = 2n**33n;
 const TRTL_TEXTURE       = 2n**34n;
 const TRTL_TRACK         = 2n**35n;
+const TRTL_CT_NOLABELS   = 2n**35n;

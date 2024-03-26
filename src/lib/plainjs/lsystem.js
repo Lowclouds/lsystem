@@ -34,7 +34,7 @@
 const RE = {};
 
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}\&^\\\\/#!\\.\\_|\\$%\~]|@D[aeimfst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@D[idce]|@H|\\?[PHLU]?";
+var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]?";
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 /* test for module RE string
@@ -43,13 +43,13 @@ var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3
 
 var numReStr = '\\d+(?:\\.\\d+)?';
 var varnameReStr = '\\w[\\w\\d]*';
-var startdReStr='^(?:define)[ \\t]+{';
-var enddReStr = '\)[ \\t]+([^ \\t].*)';
-var startiReStr = '^(?:#?[iI]gnore:) *\(';
-var endiReStr = '\+\)';
+// var startdReStr='^(?:define)[ \\t]+{';
+// var enddReStr = '\)[ \\t]+([^ \\t].*)';
+var startiReStr = '^(?:#?[iI]gnore:) *(';
+var endiReStr = '\+)';
 var startcReStr = '^(?:#?[cC]onsider:?) +\(';
-var param1ReStr=`${numReStr}|${varnameReStr}`;
-var expReStr = '(.*(?=->))';
+// var param1ReStr=`${numReStr}|${varnameReStr}`;
+// var expReStr = '(.*(?=->))';
 var prodNameStr = '(?:^[pP]\\d+:)';
 
 RE.defineStart = new RegExp('^(?:[\\s]*define:\\s+){[\\s]*(.*)','d');
@@ -156,7 +156,7 @@ class LsScope extends Map {
    }
 
    // order of the maps determines scoping of the variables
-   // earlier maps will shadow earlier maps
+   // earlier maps will shadow later maps
    init(...maps) {
       this.clear();
       maps.forEach((vmap) => {
@@ -189,6 +189,8 @@ class LsScope extends Map {
       this.scopeMap.set(v,null); // just set rule scope to null
    }
 
+  // evaluate pre and post conditions for side effect
+  // value test is result of strict condition
    test () {
       let r = true;
       if (this.preCondition) {
@@ -199,6 +201,7 @@ class LsScope extends Map {
          puts(`test strict: ${this.strictCondition}`, LSYS_MATCH);
          r = this.eval(this.strictCondition);
       }
+     // only need to evaluate if strict condition is true
       if (r && this.postCondition) {
          puts(`test post: ${this.postCondition}`, LSYS_MATCH);
          this.eval(this.postCondition);
@@ -206,8 +209,16 @@ class LsScope extends Map {
       return r;
    }
    
+   // Called from test() above for true/false condition
+   // this can throw if the number of formal parameters exceeds the provided values
+   // and one of the parameters is used in a condition. one could ferret out why, but
+   // it's likely the rule just doesn't apply, so let it fail and return false
    eval(expr) {
-      return math.evaluate(expr, this); // really just need this for side-effect
+      let result;
+      try {
+         result =  math.evaluate(expr, this); // really just need this for side-effect
+      } catch(error) { result = false; }
+      return result;
    }
 
    // dynamic binding  part 2
@@ -244,70 +255,60 @@ class LsProduction extends Array {
    }
    set predecessor (p) {
       this[0] = p;
-      return this[0];
    }
    get strictPredecessor () {
       return this[0][1];
    }
    set strictPredecessor (sp) {
       this[0][1] = sp;
-      return this[0][1];
    }
    get leftContext() {
       return this[0][0];
    }
    set leftContext(c) {
       this[0][0] = c;
-      return this[0][0];
    }
    get rightContext() {
       return this[0][2];
    }
    set rightContext(c) {
       this[0][2] = c;
-      return this[0][2];
    }
    get condition () {
       return this[1];
    }
    set condition (c) {
       this[1] = c;
-      return this[1];
    }
    get strictCondition () {
       return this[1][1];
    }
    set strictCondition (c) {
       this[1][1] = c;
-      return this[1][1];
    }
    get preCondition () {
       return this[1][0];
    }
    set preCondition (pc) {
       this[1][0] = pc;
-      return this[1][0];
    }
    get postCondition () {
       return this[1][2];
    }
    set postCondition (pc) {
       this[1][2] = pc;
-      return this[1][2];
    }
    get successor() {
       return this[2];
    }
    set successor(s) {
       this[2] = s;
-      return this[2];
    }
    get scope() {
       return this[3];
    }
    set scope(s) {
       this[3] = s;
-      return this[3];
    }
 }
 
@@ -463,20 +464,21 @@ class Lsystem {
             break;
          case 'subsystems':
             break;
-         default:
-            let t = Lsystem.myTypeOf(this[prop]);
-            if (t == 'map') { 
-               if (this[prop] == '') {
-                  return `${prop} is empty\n`;
-               } else {
-                  s = `${prop} contains:\n`;
-                  for (let e of this[prop].entries()) { 
-                     s = s + `  ${e}\n`;}
-               }
-            } else {
-               s = `${prop} = ${this[prop]}\n`;
-            }
-            break;
+         default: {
+           let t = Lsystem.myTypeOf(this[prop]);
+           if (t == 'map') { 
+             if (this[prop] == '') {
+               return `${prop} is empty\n`;
+             } else {
+               s = `${prop} contains:\n`;
+               for (let e of this[prop].entries()) { 
+                 s = s + `  ${e}\n`;}
+             }
+           } else {
+             s = `${prop} = ${this[prop]}\n`;
+           }
+         }
+           break;
          }
       }
       return s;
@@ -513,12 +515,14 @@ class Lsystem {
       // define these here so recursive invocations of parseHelper
       // all use the same spec and indices into it.
       let cppSpec = pp.run(spec), pos = 0;
+      // there's a bug in cpp.js that sometimes doesn't do all replacements
+      cppSpec=pp.run(cppSpec);
+
       cppSpec=cppSpec.replaceAll(/\n\n+/g, '\n'); // remove blank lines
 
       let end = cppSpec.length;      
       let m;                            // common match variable
       let nestPos;                      // where we left line mode
-      let nestIndex;
       let nesting = [];
       let ls0;
       if (lsystem) {
@@ -654,7 +658,6 @@ class Lsystem {
             //    pos = m.indices[1][0]; // reset pos to whatever's there
             // }
             nestPos = pos;
-            nestIndex = 0;
             nesting = [1];
             puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
             pr.status = P_HANDLED;
@@ -1007,51 +1010,6 @@ ${msg}`;
          }
          return l;
       }
-      /* parseDefine parses function and array declarations
-         line-by-line parsing is too constrained for this.
-         first, we'll get the to the end of the define section, then 
-         chunk it into assign statements, and then we can use regular expressions to 
-         unused */
-
-      // function parseDefine (ls, start) {
-      //         let pr = new ParseResult(P_HANDLED, inDefine);
-      //         let n = 0;
-      //         let nesting = [0];
-      //         let nestIndex=0;
-
-      //         puts(`parseDefine looking at: ${line}`);
-      //         return pr;
-      //         while (nesting[nestIndex] > 0 && n < line.length) {
-      //       if (line[n] == '}') {
-      //          nesting[nestIndex]--;
-      //       } else if (line[n] == '{') {
-      //          nesting[nestIndex]++;
-      //       }
-      //       n++;
-      //         }
-      //         if (nesting[nestIndex] == 0) {
-      //       puts(`done with nestIndex ${nestIndex}`);
-      //       if (nestIndex == 0) { // assume we're done with this line
-      //          puts(`done with inDefine, nestPos=${nestPos} - ${pos+line.length}`);
-      //          pr.status = P_TRANSITION;
-      //          pr.nextState = inItems;
-      //       }
-      //         }
-      
-      //         return pr;
-      
-      //         // m = line.matchAll(RE.assignFun);
-      //         //     puts(m);
-      //         //     for (let parts of m) {
-      //         //        let fname = parts[1];
-      //         //        let parms = parts[2];
-      //         //        let body = parts[3];
-      //         //        puts(`${fname} = (${parms}) ${body}`);
-      //         //        //ls.functions.set(fname, Function(parms, body));
-      //         //        Lsystem.functions.set(fname, Function(parms, body));
-      //         //     }
-      //         }
-
    }; // end of Parse
 
 
@@ -1112,6 +1070,8 @@ ${msg}`;
    // the property dDone keeps track of how many total iterations have
    // been done on the string.
 
+  // Note well: mstring is an array of modules, not actually a string
+
    Rewrite (ls = this, it = 0, string=null ) {
       if (string===null) {
          ls.current = ls.axiom.slice();
@@ -1119,7 +1079,7 @@ ${msg}`;
          ls.current = string;
       }
       let genv = new LsScope();
-      genv.init(ls.locals, Lsystem.globals);
+      genv.init(ls.locals, Lsystem.globals); // locals will shadow globals
       let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
@@ -1290,7 +1250,7 @@ ${msg}`;
    }
    // when rewriting/deriving an lsystem
    // nodeA must be a module in the rule with formal parameters
-   // nodeB is a module in the axiom/expansion with an actual numeric value which
+   // nodeB is a module in the axiom/expansion with an actual value which
    // gets bound to the formal parameter from nodeA
    // TABOP says that parameter length must match exactly, but then allows modules
    // to have optional parameters - so we check that the number of formal 
