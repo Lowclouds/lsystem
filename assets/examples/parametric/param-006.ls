@@ -1,5 +1,6 @@
-#TABOP 1.9, Fig 1.39
-
+/* 
+  TABOP 1.9, Fig 1.39
+*/
 #define R 1.456
 
 delta=85

@@ -1,4 +1,6 @@
-#TABOP Sec 1.10.3, Fig 137B
+/* TABOP Sec 1.10.3, Fig 137B
+   This is a space-filling fractal that takes a bit of time
+*/
 view = {position: [30,10,-7], target: [0,10,-7]};
 
 #define c 1

@@ -1,12 +1,15 @@
 /*
  This shows one way that subsystems can be strung together and sequenced at the top level.
- The top-level system will completely expand the A module until the end module E
- counts down from BS. Then it will turn on the sub-Lsystem 2 to expand B until 
- the end module, E, counts down from CS. At that point, it enables the C module
- with the M marker, which is expanded by sub-Lsystem 3. 
+ The top-level system will hand off the B and C modules to sub-lsystems 2 and 3, respectively,
+ in the first step, and then switch off. The B and C modules are then expanded by their
+ sub-lsystems in parallel until they each produce an M module and turn off.
+ The M marker module produced by sub-lsystem 2, then allows the A > M production to produce
+ a growth. In the next step, the M produced by sub-Lsystem 3 allows the M < D production to
+ match in the main lsystem (note the ignore: $ statement.) This produces the green branch
+ at the top.
 
- Note: Continued expansion of A and B can continue while B, or C are evolving. The
- key idea is that delaying expansion of B and C using sub-Lsystems.
+ Note: Continued expansion of A or D could continue in Lsystem 1 while B, or C are evolving. 
+ The key idea is delaying expansion of A and D using sub-Lsystems.
  This could be used to create contours and surfaces before expanding the main system.
 */
 #define BS 2
@@ -23,7 +26,7 @@ axiom: ABCD
 A < B -> $(2,BSCALE)B$
 B < C --> $(3,CSCALE)C$
 A > M --> F(step)
-D < D --> +;(cstep^cstep^cstep)F(step)
+M < D --> +;(cstep^cstep^cstep)F(step)
 endlsystem
 
 lsystem: 2
@@ -44,4 +47,5 @@ axiom: C
 C -> DE(4)
 D > E(n)-> DD
 E(n) : n>0 --> E(n-1)
-E(n) : n < 1 --> ;(cstep*step)F(step)
+E(n) : n < 1 --> ;(cstep*step)F(step)M
+M -> *
