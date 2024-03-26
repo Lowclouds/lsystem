@@ -1,5 +1,3 @@
-# Note: a new, svelte-based version is coming as soon as I can de-louse it well enough. It has some cool new features, too.
-
 # L-system Explorer
 ## Overview
 
@@ -90,7 +88,16 @@
    * Array specified contours and surfaces
    * L-system surface generation
    * Textures - currently just standard materials
-   * A set of examples/tests, many taken from the book, 'The Algorithmic Beauty of Plants'
-   
-   
+
+## Changes since last version
+    * Switched to using Webpack to build and debug, much nicer.
+    * Switched to using Svelte and Bootstrap: much easier implementing new UI features
+    * New layout using svelte-splitpanes and bootstrap menu bars and icons
+    * Added all my test/example files to front end to learn and browse
+    * Fixed many broken features - see shell-2.ls, or one
+    * Added better model save feature, including choice to use clones instead of instances.
+    * Ability to save some settings, like auto-load and build of demo system
+    * Added 1x1 grids to XY, YZ, and XZ planes to check size of finished models
+    * Changed contour module from @D to @C - and may have missed converting some examples
+     
   
