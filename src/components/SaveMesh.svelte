@@ -20,7 +20,7 @@
    $: if (dialog && showModal) dialog.showModal(); 
 
    function uiDoSave() {
-      let meshes =Turtle3d.getTracksByTag('lsystem && track');
+     let meshes =Turtle3d.getTracksByTag('lsystem && (track || mesh)');
       let fname = smfile.split('.')[0];
       if (meshes.length) {
          switch (ftype) {

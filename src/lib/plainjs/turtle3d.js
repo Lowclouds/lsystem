@@ -1563,7 +1563,8 @@ class Turtle3d {
          let mopts = {setmaterial: false,
                       pos: this.getPos(),
                       rotate: true ,
-                      tags: `${this.Turtle} ${this.TurtleState.trackTag}`}; // exclude 'track' from tag
+                      tags: null};
+                      //tags: `${this.Turtle} ${this.TurtleState.trackTag} instance`}; // exclude 'track' from tag
          if (scale != 1) {
             mopts.scaling = scale;
          }
@@ -1607,7 +1608,7 @@ class Turtle3d {
       mesh.isVisible = false;
       mesh.setEnabled(false);
       BABYLON.Tags.EnableFor(mesh);
-      mesh.addTags('mesh Turtle3d');
+      mesh.addTags('lsystem mesh Turtle3D');
       let mobj = {m: mesh, name: pname, counter: 0, contactPoint: null, endPoint: null, heading: null, up: null, scale: 1};
       mesh.registerInstancedBuffer("color",4);
       mesh.instancedBuffers.color = BABYLON.Color4(1,1,1,1); //FromColor3(mesh.material.diffuseColor, 1);

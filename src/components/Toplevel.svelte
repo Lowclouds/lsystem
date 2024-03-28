@@ -80,7 +80,8 @@
 <Topbar/>
 <Splitpanes on:resized={resize} >
   <Pane size={initialPaneSize} >
-    <canvas id="renderCanvas" touch-action="pan-x pan-y pinch-zoom" bind:this={canvas}> </canvas>
+    <canvas id="renderCanvas" touch-action="none" bind:this={canvas}> </canvas>
+    <!-- <canvas id="renderCanvas" touch-action="pan-x pan-y pinch-zoom" bind:this={canvas}> </canvas> -->
     <div class="tinfo"  bind:this={tinfo}> 
       <TurtleInfo/>
     </div>
@@ -98,6 +99,7 @@
 <style>
   #renderCanvas {
     width: 100%;
+    touch-action: none;
   }
   .tinfo {
     position: fixed;
