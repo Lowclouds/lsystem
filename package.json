@@ -7,12 +7,6 @@
     "dev": "webpack serve"
   },
   "dependencies": {
-    "@babylonjs/core": "^6.10.0",
-    "@babylonjs/gui": "^6.41.0",
-    "@babylonjs/loaders": "^6.41.0",
-    "@babylonjs/materials": "^6.10.0",
-    "@babylonjs/procedural-textures": "^6.12.3",
-    "@babylonjs/serializers": "^6.41.0",
     "@popperjs/core": "^2.11.8",
     "babylonjs": "^6.41.0",
     "babylonjs-gui": "^6.41.0",
