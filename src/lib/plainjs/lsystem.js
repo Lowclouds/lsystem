@@ -659,7 +659,8 @@ class Lsystem {
             // }
             nestPos = pos;
             nesting = [1];
-            puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
+            puts(`Unimplemented: would call parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
+            //puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
             pr.status = P_HANDLED;
             pr.nextState = inItems;
          } else if (RE.var.test(line)) {
