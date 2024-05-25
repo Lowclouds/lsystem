@@ -82,9 +82,7 @@
   <Pane size={initialPaneSize} >
     <canvas id="renderCanvas" touch-action="none" bind:this={canvas}> </canvas>
     <!-- <canvas id="renderCanvas" touch-action="pan-x pan-y pinch-zoom" bind:this={canvas}> </canvas> -->
-    <div class="tinfo"  bind:this={tinfo}> 
-      <TurtleInfo/>
-    </div>
+    <TurtleInfo/>
   </Pane>
   <Pane>
     <LSExplorer/>
@@ -101,11 +99,5 @@
     width: 100%;
     touch-action: none;
   }
-  .tinfo {
-    position: fixed;
-    bottom: 1em;
-    z-index: 5;
-    opacity: 0.75;
-    background-color: white;
-  }
+
 </style>

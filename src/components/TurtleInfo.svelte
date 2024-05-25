@@ -20,7 +20,6 @@
   
   $: if ( $doShowTurtleInfo ) { // || (tPos.x || tPos.y || tPos.z))
     updturtle();
-    //isShown = 'contents';
     isShown = 'flex';
   } else {
     isShown = 'none';
@@ -43,8 +42,7 @@
   }
 </script>
 
-<div style="display: {isShown}; width: 100%; justify-content: space-between;">
-  <div>
+<div id="tinfo" style="display: {isShown}">
     <table class="tbl" id="turtleinfo">
       <tr><td><button on:click={updturtle}>Update</button></td><td id="t1">Turtle: {tid} </td></tr>
       <tr><td >Pos</td><td id="t1P">{tPos}</td></tr>
@@ -52,16 +50,13 @@
       <tr><td class="tL">L(left)</td><td id="t1L" class="tL">{tL}</td></tr>
       <tr><td class="tU">U(p)</td><td id="t1U" class="tU">{tU}</td></tr>
     </table>
-  </div>
-  <div>
+
     <table class="tbl" id="camerainfo">
       <tr><td></td><td id="c1">Camera </td></tr>
       <tr><td >Position</td><td id="c1P">{camPos}</td></tr>
       <tr><td >Target</td><td id="c1T">{camTarget}</td></tr>
       <tr><td >Direction</td><td id="c1D">{posDir}</td></tr>
     </table>
-  </div>
-
 </div>
 
 <style>
@@ -72,12 +67,21 @@
   }
   table {
     font-size: smaller;
+    border: 2px solid black;
   }
   td {
     padding: 0 1em 0 .25em;
     font-size: smaller;
   }
+  #tinfo {
+    position: fixed;
+    bottom: 1em;
+    z-index: 5;
+    opacity: 0.55;
+    background-color: white;
+    justify-content: space-between;
+  }
   .tH { color: red; }
   .tL { color: blue; }
-  .tU { color: #00FF00; }
+  .tU { color: #00FF88; }
 </style>
