@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-02-07 Wed 20:10 -->
+<!-- 2024-04-05 Fri 18:19 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>L-System Explorer Quick Guide</title>
@@ -190,7 +190,7 @@
     { font-size: 10px; font-weight: bold; white-space: nowrap; }
   .org-info-js_search-highlight
     { background-color: #ffff00; color: #000000; font-weight: bold; }
-  .org-svg { width: 90%; }
+  .org-svg { }
 </style>
 </head>
 <body>
@@ -200,44 +200,87 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgdeee005">1. Modules</a>
+<li><a href="#org5d3fc6c">1. Intro</a></li>
+<li><a href="#orgfb46a77">2. Modules</a>
 <ul>
-<li><a href="#orge2eceab">1.1. Turtle Motion</a></li>
-<li><a href="#org0c8c2e6">1.2. Turtle Orientation</a></li>
-<li><a href="#org3944e0c">1.3. Turtle Settings</a></li>
-<li><a href="#org46d6251">1.4. Turtle Geometry</a></li>
-<li><a href="#org0e90181">1.5. L-system Geometry and Control</a></li>
+<li><a href="#org48e37e6">2.1. Turtle Motion</a></li>
+<li><a href="#org1a5bc1d">2.2. Turtle Orientation</a></li>
+<li><a href="#org268eaf6">2.3. Turtle Settings</a></li>
+<li><a href="#orgf480467">2.4. Turtle Geometry</a></li>
+<li><a href="#orgc3d68fe">2.5. L-system Geometry and Control</a></li>
 </ul>
 </li>
-<li><a href="#org6f7faf8">2. L-System Syntax</a>
+<li><a href="#orge710b49">3. L-System Syntax</a>
 <ul>
-<li><a href="#orgcad4d61">2.1. Comments</a></li>
-<li><a href="#org83b7a01">2.2. Defines</a></li>
-<li><a href="#orgf179b72">2.3. Settings</a></li>
-<li><a href="#org9c30a0f">2.4. Variables</a></li>
-<li><a href="#org1922295">2.5. Expressions</a></li>
+<li><a href="#orgee651ae">3.1. Rule-based systems</a>
+<ul>
+<li><a href="#org18a28ca">3.1.1. Modules</a></li>
+<li><a href="#orgba6af01">3.1.2. Axiom</a></li>
+<li><a href="#orgbdfc872">3.1.3. Productions</a></li>
+<li><a href="#org9923aac">3.1.4. Production Contexts and Matching Order</a></li>
 </ul>
 </li>
-<li><a href="#org3d60cae">3. UI and controls</a>
+<li><a href="#orgc67babc">3.2. Pre-parsing</a>
 <ul>
-<li><a href="#org0e99d0f">3.1. L-system controls</a></li>
-<li><a href="#orgc248b0c">3.2. Turtle controls</a></li>
-<li><a href="#org44085b1">3.3. Scene Controls</a></li>
+<li><a href="#org3d8e10e">3.2.1. Comments</a></li>
+<li><a href="#org52253d8">3.2.2. Defines</a></li>
+</ul>
+</li>
+<li><a href="#orgfdb202a">3.3. Settings</a></li>
+<li><a href="#org40488ac">3.4. Variables</a></li>
+<li><a href="#org6c33082">3.5. Expressions</a></li>
+</ul>
+</li>
+<li><a href="#org645775f">4. UI and controls</a>
+<ul>
+<li><a href="#org1a672c2">4.1. L-system controls</a></li>
+<li><a href="#org2805cae">4.2. Turtle controls</a></li>
+<li><a href="#org67cdf79">4.3. Scene Controls</a></li>
 </ul>
 </li>
 </ul>
+</div>
+</div>
+<div id="outline-container-org5d3fc6c" class="outline-2">
+<h2 id="org5d3fc6c"><span class="section-number-2">1.</span> Intro</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+If you just can't remember what the module for yaw is, go to the <b>Modules</b>
+section.  
+</p>
+
+<p>
+If you need a bit more info on L-System syntax, skip to that section.
+</p>
+
+<p>
+If you'd like to see some examples of L-Systems, select the <b>Examples</b> menu
+item on the main page and wander through the samples there, many of which 
+have long comments.
+</p>
 </div>
 </div>
 
-<div id="outline-container-orgdeee005" class="outline-2">
-<h2 id="orgdeee005"><span class="section-number-2">1.</span> Modules</h2>
-<div class="outline-text-2" id="text-1">
+<div id="outline-container-orgfb46a77" class="outline-2">
+<h2 id="orgfb46a77"><span class="section-number-2">2.</span> Modules</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+   A module is either a single character, or some system-defined
+sequences of characters. The behavior/meaning of the system-defined
+modules is described below.  Note, that I've only tested US Ascii
+characters, others may or may not work. An L-system consists of the
+sequence of characters and the production rules that modify them: see
+L-System Syntax, below.
+</p>
+
+<p>
+   Why are they called modules and not commands or something else?
+Because module is an old term used by botanists for a unit of growth 
+("article" in French from the Latin for branch and translated to 
+module in English.)
+</p>
+
 <p class="verse">
-Why are they called modules and not commands or something else?<br />
-Because module is an old term used by botanists for a unit of growth<br />
-("article" in French from the Latin for branch and translated to<br />
-module in English.)<br />
-<br />
 Modules marked <b>u</b> are <b>unimplemented</b><br />
 Modules marked <b>p</b> are <b>partially implemented</b><br />
 Modules marked <b>c</b> are <b>changed from TABOP/cpfg</b><br />
@@ -245,11 +288,12 @@ Modules marked <b>n</b> are <b>new for this implementation</b><br />
 </p>
 </div>
 
-<div id="outline-container-orge2eceab" class="outline-3">
-<h3 id="orge2eceab"><span class="section-number-3">1.1.</span> Turtle Motion</h3>
-<div class="outline-text-3" id="text-1-1">
+<div id="outline-container-org48e37e6" class="outline-3">
+<h3 id="org48e37e6"><span class="section-number-3">2.1.</span> Turtle Motion</h3>
+<div class="outline-text-3" id="text-2-1">
 <p>
-Without a parameter move 'step' amount, default 1 unit
+  Without a parameter move 'step' amount, default 1 unit
+<b>Motion Modules</b>
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -272,12 +316,17 @@ Without a parameter move 'step' amount, default 1 unit
 
 <tr>
 <td class="org-left">G(d)</td>
-<td class="org-left"><code>==</code> F(d), but does not record track points, creates geometry</td>
+<td class="org-left"><code>==</code>  F(d), but does not record track points, creates geometry</td>
 </tr>
 
 <tr>
 <td class="org-left">g(d)</td>
-<td class="org-left"><code>==</code> f(d), w/o recording track points</td>
+<td class="org-left"><code>==</code>  f(d), w/o recording track points</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 </tr>
 
 <tr>
@@ -289,24 +338,28 @@ Without a parameter move 'step' amount, default 1 unit
 </div>
 </div>
 
-<div id="outline-container-org0c8c2e6" class="outline-3">
-<h3 id="org0c8c2e6"><span class="section-number-3">1.2.</span> Turtle Orientation</h3>
-<div class="outline-text-3" id="text-1-2">
+
+<div id="outline-container-org1a5bc1d" class="outline-3">
+<h3 id="org1a5bc1d"><span class="section-number-3">2.2.</span> Turtle Orientation</h3>
+<div class="outline-text-3" id="text-2-2">
 <p class="verse">
-The turtle maintains three unit vectors, heading (<b>H</b>), left (<b>L</b>), and up (<b>U</b>).<br />
-The turtle home orientation is <b>H</b> = +x, <b>L</b> = +z, and <b>U</b> = +y,<br />
-but L-system Explorer pitches up 90 degrees, initially, so <b>H</b> points +y and <b>L</b> points -x.<br />
+&#xa0;&#xa0;The turtle maintains three unit vectors, heading (<b>H</b>), left (<b>L</b>), and up (<b>U</b>).<br />
+&#xa0;&#xa0;The turtle home orientation is <b>H</b> = +x, <b>L</b> = +z, and <b>U</b> = +y,<br />
+&#xa0;&#xa0;but L-system Explorer pitches up 90 degrees, initially, so <b>H</b> points +y and <b>L</b> points -x.<br />
 <br />
-<b>*</b> positive yaw (left) rotates <b>H</b> towards <b>L</b> around <b>U</b>. (x -&gt; z around y)<br />
-<b>*</b> positive pitch (down) rotates <b>U</b> towards <b>H</b> around <b>L</b>. (y -&gt; x around z)<br />
-<b>*</b> positive roll rotates <b>L</b> towards <b>U</b> around <b>H</b>. (z -&gt; y around x)<br />
+&#xa0;&#xa0;<b>*</b> positive yaw (left) rotates <b>H</b> towards <b>L</b> around <b>U</b>. (x -&gt; z around y)<br />
+&#xa0;&#xa0;<b>*</b> positive pitch (down) rotates <b>U</b> towards <b>H</b> around <b>L</b>. (y -&gt; x around z)<br />
+&#xa0;&#xa0;<b>*</b> positive roll rotates <b>L</b> towards <b>U</b> around <b>H</b>. (z -&gt; y around x)<br />
 <br />
-Without a parameter, a turn is 'delta' degrees, default is 90.<br />
+&#xa0;&#xa0;Without a parameter, a turn is 'delta' degrees, default is 90. Change delta<br />
+in an L-system with the line:<br />
 <br />
-<b>Note</b> We make the turtle behave as if it were in a right-handed system, but all the<br />
-underlying Babylonjs is left-handed. This has some odd consequences when comparing<br />
-models with TABOP. (If I'd known I could just tell Babylonjs to use a RHS, things<br />
-would have been simpler.)<br />
+&#xa0;&#xa0;&#xa0;delta = 45           <i>* or whatever you want *</i><br />
+<br />
+&#xa0;&#xa0;<b>Note</b> We make the turtle behave as if it were in a right-handed system, but all the<br />
+&#xa0;&#xa0;underlying Babylonjs is left-handed. This has some odd consequences when comparing<br />
+&#xa0;&#xa0;models with TABOP. (If I'd known I could just tell Babylonjs to use a RHS, things<br />
+&#xa0;&#xa0;would have been simpler.)<br />
 </p>
 <p>
 <b>Orientation modules</b>
@@ -389,9 +442,9 @@ would have been simpler.)<br />
 </div>
 </div>
 
-<div id="outline-container-org3944e0c" class="outline-3">
-<h3 id="org3944e0c"><span class="section-number-3">1.3.</span> Turtle Settings</h3>
-<div class="outline-text-3" id="text-1-3">
+<div id="outline-container-org268eaf6" class="outline-3">
+<h3 id="org268eaf6"><span class="section-number-3">2.3.</span> Turtle Settings</h3>
+<div class="outline-text-3" id="text-2-3">
 <p>
 Defaults without a parameter to one
 </p>
@@ -415,12 +468,12 @@ Defaults without a parameter to one
 </tr>
 
 <tr>
-<td class="org-left">@;(n)</td>
+<td class="org-left">@;(n) <b>u</b></td>
 <td class="org-left">increase or set back face color/material index</td>
 </tr>
 
 <tr>
-<td class="org-left">@,(n)</td>
+<td class="org-left">@,(n) <b>u</b></td>
 <td class="org-left">decrease or set back face color/material index</td>
 </tr>
 
@@ -453,13 +506,13 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org46d6251" class="outline-3">
-<h3 id="org46d6251"><span class="section-number-3">1.4.</span> Turtle Geometry</h3>
-<div class="outline-text-3" id="text-1-4">
+<div id="outline-container-orgf480467" class="outline-3">
+<h3 id="orgf480467"><span class="section-number-3">2.4.</span> Turtle Geometry</h3>
+<div class="outline-text-3" id="text-2-4">
 <p>
 In addition to orientation and color/material, the turtle also maintains a <i>track shape</i>,
 which is the shape that it will extrude in moving when the pen is down. The default track
-shape is a circle with an initial size of one.
+shape is a circle with an initial size, as in diameter, of one.
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -670,9 +723,9 @@ shape is a circle with an initial size of one.
 </div>
 
 
-<div id="outline-container-org0e90181" class="outline-3">
-<h3 id="org0e90181"><span class="section-number-3">1.5.</span> L-system Geometry and Control</h3>
-<div class="outline-text-3" id="text-1-5">
+<div id="outline-container-orgc3d68fe" class="outline-3">
+<h3 id="orgc3d68fe"><span class="section-number-3">2.5.</span> L-system Geometry and Control</h3>
+<div class="outline-text-3" id="text-2-5">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -712,44 +765,335 @@ shape is a circle with an initial size of one.
 </div>
 </div>
 
-<div id="outline-container-org6f7faf8" class="outline-2">
-<h2 id="org6f7faf8"><span class="section-number-2">2.</span> L-System Syntax</h2>
-<div class="outline-text-2" id="text-2">
+<div id="outline-container-orge710b49" class="outline-2">
+<h2 id="orge710b49"><span class="section-number-2">3.</span> L-System Syntax</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-orgee651ae" class="outline-3">
+<h3 id="orgee651ae"><span class="section-number-3">3.1.</span> Rule-based systems</h3>
+<div class="outline-text-3" id="text-3-1">
 <p>
-Before parsing, the L-system text is run through a JavaScript cpp parser which handles
-comments and macro defines. After than, all empty lines and removed and the system is
-parsed. See <a href="https://github.com/acgessler/cpp.js/blob/master/Readme.md">cpp.js README</a> for details on how this differs from standard CPP.
+   An L-System is a rule-based object defined on a set of symbols;
+formal grammars are available in the literature. Here, we'll be far less
+strict, and attempt to describe how to create one. In outline, you begin
+with an axiom, which is a sequence of symbols called 'modules', and
+provide a set of rules, called, productions, which modify the axiom
+based which production matches the module currently encountered. Strict
+L-systems can be evaluated in parallel, but this implementation cannot
+do that. We evaluate strictly from left to right, with some
+caveats. Note that context dependenct rules do not strictly rule out
+parallel evaluation, but variables, both global and local make it
+difficult and in some cases impossible.
 </p>
 </div>
-<div id="outline-container-orgcad4d61" class="outline-3">
-<h3 id="orgcad4d61"><span class="section-number-3">2.1.</span> Comments</h3>
-<div class="outline-text-3" id="text-2-1">
+<div id="outline-container-org18a28ca" class="outline-4">
+<h4 id="org18a28ca"><span class="section-number-4">3.1.1.</span> Modules</h4>
+<div class="outline-text-4" id="text-3-1-1">
 <p>
-C-style comments, '/​* stuff, including newline */​' are supported.<br />
-Single-line '//' style comments are not - they conflict with L-system module syntax.
+   As above, a module is a single, case-sensitive character, or a single,
+case-sensitive character with a parenthesised argument list, i.e. it
+looks like a function call, or a system-defined sequence starting with @. Modules with arguments are called
+parameterized modules. In the case of context matching, a parameterized
+module with the same character as a non-parameterized module will not
+match. The arguments are typically numeric, but in some system-provided
+modules they may be strings, or, potentially, any valid Javascript
+object. Examples:
+</p>
+
+<p>
+aAa(1)A(1)  is a string with four different modules
+</p>
+
+<p>
+   The system-defined modules implement branching and the turtle
+interpretation of the L-system. Their behavior can't be overridden, but
+the matching and production rules apply equally to them. Many
+system-defined modules are multi- character sequences starting with @,
+such as @#(id). Perhaps, I'll add a user- defined multi-character
+module, say, @Uxyz(&#x2026;).
+</p>
+
+<p>
+   The arguments of parametric modules in the axiom are constant values. In
+the predecessor they are dummy variables, and in the successor, they may be
+constants, variables, or expressions which are evaluated before being
+substituted into the result string as constant values. The actual value of
+the parameter is substituted into the dummy variable at match time.
 </p>
 </div>
 </div>
-<div id="outline-container-org83b7a01" class="outline-3">
-<h3 id="org83b7a01"><span class="section-number-3">2.2.</span> Defines</h3>
-<div class="outline-text-3" id="text-2-2">
+
+<div id="outline-container-orgba6af01" class="outline-4">
+<h4 id="orgba6af01"><span class="section-number-4">3.1.2.</span> Axiom</h4>
+<div class="outline-text-4" id="text-3-1-2">
 <p>
-   Lines that start with '#define macro value', 'macro' being some word, create
-standard C-style macros where 'macro' is replaced with 'value' in 
+   This is the starting sequence of modules, and can be any valid
+sequence. The L-system is evaluted in discreet steps, where every module
+is evaluated in each step. So, you can think of the axiom as the
+starting point of each interation, but we will refer to it as the
+result 'string'. If you define a derivation length, we will do that many
+interations, otherwise the result is just the axiom.  Declare the axiom
+like this:
+</p>
+
+<p>
+axiom: &lt;modules&gt;
+</p>
+
+<p>
+e.g. an axiom with three modules:
+</p>
+
+<p>
+axiom: CA(10)B
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgbdfc872" class="outline-4">
+<h4 id="orgbdfc872"><span class="section-number-4">3.1.3.</span> Productions</h4>
+<div class="outline-text-4" id="text-3-1-3">
+<p>
+   A production has two main parts, the predecessor and the successor,
+which most simply is:
+</p>
+
+<p>
+P &#x2013;&gt; S
+</p>
+
+<p>
+where P is a single module and S is a sequence of one or more modules
+which will replace P in the axiom. As a special case, if S is "*", then
+P will be removed from the string.
+</p>
+
+<p>
+The default rule, if no production matches, is to move the module to the result string, i.e.:
+</p>
+
+<p>
+P &#x2013;&gt; P
+</p>
+
+<p>
+The predecessor can be more complicated though, and more formally:
+</p>
+
+<p>
+[left-context &lt; ] strict-predecessor [ &gt; right-context] [ : condition ]
+</p>
+
+<p>
+   Things in brackets may be omitted. In addtion, condition may be
+more complex.  The simplest condition is a test, which is an expression
+that returns true or false and follows mathjs syntax and expression
+rules. For example:
+</p>
+
+<p>
+A(i) : i&lt;10 &#x2013;&gt; F(i)A(i+1)
+</p>
+
+<p>
+If the string were  BCA(1), it would be expanded to BCF(1)A(2).
+</p>
+
+<p>
+   The "condition" may be "pre-condition test post-condition", where
+both pre- and post-condition have the format {expression}. Again,
+"expression" is any valid mathjs expression that can use dummy variables
+in the current production, or local or global variables. The
+pre-condition is evaluated before the test, so you can compute values
+needed for the test. The post-condition is evaluated after both the
+pre-condition and the test and can be used to compute substitutions in
+the successor after a successful test. It's possible to use the
+post-condition without either pre-condition or test by inserting a * for
+the test:
+</p>
+
+<p class="verse">
+v=0<br />
+axiom: bbb(4)a<br />
+bb(i) &lt; a : * {v=i} -&gt; d(v)<br />
+</p>
+
+<p>
+In the UI, the parse of this system is shown as:
+</p>
+
+<p class="verse">
+axiom = bbb(4)a<br />
+rules:= {pre, strict, post} {cond} {succ} {scope}<br />
+{b,b(i),a,}{,true,v=i}{d(v)}{has scope}<br />
+<br />
+Here, the condition is shown as {,true,v=i}, where the pre-condition<br />
+is empty, test is true, and the post-condition is v=i.<br />
+<br />
+</p>
+<p>
+Evaluating the L-system results in: 
+</p>
+
+<p>
+bbb(4)d(4)
+</p>
+
+<p>
+Note the header line, which tells you exactly what the parser saw:: 
+</p>
+
+<p>
+rules:= {pre, strict, post} {cond} {succ} {scope}
+</p>
+
+<p>
+Finally, scope just tells you what variables are in scope for each production
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9923aac" class="outline-4">
+<h4 id="org9923aac"><span class="section-number-4">3.1.4.</span> Production Contexts and Matching Order</h4>
+<div class="outline-text-4" id="text-3-1-4">
+<p>
+   Context-sensitive matching is optional, and based on what precedes, or
+follows a module, or both, in reading the string from left to right. The
+left context is separated from the strict predecessor by '&lt;', and the right
+context by the '&gt;' characters. Example:
+</p>
+
+<p>
+abc &lt; d &gt; efg  , which matches d in the string, &#x2026;abcdef&#x2026;
+</p>
+
+<p>
+   Branches introduce an apparent non-locality in matching; consider the
+following predecessor and these strings:
+</p>
+
+<p class="verse">
+predecessor:   a &lt; b &gt; c<br />
+<br />
+string 1:     aaa[bc]ddd<br />
+string 2:     aaa[b]cddd<br />
+string 3:     [aaa]bcddd<br />
+<br />
+string 1 matches, but strings 2 and 3 do not.<br />
+</p>
+
+<p>
+   The way to think about this is that the right bracket, ], denotes the
+end of a branch, which, topologically, is not next to whatever follows it
+in the string representation of the tree. The left bracket, [, starts a
+branch, but the immediate neighbors of 'a' are 'b' and 'd' in string 1. For
+string 1, a &gt; d would also match.
+</p>
+
+<p>
+   It is possible to control which modules should be used in matching with the 
+directives, <b>include:</b> and <b>exclude:</b>. For example, 
+</p>
+
+<p>
+exclude: FG
+</p>
+
+<p>
+    Tells the matcher to ignore and skip, the modules F or G if they are encountered
+when looking for a match, e.g.:
+</p>
+
+<p>
+a &lt; b , given the string aFGFGb, would produce a match.
+</p>
+
+<p>
+    Conversely, it is possible to only consider certain modules by using the include
+directive:
+</p>
+
+<p>
+include: ab
+</p>
+
+<p>
+a &lt; b , matches any string where a precedes b, except for the branching rules, above.
+</p>
+
+<p>
+   Rules are matched in top-down order, with the caveat that the
+most-specific match which occurs first will be used. This means the rule
+which has the longest context. Example, given the following rules:
+</p>
+
+<p>
+#+BEGIN<sub>VERSE</sub>
+   p1: a &#x2013;&gt; aa
+   p2: b(i) &lt; a &#x2013;&gt; c
+   p3: bb(i) &lt; a : i &lt; 10 &#x2013;&gt; d
+   p4: bb(i) &lt; a : i &lt; 5 &#x2013;&gt; c
+</p>
+
+<p>
+and the string, bbb(4)a, the result will be: 
+</p>
+
+<p>
+   bbb(4)d
+#+BEGIN<sub>VERSE</sub>
+</p>
+
+<p>
+because p3: bb(i) &lt; a is more specific, i.e. it has a longer context,
+than p1: or p2: b(i) &lt; a, but has the same specificity as p4:, just a
+different conditional test.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc67babc" class="outline-3">
+<h3 id="orgc67babc"><span class="section-number-3">3.2.</span> Pre-parsing</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+   Before parsing, the L-system text is run through a JavaScript cpp-like
+parser which handles comments and macro defines. After that, all empty
+lines and removed and the system is parsed. See <a href="https://github.com/acgessler/cpp.js/blob/master/Readme.md">cpp.js README</a> for
+details on how this differs from standard CPP.
+</p>
+</div>
+<div id="outline-container-org3d8e10e" class="outline-4">
+<h4 id="org3d8e10e"><span class="section-number-4">3.2.1.</span> Comments</h4>
+<div class="outline-text-4" id="text-3-2-1">
+<p>
+C-style comments, '/​* stuff, including newline */​' are
+supported.\\ Single-line '//' style comments are not - they conflict
+with L-system module syntax.
+</p>
+</div>
+</div>
+<div id="outline-container-org52253d8" class="outline-4">
+<h4 id="org52253d8"><span class="section-number-4">3.2.2.</span> Defines</h4>
+<div class="outline-text-4" id="text-3-2-2">
+<p>
+   Lines that start with '#define macro value', 'macro' being some word,
+create standard C-style macros where 'macro' is replaced with 'value' in
 the L-system before parsing starts. They are not as powerful as cpp.
 </p>
 </div>
 </div>
-<div id="outline-container-orgf179b72" class="outline-3">
-<h3 id="orgf179b72"><span class="section-number-3">2.3.</span> Settings</h3>
-<div class="outline-text-3" id="text-2-3">
+</div>
+<div id="outline-container-orgfdb202a" class="outline-3">
+<h3 id="orgfdb202a"><span class="section-number-3">3.3.</span> Settings</h3>
+<div class="outline-text-3" id="text-3-3">
 <p>
-   Before the axiom is specified, settings variables can be set for the L-system. 
-The following settings can be used to control default/initial L-system values, 
-using standard syntax, i.e. var = value. Multiple settings on the same line must be
-separated by a semi-colon.<br />
-   Note that the view setting is a JS object with the properties
-'position' and 'target', whose values are JS arrays of X,Y,Z coordinates.
+   Before the axiom is specified, settings variables can be set for the
+L-system.  The following settings can be used to control default/initial
+L-system values, using standard syntax, i.e. var = value. Multiple
+settings on the same line must be separated by a semi-colon. <b>Note</b> that
+the view setting is a JS object with the properties 'position' and
+'target', whose values are JS arrays of X,Y,Z coordinates.
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -832,7 +1176,12 @@ separated by a semi-colon.<br />
 
 <tr>
 <td class="org-left">&#xa0;</td>
-<td class="org-left">case-insensitivity and quotes. Or,</td>
+<td class="org-left">case-insensitivity and quotes.</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#x2014; or ---</td>
 </tr>
 
 <tr>
@@ -859,33 +1208,36 @@ separated by a semi-colon.<br />
 </div>
 </div>
 
-<div id="outline-container-org9c30a0f" class="outline-3">
-<h3 id="org9c30a0f"><span class="section-number-3">2.4.</span> Variables</h3>
-<div class="outline-text-3" id="text-2-4">
+<div id="outline-container-org40488ac" class="outline-3">
+<h3 id="org40488ac"><span class="section-number-3">3.4.</span> Variables</h3>
+<div class="outline-text-3" id="text-3-4">
 <p>
-   Variables used in the L-system can be set and used in the rules. If you define and 
-set a  variable before the lsystem: keyword, it will be global across the main L-system 
-and any sub-L-systems. If the variable is set after the lsystem: keyword, it is local
-to that L-system. Module parameter variables are local to the rule they are used in.
-However, since global and L-system local variables can be used in rule expressions 
-along with module parameters, it's best not to have name conflicts.
-   For example if you have a parameterized module like, A(t), then defining a global or 
-L-system scope variable, t, may cause you grief. LS Explorer uses a dynamic scoping
-mechanism where it looks for variables first in rule scope, then L-system scope, and,
-finally, global scope.
+   Variables used in the L-system can be set and used in the rules. If
+you define and set a variable before the lsystem: keyword, it will be
+global across the main L-system and any sub-L-systems. If the variable
+is set after the lsystem: keyword, it is local to that L-system. Module
+parameter variables are local to the rule they are used in.  However,
+since global and L-system local variables can be used in rule
+expressions along with module parameters, it's best not to have name
+conflicts.  For example if you have a parameterized module like, A(t),
+then defining a global or L-system scope variable, t, may cause you
+grief. LS Explorer uses a dynamic scoping mechanism where it looks for
+variables first in rule scope, then L-system scope, and, finally, global
+scope.
 </p>
 </div>
 </div>
-<div id="outline-container-org1922295" class="outline-3">
-<h3 id="org1922295"><span class="section-number-3">2.5.</span> Expressions</h3>
-<div class="outline-text-3" id="text-2-5">
+<div id="outline-container-org6c33082" class="outline-3">
+<h3 id="org6c33082"><span class="section-number-3">3.5.</span> Expressions</h3>
+<div class="outline-text-3" id="text-3-5">
 <p>
-  Expressions occur in tests, parameters, and pre/post test; they follow
-mathjs syntax: <a href="https://mathjs.org/docs/expressions/syntax.html">Expression syntax for mathjs</a>.
+  Expressions occur in tests, parameters, and pre/post test; they
+follow mathjs syntax: <a href="https://mathjs.org/docs/expressions/syntax.html">Expression syntax for mathjs</a>.
 </p>
 
 <p>
-Of particular note, are the logical operators which must be written explicitly as
+Of particular note, are the logical operators which must be written
+explicitly as
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -918,43 +1270,57 @@ e.g. "(t &gt; 0) and not u", instead of "(t &gt; 0) &amp;&amp; !u"
 </div>
 </div>
 </div>
-<div id="outline-container-org3d60cae" class="outline-2">
-<h2 id="org3d60cae"><span class="section-number-2">3.</span> UI and controls</h2>
-<div class="outline-text-2" id="text-3">
+<div id="outline-container-org645775f" class="outline-2">
+<h2 id="org645775f"><span class="section-number-2">4.</span> UI and controls</h2>
+<div class="outline-text-2" id="text-4">
 <ul class="org-ul">
 <li>subject to constant change -</li>
 </ul>
 </div>
-<div id="outline-container-org0e99d0f" class="outline-3">
-<h3 id="org0e99d0f"><span class="section-number-3">3.1.</span> L-system controls</h3>
-<div class="outline-text-3" id="text-3-1">
+<div id="outline-container-org1a672c2" class="outline-3">
+<h3 id="org1a672c2"><span class="section-number-3">4.1.</span> L-system controls</h3>
+<div class="outline-text-3" id="text-4-1">
 <p>
-Here, you can load an L-system file from disk or enter one manually in the text area.
-Below the choose file entry are controls to build, step, parse, rewrite, and draw the L-system.
+Here, you can load an L-system file from disk or enter one manually in
+the text area.  Below the choose file entry are controls to build,
+step, parse, rewrite, and draw the L-system.
 </p>
 <ul class="org-ul">
-<li><b>Choose File</b> allows you to load an lsystem locally. It is a text file, typically with a .ls extension</li>
+<li><b>Choose File</b> allows you to load an lsystem locally. It is a text file, 
+typically with a .ls extension</li>
 <li><b>Save LS</b> allows you to save the L-system text file.</li>
 
-<li><b>Build</b> will clear geometry, reset the turtle, re-parse, and rewrite the L-system  before drawing.</li>
-<li><b>Step</b> will do one iteration step of the the L-system, i.e. one rewrite step and one draw, no matter how
-many interations are specified in the L-system spec. As a special case, if the <b>Parse</b> button is used to
-reparse and recreate the L-system, <b>Step</b> will initially write and interpret just the axiom; subsequent steps
-will clear the previous geometry, rewrite one step of the L-system, and redraw it.</li>
-<li><b>Parse</b> this button will parse whatever text is in the L-system source area, re-create the current L-system
-and show the result in the L-system Expansion text box. If you make changes to the L-system, choose this first.</li>
-<li><b>Rewrite</b> will rewrite the parsed L-system, and, again, place the result in the L-system Expansion box.</li>
-<li><b>Draw</b> will interpret the expanded system and draw the geometry on the canvas. Note, that <b>Draw</b> neither
-clears, nor resets any previously drawn geometry.</li>
-<li><b>Gen Code</b> causes the interpretation to generate the turtle code that it uses to draw the geometry. This 
-is simpler in single turtle mode. This should run standalone (with the Turtle3d class) to generate the geometry</li>
-<li><b>Save LS file</b> allows you to save the text of the L-system description as a .ls file.</li>
+<li><b>Build</b> will clear geometry, reset the turtle, re-parse, and rewrite the 
+L-system  before drawing.</li>
+<li><b>Step</b> will do one iteration step of the the L-system, i.e. one rewrite
+step and one draw, no matter how many interations are specified in
+the L-system spec. As a special case, if the <b>Parse</b> button is used
+to reparse and recreate the L-system, <b>Step</b> will initially write and
+interpret just the axiom; subsequent steps will clear the previous
+geometry, rewrite one step of the L-system, and redraw it.</li>
+<li><b>Parse</b> this button will parse whatever text is in the L-system source area,
+re-create the current L-system and show the result in the L-system
+Expansion text box. If you make changes to the L-system, choose this
+first.</li>
+<li><b>Rewrite</b> will rewrite the parsed L-system, and, again, place the result
+in the L-system Expansion box.</li>
+<li><b>Draw</b> will interpret the expanded system and draw the geometry on the
+canvas. Note, that <b>Draw</b> neither clears, nor resets any previously 
+drawn geometry.</li>
+<li><b>Gen Code</b> causes the interpretation to generate the turtle code that
+it uses to draw the geometry. This is simpler in single turtle
+mode. This should run standalone (with the Turtle3d class) to
+generate the geometry</li>
+<li><b>Save LS file</b> allows you to save the text of the L-system description 
+as a .ls file.</li>
 <li><b>Save Model</b> allows you to save drawn geometry to a .babylon or GLTF/GLB file.</li>
-<li><b>MultiTurtle?</b> is a checkbox to turn this mode on/off. When on, the interpretation/drawing creates a new
-turtle for each branch and then gives each turtle one step on its branch in a round-robin draw mode. When
-a turtle reaches the end of the branch it is destroyed. This mode typically appears more natural, however
-there are some TABOP nested polygon productions that do not work in this mode, so it's best to turn it off
-when using polygon geometry.</li>
+<li><b>MultiTurtle?</b> is a checkbox to turn this mode on/off. When on, the
+interpretation/drawing creates a new turtle for each branch and then
+gives each turtle one step on its branch in a round-robin draw mode.
+When a turtle reaches the end of the branch it is destroyed. This mode
+typically appears more natural, however there are several operations,
+including TABOP nested polygon productions, that do not work in this
+mode, so it's best to turn it off if things look wonky.</li>
 </ul>
 
 <p>
@@ -962,45 +1328,51 @@ Below the L-system source box are status and more controls:
 </p>
 
 <ul class="org-ul">
-<li><b>L-system status:</b> |X|Y|Z| , where X is the number of iterations/expansions of the axiom; Y is the number
-of modules in the L-system expansion, and Z is the number of modules that have been interpreted/drawn. This
+<li><b>L-system status:</b> |X|Y|Z| , where X is the number of iterations/expansions
+of the axiom; Y is the number of modules in the L-system expansion,
+and Z is the number of modules that have been interpreted/drawn. This
 last box will turn green when drawing is complete.</li>
-<li><b>Draw Speed</b> is an input to control the drawing speed in modules/frame. It defaults to 200 and runs from
-1 to 500. Higher rates tend to bog down the browser.</li>
-
-<li><b>Save Code</b> allows you to save that generated code.</li>
+<li><b>Draw Speed</b> is an input to control the drawing speed in modules/frame. 
+It defaults to 200 and runs from 1 to 500. Higher rates tend to bog
+down the browser.</li>
+<li><b>Save Code</b> allows you to save that generated code as a GLB or BABYLON file.</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgc248b0c" class="outline-3">
-<h3 id="orgc248b0c"><span class="section-number-3">3.2.</span> Turtle controls</h3>
-<div class="outline-text-3" id="text-3-2">
+<div id="outline-container-org2805cae" class="outline-3">
+<h3 id="org2805cae"><span class="section-number-3">4.2.</span> Turtle controls</h3>
+<div class="outline-text-3" id="text-4-2">
 <p>
-Below the L-system controls are the turtle controls. To the right of the label, "Turtle Controls" is a widget
-that will expand and collapse the controls. The first expansion is a buttonbar that controls the
-default turtle. If you open the Javascript console, you can directly enter Turtle3d commands to get 
-an idea for how it works. You can also turn on the Gen Code mode to get examples of how the turtle 
-is used. 
+Below the L-system controls are the turtle controls. To the right of
+the label, "Turtle Controls" is a widget that will expand and collapse
+the controls. The first expansion is a buttonbar that controls the
+default turtle. If you open the Javascript console, you can directly
+enter Turtle3d commands to get an idea for how it works. You can also
+turn on the Gen Code mode to get examples of how the turtle is used.
 </p>
 
 <ul class="org-ul">
-<li><b>Hide/Show</b> will hide or show the turtle shape, which is a mini axis of the HLU system of the turtle.</li>
+<li><b>Hide/Show</b> will hide or show the turtle shape, which is a mini axis of the 
+HLU system of the turtle. Note that the size of the turtle axes is 0.5 units.</li>
 <li><b>Home</b> moves the turtle back to 0,0,0 and orients it along the axes.</li>
 <li><b>Reset</b> is the same as <b>Clear</b> and <b>Home</b></li>
 <li><b>Clear</b> will clear all the geometry generated by the turtle(s).</li>
-<li><b>Look at Turtle</b> orients the camera so the turtle is in the center of view, or you can pick the origin, or
-the center of the drawn geometry bounding sphere.</li>
+<li><b>Look at Turtle</b> orients the camera so the turtle is in the center of 
+view, or you can pick the origin, or the center of the drawn geometry
+bounding sphere.</li>
 <li><b>Show/Hide Color Table</b> displays the current color/material table</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org44085b1" class="outline-3">
-<h3 id="org44085b1"><span class="section-number-3">3.3.</span> Scene Controls</h3>
-<div class="outline-text-3" id="text-3-3">
+<div id="outline-container-org67cdf79" class="outline-3">
+<h3 id="org67cdf79"><span class="section-number-3">4.3.</span> Scene Controls</h3>
+<div class="outline-text-3" id="text-4-3">
 <p>
-Here you can toggle visibility of the Ground, Sky, and coordinate axes. You can also 'look at'
-the turtle, the current origin for the turtle, or the center of the mesh bounding sphere:
-helpful if you've lost track of where you are when navigating around.
+Here you can toggle visibility of the Ground, Sky, coordinate axes,
+and gridded planes on the primary axes. The latter can help to debug
+size issues.You can also 'look at' the turtle, the current origin for
+the turtle, or the center of the mesh bounding sphere: helpful if
+you've lost track of where you are when navigating around.
 </p>
 <hr />
 </div>
@@ -1008,7 +1380,7 @@ helpful if you've lost track of where you are when navigating around.
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2024-02-07 Wed 20:10</p>
+<p class="date">Created: 2024-04-05 Fri 18:19</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

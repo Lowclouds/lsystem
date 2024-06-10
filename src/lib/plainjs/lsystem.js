@@ -659,7 +659,8 @@ class Lsystem {
             // }
             nestPos = pos;
             nesting = [1];
-            puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
+            puts(`Unimplemented: would call parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
+            //puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
             pr.status = P_HANDLED;
             pr.nextState = inItems;
          } else if (RE.var.test(line)) {
@@ -908,7 +909,7 @@ ${msg}`;
             if ( RE.pre_condition.test(condition)) {
                while (condition[p0] != '{') { p0++; }
                [c,p1] = Lsystem.skipbrackets(condition, p0,1,1); // skip braces right
-               pre = condition.slice(p0+1,p1-2);
+               pre = condition.slice(p0+1,p1-1);
                condition = condition.slice(p1);
                needScope=true;
                rule.preCondition = pre;
