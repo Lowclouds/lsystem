@@ -1,9 +1,8 @@
 #+TITLE: L-System Explorer Quick Guide
 * Intro
-If you just can't remember what the module for yaw is, go to the *Modules*
-section.  
+If you just can't remember what the module for yaw is, go to the [[*Turtle Orientation][Turtle Orientation]] section.
 
-If you need a bit more info on L-System syntax, skip to that section.
+If you need a bit more info on L-System syntax, skip to that section, [[*L-System Syntax][L-System Syntax]]
 
 If you'd like to see some examples of L-Systems, select the *Examples* menu
 item on the main page and wander through the samples there, many of which 
@@ -43,22 +42,22 @@ Modules marked *n* are *new for this implementation*
 ** Turtle Orientation
 #+BEGIN_VERSE
   The turtle maintains three unit vectors, heading (*H*), left (*L*), and up (*U*).
-  The turtle home orientation is *H* = +x, *L* = +z, and *U* = +y,
-  but L-system Explorer pitches up 90 degrees, initially, so *H* points +y and *L* points -x.
+  The turtle home orientation is *H* = *+x*, *L* = *+z*, and *U* = *+y*,
+  but L-system Explorer pitches up 90 degrees, initially, so *H* points *+y* and *L* points *-x*.
 
-  *** positive yaw (left) rotates *H* towards *L* around *U*. (x -> z around y)
-  *** positive pitch (down) rotates *U* towards *H* around *L*. (y -> x around z)
-  *** positive roll rotates *L* towards *U* around *H*. (z -> y around x)
+  *** positive yaw (left) rotates *H* towards *L* around *U*. (*x* -> *z* around *y*)
+  *** positive pitch (down) rotates *U* towards *H* around *L*. (*y* -> *x* around *z*)
+  *** positive roll rotates *L* towards *U* around *H*. (*z* -> *y* around *x*)
 
   Without a parameter, a turn is 'delta' degrees, default is 90. Change delta
 in an L-system with the line:
 
-   delta = 45           /* or whatever you want */
+   delta = DD        ​/* where DD is your angle in degrees *​/
 
   *Note* We make the turtle behave as if it were in a right-handed system, but all the 
   underlying Babylonjs is left-handed. This has some odd consequences when comparing 
-  models with TABOP. (If I'd known I could just tell Babylonjs to use a RHS, things 
-  would have been simpler.)
+  models with TABOP. /If I'd known I could just tell Babylonjs to use a RHS, things 
+  would have been simpler./
 #+END_VERSE
   *Orientation modules*
 | +(a)                    | yaw left 'a' degrees    ('a' optional) |
@@ -141,41 +140,50 @@ shape is a circle with an initial size, as in diameter, of one.
   
 * L-System Syntax
 ** Rule-based systems
-   An L-System is a rule-based object defined on a set of symbols;
-formal grammars are available in the literature. Here, we'll be far less
-strict, and attempt to describe how to create one. In outline, you begin
-with an axiom, which is a sequence of symbols called 'modules', and
-provide a set of rules, called, productions, which modify the axiom
-based which production matches the module currently encountered. Strict
-L-systems can be evaluated in parallel, but this implementation cannot
-do that. We evaluate strictly from left to right, with some
-caveats. Note that context dependenct rules do not strictly rule out
-parallel evaluation, but variables, both global and local make it
-difficult and in some cases impossible.
+An L-System is a rule-based object defined on a set of symbols; formal grammars
+are available in the literature, e.g. [[http://algorithmicbotany.org/papers/hanan.dis1992.pdf][Hanan thesis]]. Here, we'll be far less
+strict, and attempt to describe how to create one.
+
+In outline, you begin with an axiom, which is a sequence of symbols called
+'modules', and provide a set of rules, called, productions, which modify the
+axiom based which production matches the module currently encountered. Some
+strict L-systems can be evaluated in parallel, but this implementation cannot do
+that. We evaluate strictly from left to right, with some caveats. Note that
+context dependenct rules do not strictly rule out parallel evaluation, but
+variables, both global and local make it difficult and, in some cases,
+impossible to avoid nonsensical results.
+
+Evaluation procedes in steps: the entire input string/axiom is completely
+rewritten before the next step. When all modules have been evaluated and
+substitutions made, the result string becomes the input for the next evaluation
+step.
 *** Modules
-   As above, a module is a single, case-sensitive character, or a single,
-case-sensitive character with a parenthesised argument list, i.e. it
-looks like a function call, or a system-defined sequence starting with @. Modules with arguments are called
-parameterized modules. In the case of context matching, a parameterized
-module with the same character as a non-parameterized module will not
-match. The arguments are typically numeric, but in some system-provided
-modules they may be strings, or, potentially, any valid Javascript
-object. Examples:
+ A module is one of
+ - a single, case-sensitive character,
+ - a single, case-sensitive character with a parenthesised argument list,
+   i.e. it looks like a function call, 
+ - a system-defined sequence starting with @, which may contain more than one 
+   character. 
 
-   aAa(1)A(1)  is a string with four different modules
+Modules with arguments are called parameterized modules. In the case of context
+matching (see below), a parameterized module with the same character as a
+non-parameterized module will not match. The arguments are typically numeric,
+but in some system-provided modules they may be strings, or, potentially, any
+valid Javascript object. Examples:
 
-   The system-defined modules implement branching and the turtle
-interpretation of the L-system. Their behavior can't be overridden, but
-the matching and production rules apply equally to them. Many
-system-defined modules are multi- character sequences starting with @,
-such as @#(id). Perhaps, I'll add a user- defined multi-character
-module, say, @Uxyz(...).
+  : aAa(1)A(1)  is an L-System string with four different modules: a, A, a(1), A(1)
 
-   The arguments of parametric modules in the axiom are constant values. In
-the predecessor they are dummy variables, and in the successor, they may be
+   The system-defined modules implement branching and the turtle interpretation
+of the L-system. Their behavior can't be overridden, but the matching and
+production rules apply equally to them. Many system-defined modules are multi-
+character sequences starting with @, such as @#(id). Perhaps, I'll add a user-
+defined multi-character module, say, @Uxyz(...).
+
+   The arguments of parametric modules in the axiom are constant values. In the
+predecessor they are dummy variables, and in the successor, they may be
 constants, variables, or expressions which are evaluated before being
-substituted into the result string as constant values. The actual value of
-the parameter is substituted into the dummy variable at match time.
+substituted into the result string as constant values. The actual value of the
+parameter is substituted into the dummy variable at match time.
 
 *** Axiom
    This is the starting sequence of modules, and can be any valid
@@ -196,116 +204,79 @@ like this:
    A production has two main parts, the predecessor and the successor,
 which most simply is:
 
-   P --> S
+  : P --> S
 
 where P is a single module and S is a sequence of one or more modules
-which will replace P in the axiom. As a special case, if S is "*", then
-P will be removed from the string.
+which will replace P in the axiom. 
 
 The default rule, if no production matches, is to move the module to the result string, i.e.:
 
-P --> P
+   : P --> P
 
-The predecessor can be more complicated though, and more formally:
+As a special case, if S is "*", then, P will be removed from the string.
 
-   [left-context < ] strict-predecessor [ > right-context] [ : condition ]
+The predecessor can be more complicated though, and more formally is:
 
-   Things in brackets may be omitted. In addtion, condition may be
-more complex.  The simplest condition is a test, which is an expression
-that returns true or false and follows mathjs syntax and expression
-rules. For example:
+  : [left-context < ] strict-predecessor [ > right-context] [ : condition ]
 
-   A(i) : i<10 --> F(i)A(i+1)
+Things in brackets may be omitted. In addition, the condition may be more complex, see below.  
 
-   If the string were  BCA(1), it would be expanded to BCF(1)A(2).
+Finally, note the header line after parsing, which tells you exactly what the parser saw: 
 
-   The "condition" may be "pre-condition test post-condition", where
-both pre- and post-condition have the format {expression}. Again,
-"expression" is any valid mathjs expression that can use dummy variables
-in the current production, or local or global variables. The
-pre-condition is evaluated before the test, so you can compute values
-needed for the test. The post-condition is evaluated after both the
-pre-condition and the test and can be used to compute substitutions in
-the successor after a successful test. It's possible to use the
-post-condition without either pre-condition or test by inserting a * for
-the test:
+   : rules:= {pre, strict, post} {cond} {succ} {scope}
 
-#+BEGIN_VERSE
-   v=0
-   axiom: bbb(4)a
-   bb(i) < a : * {v=i} -> d(v)
-#+END_VERSE
+The {scope} term just tells you what variables, if any, are in scope for each production,
+and is only there for information.
 
-In the UI, the parse of this system is shown as:
+*** Production Contexts
+   Context-sensitive matching is optional, and is based on what precedes or
+follows a module, or both, reading the string from left to right. The left context 
+is separated from the strict predecessor by '<', and the right context by 
+the '>' characters. Example:
 
-#+BEGIN_VERSE
-   axiom = bbb(4)a
-   rules:= {pre, strict, post} {cond} {succ} {scope}
-   {b,b(i),a,}{,true,v=i}{d(v)}{has scope}
-
-   Here, the condition is shown as {,true,v=i}, where the pre-condition
-   is empty, test is true, and the post-condition is v=i.
-
-#+END_VERSE
-Evaluating the L-system results in: 
-
-   bbb(4)d(4)
-
-Note the header line, which tells you exactly what the parser saw:: 
-
-   rules:= {pre, strict, post} {cond} {succ} {scope}
-
-Finally, scope just tells you what variables are in scope for each production
-
-*** Production Contexts and Matching Order
-   Context-sensitive matching is optional, and based on what precedes, or
-follows a module, or both, in reading the string from left to right. The
-left context is separated from the strict predecessor by '<', and the right
-context by the '>' characters. Example:
-
-   abc < d > efg  , which matches d in the string, ...abcdef...
+   : abc < d > efg  , which matches d in the string, ...abcdef...
 
    Branches introduce an apparent non-locality in matching; consider the
-following predecessor and these strings:
+following predecessor and strings:
 
-#+BEGIN_VERSE
+#+BEGIN_EXAMPLE
    predecessor:   a < b > c
 
-   string 1:     aaa[bc]ddd
-   string 2:     aaa[b]cddd
-   string 3:     [aaa]bcddd
-
-   string 1 matches, but strings 2 and 3 do not. 
-#+END_VERSE
+   string 1:     aaa[bc]ddd    *matches*
+   string 2:     aaa[b]cddd    *does NOT match*
+   string 3:     [aaa]bcddd    *does NOT match*
+#+END_EXAMPLE
 
    The way to think about this is that the right bracket, ], denotes the
 end of a branch, which, topologically, is not next to whatever follows it
 in the string representation of the tree. The left bracket, [, starts a
-branch, but the immediate neighbors of 'a' are 'b' and 'd' in string 1. For
-string 1, a > d would also match.
+branch, so the immediate neighbors of 'a' are 'b' and 'd' in string 1. For
+string 1, the predecessor, a > d,  would also match.
 
    It is possible to control which modules should be used in matching with the 
 directives, *include:* and *exclude:*. For example, 
 
-    exclude: FG
+   : exclude: FG
 
     Tells the matcher to ignore and skip, the modules F or G if they are encountered
 when looking for a match, e.g.:
 
-    a < b , given the string aFGFGb, would produce a match.
+   : a < b , given the string aFGFGb, would produce a match.
 
-    Conversely, it is possible to only consider certain modules by using the include
+    Conversely, it is possible to consider only certain modules by using the include
 directive:
 
-     include: ab
+   :  include: ab
 
-     a < b , matches any string where a precedes b, except for the branching rules, above.
+then, only a and be are considered when matching, so, "a < b" matches any string
+where "a" precedes "b" with any intervening modules, except for the branching rules, above.
 
+*** Matching Order
    Rules are matched in top-down order, with the caveat that the
 most-specific match which occurs first will be used. This means the rule
 which has the longest context. Example, given the following rules:
 
-#+BEGIN_VERSE
+#+BEGIN_EXAMPLE
    p1: a --> aa
    p2: b(i) < a --> c
    p3: bb(i) < a : i < 10 --> d
@@ -314,11 +285,53 @@ which has the longest context. Example, given the following rules:
    and the string, bbb(4)a, the result will be: 
 
    bbb(4)d
-#+BEGIN_VERSE
+#+END_EXAMPLE
 
-   because p3: bb(i) < a is more specific, i.e. it has a longer context,
-   than p1: or p2: b(i) < a, but has the same specificity as p4:, just a
-   different conditional test.
+   because p3 is more specific, i.e. it has a longer context, than p1 or p2, 
+   and has the same specificity as p4, but it comes first.
+
+*** Conditional Tests
+   The simplest condition is a test, which is an expression
+that returns true or false and follows mathjs syntax and expression
+rules. For example:
+
+  : A(i) : i<10 --> F(i)A(i+1)
+
+If the string were  BCA(1), it would be expanded to BCF(1)A(2).
+
+However, since a condition is 
+
+   : [pre-condition] test [post-condition]
+
+ where both pre- and post-condition have the format {expression} or are empty. 
+Again, an expression is any valid mathjs expression that can use dummy variables
+in the current production, or local or global variables. The pre-condition is 
+evaluated before the test, so you can compute values needed for the test. 
+The post-condition is evaluated after both the pre-condition and the test
+and can be used to compute substitutions in the successor after a successful
+test. It's possible to use the post-condition without either pre-condition
+or test by inserting a '*' for the test:
+
+#+BEGIN_EXAMPLE
+   v=0
+   axiom: bbb(4)a
+   bb(i) < a : * {v=i} -> d(v)
+#+END_EXAMPLE
+
+In the UI, the parse of this system is shown as:
+
+#+BEGIN_EXAMPLE
+   axiom = bbb(4)a
+   rules:= {pre, strict, post} {cond} {succ} {scope}
+   {b,b(i),a,}{,true,v=i}{d(v)}{has scope}
+#+END_EXAMPLE
+
+Here, the condition is shown as {,true,v=i}, where the pre-condition
+is empty, test is true, and the post-condition is v=i.
+
+Evaluating the L-system results in: 
+
+   : bbb(4)d(4)
 
 ** Pre-parsing
    Before parsing, the L-system text is run through a JavaScript cpp-like
@@ -381,10 +394,14 @@ scope.
 
   Of particular note, are the logical operators which must be written
   explicitly as
-| and | instead of '&&'|
-| or | instead of '\vert\vert' |
-| not | instead of '!' |
-   e.g. "(t > 0) and not u", instead of "(t > 0) && !u"
+
+  |*and* |   instead of *'&&'*|
+  |*or* |  instead of *'\vert\vert'*|
+  |*not* |   instead of *'!'*|
+
+for example:
+  : (t > 0) and not u, instead of  (t > 0) && !u
+
 * UI and controls
   - subject to constant change -
 ** L-system controls

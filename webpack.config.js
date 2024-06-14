@@ -118,10 +118,10 @@ module.exports = {
     new FileManagerPlugin({
       events: {
         onStart: {
-          delete: [ './public/*', './public/assets/', './public/code/' ],
+          delete: [ './public' ],
         },
         onEnd: {
-          mkdir: ['./public/code', './public/assets/examples'],
+          mkdir: ['./public', './public/code', './public/assets/examples'],
           copy: [
             { source: './node_modules/bootstrap/dist/js/bootstrap.bundle.min.js',
               destination: './public/code/vendor/',
