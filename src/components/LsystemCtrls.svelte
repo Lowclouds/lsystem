@@ -406,13 +406,6 @@
   let tip_el_numDrawn = "Number of Modules 'drawn' or interpreted";
   let tip_el_drawspeed = `Number of Modules interpreted per Frame. ${speedtip}`;
 
-
-
-  let leftBound = '\u22D0';
-  function insertSymbol(evt) {
-    console.log('textContent: ', evt?.target.textContent);
-  }
-  
 </script>
 
 <div class="btn-group bgroup my-0 py-0">
@@ -437,7 +430,7 @@
            data-bs-toggle="tooltip" data-bs-title={tip_btn_draw}
           on:click={uiDoDraw}><i class="bi-paint-bucket"></i></button>
 
-  <SymbolMenu insertTarget={lsSrcEl}>Insert Symbol</SymbolMenu>
+  <SymbolMenu insertTarget={lsSrcEl}/>
 
   <div class="btn-group" style="display: flex; justify-content: flex-end; margin-left: auto; background-color: wheat; padding: 0">
       <button class="gbutton tbutton" id="btn-gencode" 
