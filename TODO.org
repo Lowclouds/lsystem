@@ -1,30 +1,31 @@
-* Example files
-Create list of current tests to present a choice list
-Organize tests
-* Pre-post condition expressions
+* DONE Example files
+** DONE Create list of current tests to present a choice list
+** DONE Organize tests
+* DONE Pre-post condition expressions
 This requires resolution of global/local/parameter variables and
 revision of formalMatch to not pollute local or global variables
 during matching
 done <2022-10-16 Sun>
-* Surfaces/meshes
+* TODO Surfaces/meshes
 Two different TABOP notions, pre-defined by arrays, and L-system generated, 
 in addition to loading pref-defined BABYLON meshes. The first is relatively
 easy, the last really appealing from a usability pov
-** Pre-defined Arrays
-** L-system generated
+** TODO Pre-defined Arrays
+** TODO L-system generated
 Extrusions go a long way toward this already, maybe enhance this or look at ribbons.
 Alternatively, directly create meshes from turtle positions
 Not sure about cpgf bspline design
-<2022-09-05 Mon> initial handling of mesh instancing done: add/get named mesh, and 
+*** DONE <2022-09-05 Mon> initial handling of mesh instancing done: add/get named mesh, and 
 insertMesh as instance at turtle position. scaling and rotation done - need to work on
 instance specific material. 
-*** Still need to implement surface creation - this works with polygons, and paths
-*** Need better method for referencing mesh to add
-<2022-10-01 Sat> done 
-  New, breaking, syntax: ~(name, scale), which inserts mesh from Turtle3d.meshes at point 
+*** TODO Still need to implement surface creation - this works with polygons, and paths
+*** DONE Need better method for referencing mesh to add
+<2022-10-01 Sat>  
+** DONE New, breaking, syntax: ~(name, scale), which inserts mesh from Turtle3d.meshes at point 
   and using turtle orientation, optionally scaling it.
-** Supported Babylonjs types, glb, gltf
-** Export meshes
+** TODO Supported Babylonjs types, glb, gltf
+ we can export, but not import, meshes
+** DONE Export meshes
 <2022-06-20 Mon> gltf export done
 * Splines for paths
   Maybe rework end path, }, to take parameter specifying 
@@ -33,17 +34,33 @@ instance specific material.
 <2022-10-01 Sat>
   New syntax: }(type, name), where name is a string or number. The extrusion is
   added to the Turtle3d.meshes map by name and can be inserted using ~(name,scale)
-** Hermite
+** DONE Hermite
 <2022-06-11 Sat> open Hermite spline done, including setting radii with spline
   still need to implement segments/pair of control point - currently #segments
   applies to entire spline
-** B-spline
+** TODO B-spline
   on back burner
-* Homomorphism productions
+* TODO Homomorphism productions
 Nice to have
-* Decomposition productions
+* TODO Decomposition productions
 Back burner
-* Animations
+* TODO Explore Map Operator
+<2024-06-16 Sun>
+Something like @Map(axiom, parameter set list), to automate/simplify
+   ...[axiom(xi,yi,...)]
+Where one replacement is made for each parameter set in the list -> depending on the values
+in the parameter set. So, maybe:
+
+p: ?EvalStuff(pset) < P : pset.x^2 + pset.y^2 < 1 -> P@Map(a, pslist)
+
+?EvalStuff(pset) returns a list of parameter sets, i.e. objects referenced by pset.val.
+The condition would be evaluated and tested for each pset, and if true, the axiom is 
+inserted in to the output. ?EvalStuff is more problematic that the replacement notion.
+
+Possible candidates are to interate over all turtles, or some subset of them, or maybe tagged
+meshes? (how to tag a mesh? a named mesh is tagged its name when inserted?)
+
+* TODO Animations
 <2022-06-11 Sat> start working on this
  Step was first part of this, but after implementing multiple turtle drawing, that will be the
  primary focus for animations. That said, the polygon implementation in TABOP where polygons
@@ -55,21 +72,20 @@ Back burner
 speed control. Animation, with capture of layers, will need to wait a bit more.
 ** need layer to step through Lsystem.Rewrite and interp
 ** screen capture to 'movie'? what does babylon offer
-* Multiple turtle implementation
+* DONE Multiple turtle implementation
 Attractive from a visualization standpoint, and maybe a cleaner encapsulation
 <2022-08-17 Wed> Initial changes done - move this to animation
 <2022-08-24 Wed> This is done, including UI to toggle between single and multiple turtle drawing.
 * UI
-** <2022-06-20 Mon> show color table and save mesh implemented
-** To React or not to React????
-
-
+** DONE <2022-06-20 Mon> show color table and save mesh implemented
+** DONE To React or not to React????
+to svelte, and Not to react
 ** Supported Babylonjs types, glb, gltf, ..
 ** Export meshes
 <2022-06-20 Mon> gltf export done
 * Bugs
-** extrusion orientation of straight paths
+** DONE extrusion orientation of straight paths
  <2022-05-21 Sat> The orientation is fixed, i think, but something is broken with lighting
 <2022-06-11 Sat>  ok, fixed now using added adjustFrame parameter to ExtrudeShapeXXX
-** reference to string parameters in productions is broken
+** DONE reference to string parameters in productions is broken
 <2022-10-31 Mon> all strings now normalized to "xxx"

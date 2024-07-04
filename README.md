@@ -1,7 +1,7 @@
 # L-system Explorer
 ## Overview
 
-  L-system Explorer mplements much of the system described in 'The Algorithmic Beauty of Plants' by Przemyslaw Prusinkiewicz and Aristid Lindenmayer, as well as most of the system described in the CPFG user manual for their version of the system, which was the primary source for reverse-engineering the L-Studio functionality. Many great references for L-systems can be found here: [Algorithmic Botany](http://algorithmicbotany.org/papers/ "Algorithmic Botany"). The best reference for this implementation, and it is far more complete than what is here, is the CPFG manual in the L-Studio package available from the algorithmicbotany site. This paper by Prusinkiewicz, Mech, and Hanan, [Mech Dissertation ](https://prism.ucalgary.ca/bitstream/handle/1880/45607/1997-599-01.pdf?sequence=2 "Mech dis
+  L-system Explorer implements much of the system described in 'The Algorithmic Beauty of Plants' by Przemyslaw Prusinkiewicz and Aristid Lindenmayer, as well as most of the system described in the L-Studio documentatino, my primary source for reverse-engineering. Many great references for L-systems can be found here: [Algorithmic Botany](http://algorithmicbotany.org/papers/ "Algorithmic Botany"). The best reference for this implementation, and it is far more complete than what is here, is the CPFG manual in the L-Studio package available from the algorithmicbotany site. This paper by Prusinkiewicz, Mech, and Hanan, [Mech Dissertation ](https://prism.ucalgary.ca/bitstream/handle/1880/45607/1997-599-01.pdf?sequence=2 "Mech dis
   sertation"), is also a useful reference - and the best for understanding the splined paths.
 
  [Babylonjs](https://babylonjs.com) is a major reason this exists at all, since all of the underlying geometry is built on top of it. The 3D turtle extrudes configurable shapes as it moves around, and uses the underlying scene, camera, lighting, materials, and textures. You can save generated meshes to disk and open them in Blender, and someday, may be able to import gltf meshes as turtle shapes or as surfaces. Thank you, Babylonjs team. 
@@ -9,7 +9,7 @@
  It uses mathjs for interpreting parameter values and expressions, so pretty much anything the mathjs expression evaluator can do is possible in expressions and parameters. Likewise, things that mathjs can't do are, for the most part, also not possible.
 
 ## What is an L-System?
-   This is best explained by referring you to the source, [Algorithmic Botany](http://algorithmicbotany.org/papers/#abop), but, in a nutshell, it is a system for modeling branching structures, such as, say, plants. It turns out that many interesting real and theoretical objects, fractals, e.g., can be modeled using the notion of an L-System. L-System Explorer is broken into three parts: the parsing and rewriting of the L-System description/model, an underlying 3D turtle that can draw the geometry, and an interpreter that reads the expanded(rewritten) model and executes the appropriate turtle functions. 
+   This is best explained by referring you to the source, [Algorithmic Botany](http://algorithmicbotany.org/papers/#abop), but, in a nutshell, it is a system for modeling branching structures, such as, say, plants. It turns out that many interesting real and theoretical objects, fractals, e.g., can be modeled using the formalism of an L-System. L-System Explorer is broken into three parts: the parsing and rewriting of the L-System description/model, an underlying 3D turtle that can draw the geometry, and an interpreter that reads the expanded(rewritten) model and executes the appropriate turtle functions. 
    The model is a string (implemented here as an array) of modules, where a module is a single or multi-character word. A number of modules(characters) are reserved for the underlying geometry operations, while all remaining characters are available for writing model productions. 
    
 ## Features
@@ -42,7 +42,7 @@
         It is possible to define and use L-System generated contours for path shapes, which is not supported in L-Studio. 
       * Piecewise path.
 
-        Paths can be extruded along paths where the points are not explicit spline control points. This path uses the underlying BABYLON Path3D (which looks very much like a CatmullRom spline).
+        Contours can be extruded along paths where the points are not explicit spline control points. This path uses the underlying BABYLON Path3D (which looks very much like a CatmullRom spline).
   * L-system development
       * Branching
 
@@ -74,10 +74,11 @@
 
 
 ## Missing or changed features
-  * It does not implement stochastic L-systems, but that can be closely approximated by parametric expressions and could be made essentially equivalent (using conditional expressions and the rand function
-  * BSpline paths
+  * It does not implement stochastic L-systems, but that can be closely approximated by parametric expressions and could be made essentially equivalent (using conditional expressions and the rand function).
+  * BSpline paths - feasible, though.
   * The '{(0)' module does not start a polygon, but a piecewise path. Polygons must use the unparameterized '{' module.
-  * The '}' and @Ge modules now take a second parameter that causes the generated polygon or extrusion to be saved as a mesh/surface. For example ... }('','leaf') ... ~('leaf') ... will construct a 'leaf' mesh and save it, and, later the ~('leaf') module will insert it at the current turtle location.
+  * The '}' and @Ge modules now take a second parameter that causes the generated polygon or extrusion to be saved as a mesh/surface. For example ... }('','leaf') ... ~('leaf') ... will construct a 'leaf' mesh and save it.
+  * The '~' module is now parameterized, so the syntax is now '~(some-identifier)' instead of ~S. Identifiers maybe numbers or strings, so ~('leaf') module will insert a saved mesh called 'leaf' at the current turtle location.
   * Setting the variable 'n' will set the derivation length, if it is not set. This allows you to use examples in The Algorithmic Beauty of Plants more easily
   * Decomposition. This feature, cool as it is, is on the back, back burner and may never see the light of day.
 
@@ -94,7 +95,7 @@
     * Switched to using Svelte and Bootstrap: much easier implementing new UI features
     * New layout using svelte-splitpanes and bootstrap menu bars and icons
     * Added all my test/example files to front end to learn and browse
-    * Fixed many broken features - see shell-2.ls, or one
+    * Fixed many broken features - see shell-2.ls, for one
     * Added better model save feature, including choice to use clones instead of instances.
     * Ability to save some settings, like auto-load and build of demo system
     * Added 1x1 grids to XY, YZ, and XZ planes to check size of finished models
