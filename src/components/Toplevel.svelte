@@ -40,6 +40,7 @@
   let scene = getContext('scene');
   let turtle = getContext('turtle');
   let showExamples = getContext('showExamples');
+  let sizeExPane = 0;
 
   let tinfo; // turtle info
   
@@ -48,6 +49,12 @@
     $scene = createScene(canvas);
     $turtle = defaultTurtle;
     initCanvas();
+  }
+
+  $: if ($showExamples) {
+    sizeExPane=15;
+  } else {
+    sizeExPane = 0;
   }
 
   // initially, just reset the height for the engine
@@ -78,7 +85,7 @@
 <svelte:window on:resize={initCanvas} />
 
 <Topbar/>
-<Splitpanes on:resized={resize} >
+<Splitpanes on:resized={resize}>
   <Pane size={initialPaneSize} >
     <canvas id="renderCanvas" touch-action="none" bind:this={canvas}> </canvas>
     <!-- <canvas id="renderCanvas" touch-action="pan-x pan-y pinch-zoom" bind:this={canvas}> </canvas> -->
@@ -87,11 +94,9 @@
   <Pane>
     <LSExplorer/>
   </Pane>
-  {#if $showExamples}
-    <Pane size=10 maxSize=20>
-      <Examples/>
-    </Pane>
-  {/if}
+  <Pane size={sizeExPane} >
+    <Examples/>
+  </Pane>
 </Splitpanes>
 
 <style>
