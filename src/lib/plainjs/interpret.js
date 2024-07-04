@@ -296,7 +296,7 @@ t0.setHeading([0,1,0])`);
                      idata.gencode('turtle');
                      if (!p) {
                         turtle.penDown();
-                        idata.gencode('.pu()');
+                        idata.gencode('.pd()');
                      }
                      turtle.goto(pM.p[0], pM.p[1],pM.p[2]);
                      idata.gencode(`.goto(${pM.p[0]}, ${pM.p[1]},${pM.p[2]});\n`);
