@@ -8,11 +8,10 @@
   }
 
   let lsSrc = getContext('lsSource');
-  console.log('Examples: ', lsSrc);
 
   function loadfile(evt) {
     let i,j;
-    [i, j] = event.target.id.split(' ')[1].split('.');
+    [i, j] = evt?.target.id.split(' ')[1].split('.');
 
     $lsSrc.fname = examples[i].files[j].lsfile,
     $lsSrc.text = examples[i].files[j].src;
