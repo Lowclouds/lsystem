@@ -8,6 +8,7 @@
   import saveAs from 'file-saver';
   import SaveMesh from '/src/components/SaveMesh.svelte';
   import Modal from '/src/components/Modal.svelte';
+  import SymbolMenu from '/src/components/SymbolMenu.svelte';
 
   let settings = Settings.getSettings();
   let lsys = getContext('lsystem');
@@ -46,6 +47,7 @@
   let lsSrcEl;
   let ls_text = "";
   let fname = null;
+  let cpos=0;
 
     // the default turtle
   let turtle = getContext('turtle');
@@ -88,6 +90,8 @@
       startupDone();
     }
   }
+
+  $: console.log("cpos: ", cpos);
 
   afterUpdate(() => {
     //puts(`hit ls_text update: ${ls_text}`);
@@ -232,8 +236,8 @@
     uiSaveAsLSfile();
   }
 
-  function uiSaveAsLSfile(event) {
-    event?.target.blur();
+  function uiSaveAsLSfile(evt) {
+    evt?.target.blur();
 
     let file = (fname === null) ? 'lsystem.ls' : fname; 
 
@@ -251,8 +255,8 @@
   let doGenCode = getContext('doGenCode');
   let codegen = getContext('codegen');
 
-  function genCodeToggle(event) {
-    event?.target.blur();
+  function genCodeToggle(evt) {
+    evt?.target.blur();
 
     if ($doGenCode) {
       gcodestr  = 'bi-square';
@@ -382,6 +386,7 @@
       })
   }
 
+
   let ourposition = 'relative';
 
   // tooltips
@@ -402,6 +407,11 @@
   let tip_el_drawspeed = `Number of Modules interpreted per Frame. ${speedtip}`;
 
 
+
+  let leftBound = '\u22D0';
+  function insertSymbol(evt) {
+    console.log('textContent: ', evt?.target.textContent);
+  }
   
 </script>
 
@@ -427,6 +437,8 @@
            data-bs-toggle="tooltip" data-bs-title={tip_btn_draw}
           on:click={uiDoDraw}><i class="bi-paint-bucket"></i></button>
 
+  <SymbolMenu insertTarget={lsSrcEl}>Insert Symbol</SymbolMenu>
+
   <div class="btn-group" style="display: flex; justify-content: flex-end; margin-left: auto; background-color: wheat; padding: 0">
       <button class="gbutton tbutton" id="btn-gencode" 
               data-bs-toggle="tooltip" data-bs-title={tip_btn_gencode}
@@ -444,7 +456,7 @@
   <button on:click={uiAbortDrawing}>Click to stop interpretation</button>
 </Modal>
 
-<textarea bind:this={lsSrcEl} id="lsSrc" bind:value={ls_text} placeholder="Load LS file or start typing"/>
+<textarea type="text" id="lsSrc" bind:this={lsSrcEl} bind:value={ls_text} placeholder="Load LS file or start typing"></textarea>
 
 <div class="btn-group bgroup-plus my-0 py-0">
   <div class="gbutton nbutton my-0 py-0" >LS status</div>
