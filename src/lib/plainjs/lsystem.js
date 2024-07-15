@@ -32,6 +32,16 @@
     
 // RE is the container for all regular expressions. this s.b. in LSystem class
 const RE = {};
+let greekSymbols = [
+  '\u22D0', '\u22D1', '\u0393', '\u0394', '\u0398',
+  '\u039B', '\u039E', '\u03A0', '\u03A3', '\u03A6',
+  '\u03A8', '\u03A9', '\u03B1', '\u03B2', '\u03B3',
+  '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', 
+  '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD',
+  '\u03BE', '\u03BF', '\u03C0', '\u03C1', '\u03C2',
+  '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7',
+  '\u03C8', '\u03C9',
+];
 
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
 var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]?";
@@ -1053,7 +1063,7 @@ ${msg}`;
       if ('string' == typeof l) {return l;}
       l.forEach(e => { 
          if (e) {
-            if ('object' == typeof e) {
+            if ('object' == typeof e && e?.m != null) {
                r+= e.m + '(' + e.p + ')';
             } else  {
                r  += e;
@@ -1101,6 +1111,8 @@ ${msg}`;
          for (let n=0; n < clength; n++)   {
             let module = mstring[n];
             puts(`looking at module[${n}] = ${module}, Lsys: ${lsLabel}`, LSYS_REWRITE);
+            if (module == null || Array.isArray(module)) continue;
+
             // special handling of cut module, %
             if (module == '%') {
                let on = n;
@@ -1201,15 +1213,6 @@ ${msg}`;
          //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
          mstring = lsnext.flat();
       }
-      // handle any introduced cut, %, modules
-      clength = mstring.length;
-      for (let n=0; n < mstring.length; n++)   {
-         let node = mstring[n];
-         if (node == '%') {
-            let cut = this.cutInPlace(n,mstring); // this modifies mstring!
-            puts(`cut mstring from ${n}: ${cut}`, LSYS_REWRITE);
-         }
-      }
       ls.current = mstring;
       if (string) {
          ls.dDone += niter;     // step case
@@ -1243,6 +1246,10 @@ ${msg}`;
    }
 
    moduleName(m) {
+     if (!m ) {
+       puts(`mlist[${n}] is null, ${mlist}`, LSYS_CONTEXT);
+       return m;
+     }
       if (typeof m == 'string') {
          return m;
       } else {                  // assume parameterized Module
@@ -1310,8 +1317,8 @@ ${msg}`;
       while (n >= 0 && n < nmax) {
          m = mlist[n];
          c = ctxt[ci];
-         let mn = this.moduleName(mlist[n]);
-         let cn = this.moduleName(ctxt[ci]);
+         let mn = this.moduleName(m);
+         let cn = this.moduleName(c);
          if ((ignore && ignore.includes(mn)) || (consider && !consider.includes(mn))) {
             n += dir;           // next module, same context
             puts(`skipping module ${m}`, LSYS_CONTEXT);
@@ -1444,11 +1451,13 @@ ${msg}`;
    // this depends on sequential left-right processing of L-system string
    cut (nxt, start) {
       let i = start;
+      let j = 0;                // count to delete
       let atEnd=false;
       let nested = 0;
       do {
-         nxt[i] = null;
+         nxt[i] = [];            // this disappears when array is flattened
          i++;
+         j++;
          if ( i >= nxt.length ){
             atEnd = true;
          } else {
