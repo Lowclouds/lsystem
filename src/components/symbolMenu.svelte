@@ -1,7 +1,5 @@
 <script>
 /*
-U+0391 	Α 	913 	Greek Capital Letter Alpha 	0386
-U+0392 	Β 	914 	Greek Capital Letter Beta 	0387
 U+0393 	Γ 	915 	Greek Capital Letter Gamma 	0388
 U+0394 	Δ 	916 	Greek Capital Letter Delta 	0389
 U+0395 	Ε 	917 	Greek Capital Letter Epsilon 	0390
@@ -59,24 +57,23 @@ U+03C9 	ω 	969 	Greek Small Letter Omega 	0441
   let _symbols = [
     '\u22D0 \u22D1', '\u22D0', '\u22D1',
     '\u0393', '\u0394', '\u0398',
-    '\u0399', '\u039A', '\u039B',
-    '\u039E', '\u03A0', '\u03A3',
-    '\u03A4', '\u03A5','\u03A6',
-    '\u03A8', '\u03A9', '\u03B1',
-    '\u03B2', '\u03B3', '\u03B4',
-    '\u03B5', '\u03B6', '\u03B7',
-    '\u03B8', '\u03B9', '\u03BA',
-    '\u03BB', '\u03BC', '\u03BD',
-    '\u03BE', '\u03BF', '\u03C0',
-    '\u03C1', '\u03C2', '\u03C3',
-    '\u03C4', '\u03C5', '\u03C6',
-    '\u03C7', '\u03C8', '\u03C9',
+    '\u039B', '\u039E', '\u03A0',
+    '\u03A3', '\u03A6', '\u03A8',
+    '\u03A9', '\u03B1', '\u03B2',
+    '\u03B3', '\u03B4', '\u03B5', 
+    '\u03B6', '\u03B7', '\u03B8', 
+    '\u03B9', '\u03BA', '\u03BB',
+    '\u03BC', '\u03BD', '\u03BE',
+    '\u03BF', '\u03C0', '\u03C1',
+    '\u03C2', '\u03C3', '\u03C4',
+    '\u03C5', '\u03C6', '\u03C7',
+    '\u03C8', '\u03C9', ''
   ];
 
 
   function insertSymbol(evt) {
     let sym = evt?.target.textContent;
-    console.log('insertTarget: ', insertTarget, '  sym: ', sym)
+    //console.log('insertTarget: ', insertTarget, '  sym: ', sym)
     if (insertTarget != null) {
       evt?.target.blur();
       let curpos = insertTarget.selectionStart;
@@ -119,7 +116,7 @@ U+03C9 	ω 	969 	Greek Small Letter Omega 	0441
     background-color: aquamarine;
     border-radius: 4px;
     align-content: center;
-    min-width: 5em;
+    min-width: 4em;
     padding: 0 1em 0 .25em;  }
 
   table {

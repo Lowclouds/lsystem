@@ -365,6 +365,11 @@
         /* --------- rewrite ---------*/
         if (value) {
           uiDoRewrite()
+            .catch((error) => {
+              $lsExpansionStatus = 'Rewrite failed';
+              $lsExpansion = `Error: ${error}\n\n` + $lsExpansion;
+              isInvalid = true;
+            });
         } else {
           throw new Error('Source is invalid');
         }
