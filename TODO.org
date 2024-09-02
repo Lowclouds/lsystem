@@ -39,11 +39,14 @@ instance specific material.
   still need to implement segments/pair of control point - currently #segments
   applies to entire spline
 ** TODO B-spline
-  on back burner
+  on back burner - doable: there is a JS implementation, but...
 * TODO Homomorphism productions
 Nice to have
 * TODO Decomposition productions
-Back burner
+Maybe, not so back burner
+** Rewrite Rewrite looking at homomorphisms and speed
+*** DONE Use sparse array for accumulating production replacements
+   <2024-09-01 Sun> This is faster and less memory intensive. Also modified cut operator to fit.
 * TODO Explore Map Operator
 <2024-06-16 Sun>
 Something like @Map(axiom, parameter set list), to automate/simplify
@@ -55,7 +58,7 @@ p: ?EvalStuff(pset) < P : pset.x^2 + pset.y^2 < 1 -> P@Map(a, pslist)
 
 ?EvalStuff(pset) returns a list of parameter sets, i.e. objects referenced by pset.val.
 The condition would be evaluated and tested for each pset, and if true, the axiom is 
-inserted in to the output. ?EvalStuff is more problematic that the replacement notion.
+inserted in to the output. ?EvalStuff is more problematic than the replacement notion.
 
 Possible candidates are to interate over all turtles, or some subset of them, or maybe tagged
 meshes? (how to tag a mesh? a named mesh is tagged its name when inserted?)

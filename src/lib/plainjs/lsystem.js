@@ -150,6 +150,8 @@ var ParameterizedModule = function(name, parms) {
 }
 
 // evaluation environment might be a better word, but scope will do
+// math.js likes to use maps for secure environments, so we extend Map
+// for our purposes
 class LsScope extends Map {
 
    constructor (strict = null, pre = null, post =  null) {
@@ -194,7 +196,7 @@ class LsScope extends Map {
       if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
          this.set(v, exp); // keep strings
       } else {
-         math.evaluate(v+'=' + exp, this);
+         math.evaluate(v + '=' + exp, this);
       }
       this.scopeMap.set(v,null); // just set rule scope to null
    }
@@ -255,9 +257,7 @@ class LsProduction extends Array {
          this[1] = [[],[],[]];
          this[2] = [];
          this[3] = null;
-         if (this.length > 4) {
-            this.splice(4);
-         }
+         this.length = 4;       // truncate array if needed
       }
    }
    get predecessor () {
@@ -1081,43 +1081,45 @@ ${msg}`;
    // the property dDone keeps track of how many total iterations have
    // been done on the string.
 
-  // Note well: mstring is an array of modules, not actually a string
+  // Note well: string, mstring, and ls.current are arrays of modules, not actually strings
 
    Rewrite (ls = this, it = 0, string=null ) {
-      if (string===null) {
-         ls.current = ls.axiom.slice();
-      } else {
-         ls.current = string;
-      }
-      let genv = new LsScope();
+      let genv = new LsScope();      // set up local and global environment
       genv.init(ls.locals, Lsystem.globals); // locals will shadow globals
+     // use axiom as initial string if none supplied
+      if (string === null) {
+        // evaluate any uninstantiated parameters in axiom
+        ls.current = this.expand(new LsProduction(null,null,ls.axiom.slice(), genv));
+      } else {
+         ls.current = string;   // we assume the input has been rewritten/expanded
+      }
+
       let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
-      //let mstring = ls.current;
-      let mstring = this.expand(new LsProduction(null,null,ls.current, genv));
-      let lsnext;
+      let mstring = ls.current; 
       let lsLabel = ls.label;
       let rules = ls.rules;
       let locals = ls.locals;
       let lsStack = [];
       let restrict = ls.restrict;
-      // parallelize this later? never if subLsystems are supported
-      let clength;
+      let mlength;
       for (let i=1; i <= niter; i++) {
          puts(`iteration ${i}\n${mstring}`, LSYS_REWRITE);
-         clength = mstring.length;
-         lsnext = mstring.slice();     // default production is to copy
-         for (let n=0; n < clength; n++)   {
+         mlength = mstring.length;
+         let lschanges = [];    // changes introduced in this interation
+         for (let n=0; n < mlength; n++)   {
             let module = mstring[n];
             puts(`looking at module[${n}] = ${module}, Lsys: ${lsLabel}`, LSYS_REWRITE);
             if (module == null || Array.isArray(module)) continue;
 
-            // special handling of cut module, %
+            // special handling of cut module, %, where the length of the lsystem is reduced
             if (module == '%') {
+               let ol = mlength;
                let on = n;
-               n = this.cut(lsnext, n);
-               puts(`cut lsnext from ${on} to ${n}:\n${lsnext}`, LSYS_REWRITE);
+               mlength = this.cutInPlace(mstring, n);
+               n--;             // redo module at this index: it has changed
+               puts(`After cut at ${on}, old length was ${ol}, new length is${mlength}:`, LSYS_REWRITE);
                continue;
             }
             // 
@@ -1173,12 +1175,12 @@ ${msg}`;
             }
             puts(`bestrule is ${bestrule}`, LSYS_REWRITE);
             if (bestrule) {
-               lsnext[n] = this.expand(bestrule);
+               lschanges[n] = this.expand(bestrule);
                if (bestscope) { 
                   // pass any changed local or global values up from rule scope
                   bestscope.upbind(); 
                }
-               puts(`expanded ${mstring[n]} to ${lsnext[n]}`, LSYS_REWRITE, LSYS_EXPAND);
+               puts(`expanded ${mstring[n]} to ${lschanges[n]}`, LSYS_REWRITE, LSYS_EXPAND);
             }
             //          if (! doExpand) {
             // special case a few module types
@@ -1211,19 +1213,40 @@ ${msg}`;
             }
          }
          //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
-         mstring = lsnext.flat();
+        mstring = this.merge(mstring, lschanges);
       }
       ls.current = mstring;
-      if (string) {
-         ls.dDone += niter;     // step case
+      if (string === null) {
+        ls.dDone = niter;      // 
       } else {
-         ls.dDone = niter;      // 
+         ls.dDone += niter;     // step case: niter typically == 1
       }
-      // this.next = null;
       puts(`Expanded tree has ${ls.current.length} nodes after ${ls.dDone} interations`);
       return ls.current;
-   }
+   }                            // end of Rewrite
 
+  merge(source, changes) {
+    let changecnt = 0, newsourcelen = 0;
+
+    changes.forEach((e) => {newsourcelen += e.length; changecnt++;});
+    
+    // pre-allocate array
+    let merged = Array.from({length: source.length + newsourcelen - changecnt});
+    for (let i = 0, j=0; i < source.length; i++) {
+      if (changes[i]) {
+         changes[i].forEach((e) => {
+            merged[j] = e;
+            j++;
+         });
+      } else {
+         if (source[i]) {
+            merged[j] = source[i];
+            j++;
+         }
+      }
+    }
+    return merged;
+  }
    expand(rule) {
       puts(`expanding rule: ${rule}`, LSYS_EXPAND);
       let successor;
@@ -1231,7 +1254,7 @@ ${msg}`;
       if (scope) {
          successor = rule.successor.slice();
          puts(`nominal rule: ${rule[0]} : ${rule[1]} -->  ${successor}`, LSYS_EXPAND)
-         successor.forEach((mod,ndx) => {if (typeof mod == 'object') {
+         successor.forEach((mod,ndx) => {if (typeof mod === 'object') {
             let nmod = mod.clone();
             scope.expand(nmod);
             puts(`expanded module: ${nmod}`, LSYS_EXPAND);
@@ -1447,15 +1470,17 @@ ${msg}`;
    }
 
    // null out all modules from start to first end-branch, ], module or to end
-   // nxt is lsnext, which is initialized to be the current string
+   // nxt is mstring
    // this depends on sequential left-right processing of L-system string
+   /* dead code 9/1/2024
    cut (nxt, start) {
       let i = start;
       let j = 0;                // count to delete
       let atEnd=false;
       let nested = 0;
       do {
-         nxt[i] = [];            // this disappears when array is flattened
+         // nxt[i] = [];            // this disappears when array is flattened
+         nxt[i] = null;            // this will be skipped during merge
          i++;
          j++;
          if ( i >= nxt.length ){
@@ -1466,7 +1491,7 @@ ${msg}`;
                nested++;
                break;
             case ']':
-               atEnd = nested == 0;
+               atEnd = (nested === 0);
                nested--;
                break;
             default:
@@ -1476,21 +1501,24 @@ ${msg}`;
       } while(! atEnd);
       return i;
    }
-   cutInPlace (start, str) {
+   */
+   cutInPlace (str, start) {
       let i = start;
+      //puts(`cutInPlace: start at str[${i}] = ${str[i]}, str[${i+1}] = ${str[i+1]}`);
       let atEnd=false;
       let nested = 0;
       do {
          i++;
          if ( i >= str.length ){
             atEnd = true;
+            i = str.length;
          } else {
             switch (str[i]) {
             case '[':
                nested++;
                break;
             case ']':
-               atEnd = (nested == 0);
+               atEnd = (nested === 0);
                nested--;
                break;
             default:
@@ -1498,8 +1526,11 @@ ${msg}`;
             }
          }
       } while(! atEnd);
-      return str.splice(start,i-start);
+     // puts(`cutInPlace cutting: ${str.slice(start, i)}`);
+      str.splice(start,i-start);
+      return str.length;
    }
+
 } /* end Lsystem */
 
 Lsystem.globals.name = 'globals';
