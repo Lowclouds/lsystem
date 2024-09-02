@@ -78,7 +78,7 @@
   * BSpline paths - feasible, though.
   * The '{(0)' module does not start a polygon, but a piecewise path. Polygons must use the unparameterized '{' module.
   * The '}' and @Ge modules now take a second parameter that causes the generated polygon or extrusion to be saved as a mesh/surface. For example ... }('','leaf') ... ~('leaf') ... will construct a 'leaf' mesh and save it.
-  * The '~' module is now parameterized, so the syntax is now '~(some-identifier)' instead of ~S. Identifiers maybe numbers or strings, so ~('leaf') module will insert a saved mesh called 'leaf' at the current turtle location.
+  * The '~' module is now parameterized, so the syntax is now '~(some-identifier)' instead of ~S. Identifiers may be numbers or strings, so ~('leaf') module will insert a saved mesh called 'leaf' at the current turtle location.
   * Setting the variable 'n' will set the derivation length, if it is not set. This allows you to use examples in The Algorithmic Beauty of Plants more easily
   * Decomposition. This feature, cool as it is, is on the back, back burner and may never see the light of day.
 
@@ -91,14 +91,15 @@
    * Textures - currently just standard materials
 
 ## Changes since last version
-    * Switched to using Webpack to build and debug, much nicer.
-    * Switched to using Svelte and Bootstrap: much easier implementing new UI features
-    * New layout using svelte-splitpanes and bootstrap menu bars and icons
-    * Added all my test/example files to front end to learn and browse
-    * Fixed many broken features - see shell-2.ls, for one
-    * Added better model save feature, including choice to use clones instead of instances.
-    * Ability to save some settings, like auto-load and build of demo system
-    * Added 1x1 grids to XY, YZ, and XZ planes to check size of finished models
-    * Changed contour module from @D to @C - and may have missed converting some examples
+
+   * Switched to using Webpack to build and debug, much nicer.
+   * Switched to using Svelte and Bootstrap: much easier implementing new UI features
+   * New layout using svelte-splitpanes and bootstrap menu bars and icons
+   * Added all my test/example files to front end to learn and browse
+   * Fixed many broken features - see shell-2.ls, for one
+   * Added better model save feature, including choice to use clones instead of instances.
+   * Ability to save some settings, like auto-load and build of demo system
+   * Added 1x1 grids to XY, YZ, and XZ planes to check size of finished models
+   * Changed contour module from @D to @C - and may have missed converting some examples
      
   
