@@ -1126,7 +1126,7 @@ ${msg}`;
             if (module == '%') {
                let ol = mlength;
                let on = n;
-               mlength = this.cutInPlace(mstring, n);
+               mlength = ls.cutInPlace(mstring, n);
                n--;             // redo module at this index: it has changed
                puts(`After cut at ${on}, old length was ${ol}, new length is${mlength}:`, LSYS_REWRITE);
                continue;
