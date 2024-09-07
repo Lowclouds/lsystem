@@ -148,6 +148,7 @@ module.exports = {
             { source: './assets/*', destination: './public' },
             { source: './assets/examples/**/', destination: './public/assets/examples' },
             { source: './pages/*.html', destination: './public/'},
+            { source: './pages/*.pdf', destination: './public/'},
           ],
         }
       }

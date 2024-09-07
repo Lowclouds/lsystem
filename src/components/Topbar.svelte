@@ -217,7 +217,7 @@
         <div class="nav-item dropstart">
           <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"> Help </button>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="./quick-ref.html" target="_blank"
+            <li><a class="dropdown-item" href="./quick-ref.pdf" target="_blank"
                    data-bs-toggle="tooltip" data-bs-title={tip_btn_qref}
                    > Quick Reference </a></li>
             <li><span class="dropdown-item-text" style="color: gray">--External links--</span></li>

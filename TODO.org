@@ -40,10 +40,11 @@ instance specific material.
   applies to entire spline
 ** TODO B-spline
   on back burner - doable: there is a JS implementation, but...
-* TODO Homomorphism productions
-Nice to have
-* TODO Decomposition productions
-Maybe, not so back burner
+* DONE Homomorphism productions
+  <2024-09-06 Fri>
+* DONE Decomposition productions
+  <2024-09-06 Fri>
+  This was not so hard
 ** Rewrite Rewrite looking at homomorphisms and speed
 *** DONE Use sparse array for accumulating production replacements
    <2024-09-01 Sun> This is faster and less memory intensive. Also modified cut operator to fit.

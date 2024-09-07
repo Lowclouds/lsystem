@@ -80,18 +80,17 @@
   * The '}' and @Ge modules now take a second parameter that causes the generated polygon or extrusion to be saved as a mesh/surface. For example ... }('','leaf') ... ~('leaf') ... will construct a 'leaf' mesh and save it.
   * The '~' module is now parameterized, so the syntax is now '~(some-identifier)' instead of ~S. Identifiers may be numbers or strings, so ~('leaf') module will insert a saved mesh called 'leaf' at the current turtle location.
   * Setting the variable 'n' will set the derivation length, if it is not set. This allows you to use examples in The Algorithmic Beauty of Plants more easily
-  * Decomposition. This feature, cool as it is, is on the back, back burner and may never see the light of day.
 
 ## Features in the  works:
 
    * Animations - but see step mode with multiple turtle mode
-   * Homomorphisms
    * Array specified contours and surfaces
    * L-system surface generation
    * Textures - currently just standard materials
 
 ## Changes since last version
 
+   * Homomorphisms and decomposition 9/6/24
    * Switched to using Webpack to build and debug, much nicer.
    * Switched to using Svelte and Bootstrap: much easier implementing new UI features
    * New layout using svelte-splitpanes and bootstrap menu bars and icons
