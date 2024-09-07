@@ -78,6 +78,7 @@ RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
 RE.pre_condition = /^ *({.+)/;  
 RE.post_condition = /} *$/;
 RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
+RE.maxDepth = /^ *[Mm]ax.* +depth: *(\d+)/;
 
 RE.assignAny = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*([^;]+);?`,'g');
 RE.assignNum = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*(${numReStr}),?`,'g');
@@ -353,13 +354,15 @@ class Lsystem {
       this.label = lbl;
       this.axiom = [];
       this.rules = [];
-      this.decomprules = [];      // unimplemented
-      this.homorules = [];      // unimplemented
       this.Dlength = 0; // number of iterations
       this.dDone = 0;   // number of iterations done;
+      this.decomprules = null;      // unimplemented
+      this.decompDepth = 1;      // unimplemented
+      this.homorules = null;      // unimplemented
+      this.homoDepth = 1;      // unimplemented
       this.stepStart = false;    // 
       this.current = [];
-      this.next = [];
+      this.interp = null;
       this.verbose = 0;
       this.scale = 1;
       this.stemsize = 0.1;
@@ -502,13 +505,14 @@ class Lsystem {
       }
       this.axiom = [];
       this.rules = [];
-      this.homorules = [];
+      this.decomprules = null;
+      this.homorules = null;
       this.Dlength = 0;
       this.dDone = 0;
       this.stepStart = false;
       this.delta = 90;
       this.current=[];
-      this.next=[];
+      this.interp=null;
       this.restrict = null;
    }
 
@@ -596,8 +600,7 @@ class Lsystem {
       // eliminating tricky transition discovery.
       // A sub L-system invokes a recursive call to this function.
       // states are functions, parseResult contains a code and a nextState
-      // there is one state function call per line of input, but the inDefine state
-      // keeps track of some char positions across lines.
+      // there is one state function call per line of input
       function parseHelper (ls, isSubLs = false) {
          let line='', eol = 0;
          let linectr = 0;
@@ -782,7 +785,8 @@ class Lsystem {
       }
       function inDecomposition (ls, line) {
          let pr = new ParseResult(P_HANDLED, inProductions);
-         puts(`inDecomposition looking at: ${line}`); // , LSYS_IN_DECOMP
+         if (ls.decomprules === null) ls.decomprules=[];
+         puts(`inDecomposition looking at: ${line}`, LSYS_IN_DECOMP ); // , 
          if (line.includes('homomorphism')) {
             // should pick up warnings/no warnings
             pr.status = P_TRANSITION;
@@ -795,6 +799,8 @@ class Lsystem {
          } else if (line.includes('endlsystem')) {
             pr.status = P_TRANSITION;
             pr.nextState = wantLsystem;
+         } else if (m = line.match(RE.maxDepth)) {
+            ls.decompDepth = Number(m[1]);;
          } else {
             let rule = parseProduction(ls, line)
             if (rule != null) {
@@ -807,7 +813,8 @@ class Lsystem {
       }
       function inHomomorphism (ls, line) {
          let pr = new ParseResult(P_HANDLED, inProductions);
-         puts(`inHomomorphism looking at: ${line}`);
+         if (ls.homorules === null) ls.homorules=[];
+         puts(`inHomomorphism looking at: ${line}`, LSYS_IN_HOMO);
          if (line.includes('homomorphism')) {
             // should pick up warnings/no warnings
             pr.status = P_ERROR;
@@ -821,6 +828,8 @@ class Lsystem {
          } else if (line.includes('endlsystem')) {
             pr.status = P_TRANSITION;
             pr.nextState = wantLsystem;
+         } else if (m = line.match(RE.maxDepth)) {
+           ls.homoDepth = Number(m[1]);
          } else {
             let rule = parseProduction(ls, line)
             if (rule != null) {
@@ -1098,16 +1107,16 @@ ${msg}`;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
       let mstring = ls.current; 
+      let lschanges;
       let lsLabel = ls.label;
       let rules = ls.rules;
       let locals = ls.locals;
       let lsStack = [];
       let restrict = ls.restrict;
       let mlength;
-      for (let i=1; i <= niter; i++) {
-         puts(`iteration ${i}\n${mstring}`, LSYS_REWRITE);
-         mlength = mstring.length;
-         let lschanges = [];    // changes introduced in this interation
+
+      function doOnePass() {
+         puts(`doOnePass:\n${mstring}, mlength: ${mlength}`, LSYS_REWRITE_VERB);
          for (let n=0; n < mlength; n++)   {
             let module = mstring[n];
             puts(`looking at module[${n}] = ${module}, Lsys: ${lsLabel}`, LSYS_REWRITE);
@@ -1138,7 +1147,7 @@ ${msg}`;
                puts(`comparing  ${module} to strictp: ${strictp}`, LSYS_REWRITE_VERB);
                // todo: evaluate pre-condition expression before evaluating scope._test_()
                // side-effect of formalMatch is that scope is updated
-               if (this.formalMatch(strictp, module, scope)) {
+               if (ls.formalMatch(strictp, module, scope)) {
                   let lctxt = rule.leftContext;
                   let rctxt = rule.rightContext;
                   if (lctxt.length && 
@@ -1146,7 +1155,7 @@ ${msg}`;
                      continue;
                   }
                   if (rctxt.length && 
-                      ! this.findcontext(mstring, rctxt, n, 1, scope, restrict)) {
+                      ! ls.findcontext(mstring, rctxt, n, 1, scope, restrict)) {
                      continue;
                   }
                   // See if the condition is valid
@@ -1175,7 +1184,7 @@ ${msg}`;
             }
             puts(`bestrule is ${bestrule}`, LSYS_REWRITE);
             if (bestrule) {
-               lschanges[n] = this.expand(bestrule);
+               lschanges[n] = ls.expand(bestrule);
                if (bestscope) { 
                   // pass any changed local or global values up from rule scope
                   bestscope.upbind(); 
@@ -1184,7 +1193,7 @@ ${msg}`;
             }
             //          if (! doExpand) {
             // special case a few module types
-            if (this.formalMatch(Lsystem.modLsystemStart, module, null)) {
+            if (ls.formalMatch(Lsystem.modLsystemStart, module, null)) {
                let sublslabel = module.p[0].toString();
                let subls = Lsystem.lsystems.get(sublslabel);
                if (subls) {
@@ -1198,7 +1207,7 @@ ${msg}`;
                } else {
                   throw new Error(`lsystem: ${sublslabel} not found in ${module}`); 
                }
-            } else if (this.formalMatch(Lsystem.modLsystemEnd, module, null)) {
+            } else if (ls.formalMatch(Lsystem.modLsystemEnd, module, null)) {
                let upls = lsStack.pop()
                if (! upls) {
                   throw new Error(`Rewrite: no lsystem found on stack after "$"!`); 
@@ -1212,17 +1221,46 @@ ${msg}`;
                }
             }
          }
-         //puts(`iteration ${i + 1}\n${mstring}`, LSYS_REWRITE);
-        mstring = this.merge(mstring, lschanges);
+      }
+
+      for (let i=1; i <= niter; i++) {
+         mlength = mstring.length;
+         lschanges = [];    // changes introduced in this interation
+         puts(`iteration ${i};`, LSYS_REWRITE);
+         doOnePass();
+         mstring = this.merge(mstring, lschanges);
+         if (ls.decomprules !=  null) {
+            rules = ls.decomprules;
+            for (let j = 1; j <= ls.decompDepth; j++) {
+               mlength = mstring.length;
+               puts(`iteration ${i}; decomposition: ${j}`, LSYS_REWRITE);
+               lschanges = [];
+               doOnePass();
+               mstring = this.merge(mstring, lschanges);
+            }
+            rules = ls.rules;
+         }
       }
       ls.current = mstring;
+      ls.interp = ls.current;
+      if (ls.homorules != null) {
+         rules = ls.homorules;
+         mstring = ls.current.slice();
+         mlength = mstring.length;
+         for (let i = 1; i <= ls.homoDepth; i++) {
+            lschanges=[];
+            doOnePass();
+            mstring = this.merge(mstring, lschanges);
+         }
+         ls.interp = mstring;
+      }
       if (string === null) {
         ls.dDone = niter;      // 
       } else {
          ls.dDone += niter;     // step case: niter typically == 1
       }
-      puts(`Expanded tree has ${ls.current.length} nodes after ${ls.dDone} interations`);
-      return ls.current;
+      puts(`Expanded tree has ${ls.interp.length} nodes after ${ls.dDone} interations`);
+      return ls.interp;
    }                            // end of Rewrite
 
   merge(source, changes) {

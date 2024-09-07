@@ -6,7 +6,7 @@ var idata;
 function turtleInterp (ti, ls, opts=null, ifcUpd) {
    let desiredFps = 10;
 
-   if (ls.current.length == 0) {
+   if (ls.interp.length === 0) {
       puts('top level lsystem is empty, returning');
       return;
    }
@@ -113,7 +113,7 @@ t0.setHeading([0,1,0])`);
    
    var branches = [{turtle: t0, spos: 0, keep: true}]; 
    idata.gencode('var branches = [{turtle: t0, spos: 0, keep: true}];\n');
-   var lstring = ls.current;
+   var lstring = ls.interp;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
    puts(`using settings with turtle ${t0.Turtle}:` + idata.show(), NTRP_INIT);
 

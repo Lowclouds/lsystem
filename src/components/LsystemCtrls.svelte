@@ -166,7 +166,6 @@
     evt?.target.blur();
 
     return new Promise((resolve,reject) => {
-      //if ($lsys && !isInvalid) {
       if ($lsys && !isInvalid) {
         try {
           drawDisabled = true;
@@ -174,7 +173,7 @@
           animationState.stepStart = false;
           $lsExpansion = listtostr($lsys.Rewrite()); //.toString();
           $numIterations = $lsys.dDone;
-          $numNodes = $lsys.current.length;
+          $numNodes = $lsys.interp.length;
           $lsExpansionStatus = 'Rewrite Done';
           drawDisabled = false;
           RPRDdisabled = false;
@@ -202,13 +201,15 @@
       if ($lsys && !isInvalid) {
         if ($lsys.current.length == 0 && $lsys.dDone == 0) {
           $lsys.current = $lsys.axiom.slice();
+           $lsys.interp = $lsys.current; 
           $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
         } else {
           $lsExpansion = listtostr($lsys.Rewrite($lsys, 1, $lsys.current)); //.toString();         
         }
         $lsExpansionStatus = `Step: ${$lsys.dDone}${($lsys.dDone==0)?" => axiom":""}`;
         $numIterations = $lsys.dDone;
-        $numNodes = $lsys.current.length;
+         // $numNodes = $lsys.current.length;
+        $numNodes = $lsys.interp.length;
         $numDrawn = 0;
         Turtle3d.clearTracksByTag('lsystem');
         defaultTurtle.reset(true);
