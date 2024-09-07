@@ -14,7 +14,7 @@ easy, the last really appealing from a usability pov
 ** TODO L-system generated
 Extrusions go a long way toward this already, maybe enhance this or look at ribbons.
 Alternatively, directly create meshes from turtle positions
-Not sure about cpgf bspline design
+Not sure about cpfg bspline design
 *** DONE <2022-09-05 Mon> initial handling of mesh instancing done: add/get named mesh, and 
 insertMesh as instance at turtle position. scaling and rotation done - need to work on
 instance specific material. 
@@ -63,6 +63,10 @@ inserted in to the output. ?EvalStuff is more problematic than the replacement n
 
 Possible candidates are to interate over all turtles, or some subset of them, or maybe tagged
 meshes? (how to tag a mesh? a named mesh is tagged its name when inserted?)
+<2024-09-06 Fri> Possible algorithm: create named/tagged mesh, say a small sphere.
+Insert clones of said mesh during expansion. Test operator performs some function on said
+spheres, returning some value, say a numeric value. Provide a mesh delete operator/module?
+
 
 * TODO Animations
 <2022-06-11 Sat> start working on this
