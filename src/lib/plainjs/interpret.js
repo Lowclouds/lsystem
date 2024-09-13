@@ -425,7 +425,8 @@ t0.setHeading([0,1,0])`);
                       inhibitTaper = pM.p[1] ? true : false;
                     }
                   } else {
-                     idata.stemsize += 0.1;
+                     let os = turtle.getSize();
+                     idata.stemsize = os+1;
                   }
                   puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
                  turtle.setSize(idata.stemsize, inhibitTaper);
@@ -763,7 +764,16 @@ t0.setHeading([0,1,0])`);
                      idata.gencode('.pitch(-90);\n');
                   }
                   break;      
-               case 'S':
+               case '?T':
+                  if (isPM) {
+                     let tsout = turtle.getBasicState({basicState: true});
+ // well, still not sure what to do with this
+ // attach the value to the module? which is then picked up during a scan
+ // at the end - can't set a global. or attach a JSONstringified version?
+                  } else {
+                     puts(`?T asks for turtle state, but no parameter supplied`);
+                  }
+                  break;
                case 'L': 
                   break;
                default: 

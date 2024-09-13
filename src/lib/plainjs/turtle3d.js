@@ -255,9 +255,9 @@ class Turtle3d {
       return getbi(Turtle3d.getTracksByTag(tag, scene));
    }
    static setUseInstancesOnInsert(onoff=true){
-     Turtle3d.useInstancesOnInsert = onoff;
+      Turtle3d.useInstancesOnInsert = onoff;
    }
-  
+   
    getTrackMeshes() {
       return this.scene.getMeshesByTags(this.getTurtle() +'&& track '+ '&& !colortable' );
    }
@@ -357,7 +357,7 @@ class Turtle3d {
    }
 
    setTrack(v, id=null) {
-     puts(`setTrack to: ${v}, id: ${id}`,TRTL_TRACK);
+      puts(`setTrack to: ${v}, id: ${id}`,TRTL_TRACK);
       switch (v) {
       case 'line':
          this.TurtleState.trackType = Turtle3d.TRACK_LINE;
@@ -385,7 +385,7 @@ class Turtle3d {
       }
       return this;
    }
-   getState (opts) {
+   getState (opts=null) {
       let s = Object.assign({}, this.TurtleState);
       s.P = this.TurtleState.P.clone();
       s.H = this.TurtleState.H.clone();
@@ -403,7 +403,7 @@ class Turtle3d {
       let ts = this.TurtleState;
       Object.assign(ts, savedstate);
       // ts.P = savedstate.P.clone();  // the user may expect to re-use the saved state
-      // ts.H = savedstate.H.clone();
+      // ts.H = savedstate.H.clone();  // which seems like a bad idea, so...
       // ts.L = savedstate.L.clone();
       // ts.U = savedstate.U.clone();
       this.setTrackShape(ts.trackShapeID);
@@ -425,6 +425,24 @@ class Turtle3d {
       }
    }
 
+   // this simplifies the returned object for mathjs
+   // evaluation in lsystem queries
+   getBasicState() {
+      let ts = this.TurtleState;
+      let ms = {P: {x: 0, y: 0, z: 0},
+                H: {x: 0, y: 0, z: 0}, 
+                L: {x: 0, y: 0, z: 0}, 
+                U: {x: 0, y: 0, z: 0}, 
+                size: 0, penIsDown: true, color: "" };
+      Object.keys(ms).forEach((k) => { 
+         if ('PHLU'.includes(k)) {
+            for (const p of 'xyz') { ms[k][p] = ts[k][p]}
+         } else {
+            ms[k] = ts[k]
+         }
+      });
+      return ms;
+   }
    // some private setters
    #setPos (val) {
       try {
@@ -533,12 +551,16 @@ class Turtle3d {
    */
    setTag(val) {this.TurtleState.trackTag = val;}
    getTag() {return this.TurtleState.trackTag;}
-   addTag(tag) {this.TurtleState.trackTag += ` ${tag}`;}
+   addTag(tag) {
+      let tt = ` ${tag} `;
+      if (! this.TurtleState.trackTag.includes(tt)) {
+         this.TurtleState.trackTag += tt;
+      }
+   }
    removeTag(tag) {
-      this.TurtleState.trackTag.replace(tag,'');
+      this.TurtleState.trackTag.replace(` ${tag} `,'');
    }
    
-
    penUp() {
       this.TurtleState.penIsDown = false;
       return this;

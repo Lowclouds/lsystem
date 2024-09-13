@@ -120,9 +120,9 @@ var ParameterizedModule = function(name, parms) {
             pi++;
             // puts("onto next param");
             continue;
-         } else if (s[i] == '(') {
+         } else if (s[i] === '(' || s[i] === '[') {
             nested++;
-         } else if (s[i] == ')') {
+         } else if (s[i] == ')' || s[i] === ']') {
             nested--;
          }
          if (p[pi]) {
@@ -501,7 +501,9 @@ class Lsystem {
    initParse(parentLS = null) {
       if (parentLS) {
          // inherit locals from parent lsystem
-         this.locals.init(parentLS.locals);
+         // maybe rethink this to keep lsystem variables apart and
+         // force shared variables to be global.
+         this.locals.init(parentLS.globals);
       }
       this.axiom = [];
       this.rules = [];
@@ -623,11 +625,12 @@ class Lsystem {
             }
             // remove extra spaces and carriage returns
             line = cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
-            puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
+            // puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
             pos = eol + 1; // advance file pointer
             linectr++;
             let loop = true;
             do {
+               puts(`state: ${parseState.name}, ${pos} ${eol}, ${line}`, LSYS_PARSE);
                parseResult = parseState(ls, line);
                switch (parseResult.status) {
                case P_ERROR:
@@ -653,7 +656,6 @@ class Lsystem {
                   return;
                }
             } while(loop);
-            puts(`${pos} ${eol}`, LSYS_PARSE);
          } // not at end of spec
          return ls;
       }
@@ -888,7 +890,7 @@ ${msg}`;
          let leftside, predecessor, condition, successor;
          let m, strict, dummy ;
          let scope = null, needScope=false;
-         //puts(`in rules: looking at ${line}`)
+         //puts(`in parseProduction: looking at ${line}`, LSYS_IN_PROD)
 
          m = RE.prodTop.exec(line);        // .replaceAll(' ',''));
          if (m == null) {
@@ -992,13 +994,13 @@ ${msg}`;
 
       // need to handle, e.g. A((y+fn(x))), for any nested depth of function calls
       function parseSuccessor(s) {
-         puts("parseModules", LSYS_PARSE_SUCC);
+         puts(`parseModules in ${s}`, LSYS_PARSE_SUCC);
          let l = new Array();
          let i = 0;
          let m;
          let re = RE.successorModule;
          while (m = re.exec(s)){
-            puts(`matched: ${m} : lastIndex = ${re.lastIndex}`, LSYS_PARSE_SUCC);
+            puts(`matched: ${m[1]} : lastIndex = ${re.lastIndex}`, LSYS_PARSE_SUCC);
             if (m[2] === undefined) {
                l[i] = m[1];
             } else {
@@ -1018,7 +1020,7 @@ ${msg}`;
                   l[i] = new ParameterizedModule(m[1], parms);
                   // reset s
                   re.lastIndex = j;
-                  puts(`parms: ${parms}`, LSYS_PARSE_SUCC);
+                  puts(`parms: ${parms} -> ${l[i].p.join(' ; ')}`, LSYS_PARSE_SUCC);
                } else {
                   let ss = s.substring(m.indices[2][0], j);
                   throw new Error(`Error: end of input while parsing: ${ss}`);
@@ -1127,7 +1129,7 @@ ${msg}`;
                let ol = mlength;
                let on = n;
                mlength = ls.cutInPlace(mstring, n);
-               n--;             // redo module at this index: it has changed
+               n--;   // redo module at this index: it has changed
                puts(`After cut at ${on}, old length was ${ol}, new length is${mlength}:`, LSYS_REWRITE);
                continue;
             }
@@ -1592,7 +1594,11 @@ function expandF(scope, name) {
             module.p[ndx] = str.join('');
          } else {
             puts(`${n}: evaluating ${arg}`, LSYS_EXPAND);
-            module.p[ndx] = math.evaluate(arg, scope);
+            let r = math.evaluate(arg, scope);
+            if (typeof r === 'object') {
+               r = JSON.stringify(r);
+            }
+            module.p[ndx] = r;
          }
       });
    }
