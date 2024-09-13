@@ -1,6 +1,9 @@
 import size_control_00 from '../../assets/examples/basics/size_control_00.ls'
 import size_control_01 from '../../assets/examples/basics/size_control_01.ls'
 import size_control_02 from '../../assets/examples/basics/size_control_02.ls'
+import array_variables from '../../assets/examples/basics/array_variables.ls'
+import decomposition from '../../assets/examples/basics/phyllotaxis-Vogel.ls'
+import decomp_homomorphism from '../../assets/examples/basics/decomp-homomorphism.ls'
 
 import bracketed_a from '../../assets/examples/brackets/bracketed-a.ls';
 import bracketed_b from '../../assets/examples/brackets/bracketed-b.ls';
@@ -126,6 +129,9 @@ export var eg = [
    {dir: 'basics', files: [{lsfile: 'size_control_00.ls', src: size_control_00},
                           {lsfile: 'size_control_01.ls', src: size_control_01},
                           {lsfile: 'size_control_02.ls', src: size_control_02},
+                          {lsfile: 'array_variables.ls', src: array_variables},
+                          {lsfile: 'phyllotaxis-Vogel.ls', src: decomposition},
+                          {lsfile: 'decomp_homomorphism.ls', src: decomp_homomorphism}, 
                           ],
    },
    {dir: 'tabop', files:  [{lsfile: '3d-a1.ls', src: _3d_a1             },
@@ -240,7 +246,7 @@ export var eg = [
                               ]
   },
   {dir:'misc', files:  [{lsfile:'cut-01.ls', src: cut_01   },
-                        {lsfile:'define-01.ls', src: define_01},
+                        // {lsfile:'define-01.ls', src: define_01},
                         {lsfile:'goto-1.ls', src: goto_1   },
                         {lsfile:'goto-2.ls', src: goto_2   },
                         {lsfile:'goto.ls', src: goto     },
