@@ -143,7 +143,7 @@ t0.setHeading([0,1,0])`);
    let ipromise = new Promise((resolve, reject) => {
       //console.log('in Promise');
       
-      doModule();
+      doInterp();
 
       function packItUp(turtle) {
          let ts = turtle.getState()
@@ -174,6 +174,10 @@ t0.setHeading([0,1,0])`);
         ifcUpd?.updateLsysInfo ({bgcolor: 'lightgreen', code: idata.code});
          resolve(true);
       }
+
+     function doInterp() {
+       let rAF = requestAnimationFrame(doModule);
+     }
 
       function doModule () {
          if (branches.length == 0) {
@@ -764,12 +768,26 @@ t0.setHeading([0,1,0])`);
                      idata.gencode('.pitch(-90);\n');
                   }
                   break;      
-               case '?T':
+               case '?P':
                   if (isPM) {
-                     let tsout = turtle.getBasicState({basicState: true});
- // well, still not sure what to do with this
- // attach the value to the module? which is then picked up during a scan
- // at the end - can't set a global. or attach a JSONstringified version?
+                     let tsout = turtle.getBasicState();
+                     if (LogTag.isSet(TRTL_SETGET) ) {
+                        Object.keys(tsout).forEach((k) => { 
+                           puts(`looking at key: ${k}`);
+                           if ('PHLU'.includes(k)) {
+                              for (const p of 'xyz') { 
+                                 puts(`tsout.${k}.${p} = ${tsout[k][p]}`);
+                              }
+                           }});
+                     }
+                     let i=0;
+                     for (const p of 'xyz') {
+                        pmArgs[i] = tsout.P[p];
+                        puts(`?P: tsout.P.${p} -> pmArgs[${i}] == ${tsout.P[p]}`, TRTL_SETGET);
+                        i++;
+                        if (i === pmArgs.length) break;
+                     } 
+                     puts(`Updated ?P(xxxx) to ?P(${pmArgs})`, TRTL_SETGET);
                   } else {
                      puts(`?T asks for turtle state, but no parameter supplied`);
                   }
@@ -829,7 +847,7 @@ t0.setHeading([0,1,0])`);
            if (idata.view?.continuousUpdate) {
              ifcUpd.updateView(idata.trackTag, idata.view);
            }
-           let rAF = requestAnimationFrame(doModule);
+           setTimeout(doInterp,0);
          }
       }
    });
