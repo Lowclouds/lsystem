@@ -32,6 +32,8 @@
 
   let doSaveCode = getContext('doSaveCode');
 
+  let disableDraw = false; // 
+
   let animationState = {stepStart: false};
   // button controls
   let saveDisabled = getContext('saveDisabled');           // default true
@@ -52,10 +54,9 @@
     // the default turtle
   let turtle = getContext('turtle');
 
-  // svelte reactive actions
+  //------ svelte reactive actions ----------------
 
   // did we request to load a file?
-
   onMount (() => {
     if (!(window.location.protocol==='file:') && $loadDemoOnStartup) {
       fetch('./assets/examples/tabop/3d-b.ls')
@@ -72,26 +73,6 @@
       //console.log(`protocol + setting: ${!(window.location.protocol==='file:') && $loadDemoOnStartup}`);
     }
   });
-
-  $: buildOnLoad = $autoBuildOnLoad || (isStartUp && $loadDemoOnStartup)
-
-  $: if ($lsSrc?.text != null ) {
-    puts('hit $lsSrc update');
-    fname = $lsSrc.fname;
-    setLStextFromSrc($lsSrc.text);
-    parseDisabled=false;
-    $saveDisabled=false;
-    if ($lsSrc.text ) {
-      if (buildOnLoad) {
-        uiRPRD();
-      } else {
-        uiDoParse();
-      }
-      startupDone();
-    }
-  }
-
-  $: console.log("cpos: ", cpos);
 
   afterUpdate(() => {
     //puts(`hit ls_text update: ${ls_text}`);
@@ -113,18 +94,121 @@
       $saveDisabled = false;
     }
   });
+
+/* -------------- svelte reactive variable actions  ---------------- */
+
+  $: buildOnLoad = $autoBuildOnLoad || (isStartUp && $loadDemoOnStartup)
+
+  $: if ($lsSrc?.text != null ) {
+    puts('hit $lsSrc update');
+    fname = $lsSrc.fname;
+    setLStextFromSrc($lsSrc.text);
+    parseDisabled=false;
+    $saveDisabled=false;
+    if ($lsSrc.text ) {
+      if (buildOnLoad) {
+        uiRPRD();
+      } else {
+        uiDoParse();
+      }
+      startupDone();
+    }
+  }
+
+  $: console.log("cpos: ", cpos);
+
   // stupid input min/max doesn't work for typed in values !
   $: {
     $drawSpeed = $drawSpeed > 500 ? 500 : $drawSpeed < 1 ? 1 : $drawSpeed;
   }
       
+  $: if ($doSaveCode) {
+    $doSaveCode=false;
+    uiSaveAsLSfile();
+  }
 
+  let interpOpts;
+  $: {
+     interpOpts = {
+        gencode: $doGenCode, miCount: $drawSpeed, useMT: $useMultiTurtles, noDraw: disableDraw,
+     };
+  }
+
+  const interpIfcUpdate = {
+    updateTurtleInfo: updateTurtleInfo, 
+    updateLsysInfo: updateLsysInfo,
+    updateView: resetView,
+    wantStop: wantStop,
+  };
+  
   // ----------------
   function startupDone() {isStartUp=false;}
 
   function setLStextFromSrc(s) {ls_text=s.slice();}
 
-  export function uiDoParse (evt) {
+  function uiSaveAsLSfile(evt) {
+    evt?.target.blur();
+
+    let file = (fname === null) ? 'lsystem.ls' : fname; 
+
+    if (ls_text != '') {
+      puts(`Saving to file: ${file}`);
+      var blob = new Blob( [ls_text], {type: "text/plain;charset=utf-8"});
+      saveAs.saveAs(blob, file);
+    } else {
+      puts(`failed saving: ${ls_text} to ${file}`);
+    }
+  }
+
+  // genCode toggle
+  let gcodestr = 'bi-square';
+  let doGenCode = getContext('doGenCode');
+  let codegen = getContext('codegen');
+
+  function genCodeToggle(evt) {
+    evt?.target.blur();
+
+    if ($doGenCode) {
+      gcodestr  = 'bi-square';
+    } else {
+      gcodestr = 'bi-check-square';
+    }
+    $doGenCode=!$doGenCode;
+  }
+  
+  function updateTurtleInfo(t,idx) { }
+
+  function updateLsysInfo(linfo) {
+    if (linfo.ndrawn) {
+      $numDrawn = linfo.ndrawn;
+    }
+    if (linfo.bgcolor) {
+      elNumDrawn.style.backgroundColor = linfo.bgcolor;
+    }
+    if ($doGenCode && linfo.code) {
+      //lsCode.value = linfo.code;
+      $codegen = linfo.code;
+    } 
+  }
+
+  let showAbortPopup=false;
+  function maybeShowAbort(ms=5000) {
+    uiWantStop = false;
+    return setTimeout(() => {showAbortPopup = true;}, ms);
+  }
+  let uiWantStop=false;
+  function uiAbortDrawing() {
+    uiWantStop = true;
+  }
+  function wantStop() {
+    return uiWantStop;
+  }
+  function uiAbortAbort(timerId) {
+    clearTimeout(timerId);
+    showAbortPopup = false;
+  }
+
+  function uiDoParse (evt) {
     evt?.target.blur();
     drawDisabled = true;
     $saveModelDisabled = true;
@@ -136,10 +220,9 @@
       elNumDrawn.style.backgroundColor = 'lightgray';
       try {
         $lsys = Lsystem.Parse(spec);
-        $numIterations = $lsys.dDone;
         isInvalid = $lsys.axiom.length == 0;
-        animationState.stepStart = false;
         if (! isInvalid) {
+          $numIterations = $lsys.dDone;
           $lsExpansionStatus = 'Parse Result';
           $lsExpansion = $lsys.serialize();
           animationState.stepStart = true;
@@ -150,7 +233,7 @@
           $lsExpansion = 'No axiom found';
           isInvalid = true;
           animationState.stepStart = false;
-          resolve(false);
+          reject(false);
           //reject('No axiom found');
         }
       } catch(error) {
@@ -193,126 +276,7 @@
       animationState.stepStart = true;
     });
   }
-
-  function uiDoSingleStep(evt) {
-    evt?.target.blur();
-
-    return new Promise((resolve, reject) => {
-      if ($lsys && !isInvalid) {
-        if ($lsys.current.length == 0 && $lsys.dDone == 0) {
-          $lsys.current = $lsys.axiom.slice();
-           $lsys.interp = $lsys.current; 
-          $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
-        } else {
-          $lsExpansion = listtostr($lsys.Rewrite($lsys, 1, $lsys.current)); //.toString();         
-        }
-        $lsExpansionStatus = `Step: ${$lsys.dDone}${($lsys.dDone==0)?" => axiom":""}`;
-        $numIterations = $lsys.dDone;
-         // $numNodes = $lsys.current.length;
-        $numNodes = $lsys.interp.length;
-        $numDrawn = 0;
-        Turtle3d.clearTracksByTag('lsystem');
-        defaultTurtle.reset(true);
-        uiDoDraw()
-          .then ((result) => resolve(true))
-          .catch ((error) => {
-            $lsExpansionStatus =  `Rewrite failed`;
-            $lsExpansion =  `Error: ${error}\n\n` + $lsExpansion;
-          });
-      } else {
-        if (!$lsys) {
-          $lsExpansionStatus = 'Parse failed';
-          $lsExpansion = 'Lsystem undefined: load or enter one and click parse';
-        } else {
-          $lsExpansionStatus = 'Parse failed';
-          $lsExpansion = 'Lsystem axiom is empty: nothing to do';
-        }
-        reject('no Lsystem');
-      }
-    });
-  }
-
-  $: if ($doSaveCode) {
-    $doSaveCode=false;
-    uiSaveAsLSfile();
-  }
-
-  function uiSaveAsLSfile(evt) {
-    evt?.target.blur();
-
-    let file = (fname === null) ? 'lsystem.ls' : fname; 
-
-    if (ls_text != '') {
-      puts(`Saving to file: ${file}`);
-      var blob = new Blob( [ls_text], {type: "text/plain;charset=utf-8"});
-      saveAs.saveAs(blob, file);
-    } else {
-      puts(`failed saving: ${ls_text} to ${file}`);
-    }
-  }
-
-  // genCode toggle
-  let gcodestr = 'bi-square';
-  let doGenCode = getContext('doGenCode');
-  let codegen = getContext('codegen');
-
-  function genCodeToggle(evt) {
-    evt?.target.blur();
-
-    if ($doGenCode) {
-      gcodestr  = 'bi-square';
-    } else {
-      gcodestr = 'bi-check-square';
-    }
-    $doGenCode=!$doGenCode;
-  }
-  
-  function updateTurtleInfo(t,idx) {
-
-  }
-
-  let interpOpts;
-  $: {
-    interpOpts = {gencode: $doGenCode, miCount: $drawSpeed, useMT: $useMultiTurtles};
-  }
-
-  function updateLsysInfo(linfo) {
-    if (linfo.ndrawn) {
-      $numDrawn = linfo.ndrawn;
-    }
-    if (linfo.bgcolor) {
-      elNumDrawn.style.backgroundColor = linfo.bgcolor;
-    }
-    if ($doGenCode && linfo.code) {
-      //lsCode.value = linfo.code;
-      $codegen = linfo.code;
-    } 
-  }
-
-  const interpIfcUpdate = {
-    updateTurtleInfo: updateTurtleInfo, 
-    updateLsysInfo: updateLsysInfo,
-    updateView: resetView,
-    wantStop: wantStop,
-  };
-  
-  let showAbortPopup=false;
-  function maybeShowAbort(ms=5000) {
-    uiWantStop = false;
-    return setTimeout(() => {showAbortPopup = true;}, ms);
-  }
-  let uiWantStop=false;
-  function uiAbortDrawing() {
-    uiWantStop = true;
-  }
-  function wantStop() {
-    return uiWantStop;
-  }
-  function uiAbortAbort(timerId) {
-    clearTimeout(timerId);
-    showAbortPopup = false;
-  }
-
+ 
   function uiDoDraw (evt) {
     evt?.target.blur();
 
@@ -325,7 +289,7 @@
     let timerId = maybeShowAbort();
     return new Promise((resolve,reject) => {
       interpOpts.miCount = $drawSpeed;
-      turtleInterp($turtle, $lsys, interpOpts, interpIfcUpdate) 
+      turtleInterp($turtle, $lsys, interpOpts, interpIfcUpdate)
         .then(value => {
           uiAbortAbort(timerId);
           if (Turtle3d.getTracksByTag('lsystem').length == 0) {
@@ -357,6 +321,85 @@
     });
     return ipromise;
   }
+
+  function uiDoSingleStep(evt) {
+    evt?.target.blur();
+
+    return new Promise((resolve, reject) => {
+      if ($lsys && !isInvalid) {
+
+        Turtle3d.clearTracksByTag('lsystem');
+        defaultTurtle.reset(true);
+
+        if ($lsys.current.length === 0 && $lsys.dDone === 0) {
+           $lsys.current = $lsys.axiom.slice();
+           $lsys.interp = $lsys.current; 
+           $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
+        } else {
+           $lsExpansion = listtostr($lsys.Rewrite($lsys, 1, $lsys.current));
+        }
+        $lsExpansionStatus = `Step: ${$lsys.dDone}${($lsys.dDone==0)?" => axiom":""}`;
+        $numIterations = $lsys.dDone;
+         // $numNodes = $lsys.current.length;
+        $numNodes = $lsys.interp.length;
+        $numDrawn = 0;
+
+        uiDoDraw()
+          .then ((result) => resolve(true))
+          .catch ((error) => {
+            $lsExpansionStatus =  `Rewrite failed`;
+            $lsExpansion =  `Error: ${error}\n\n` + $lsExpansion;
+          });
+      } else {
+        if (!$lsys) {
+          $lsExpansionStatus = 'Parse failed';
+          $lsExpansion = 'Lsystem undefined: load or enter one and click parse';
+        } else {
+          $lsExpansionStatus = 'Parse failed';
+          $lsExpansion = 'Lsystem axiom is empty: nothing to do';
+        }
+        reject('no Lsystem');
+      }
+    });
+  }
+
+  function doEnviroExpansion () {
+
+    let dlen = $lsys.Dlength;
+    puts(`in doEnviroExpansion: dlen = ${dlen}`);
+    disableDraw = true;
+
+    return new Promise((resolve,reject) => {
+
+      envExpand(1);
+
+      function envExpand(ntimes) {
+        if (ntimes > dlen) {
+          resolve(true);
+          return;
+        }
+        if (ntimes === dlen) {
+          disableDraw = false;
+        }
+        puts(`in singlestep loop: ntimes: ${ntimes}, dlen: ${dlen}`);
+        uiDoSingleStep()
+          .then(() => {
+            ntimes++;
+            if (ntimes > dlen) {
+              resolve(true);
+            }
+            return envExpand(ntimes);
+          })
+          .catch((error) => {
+            ntimes = dlen+1;
+            disableDraw = false;
+            reject(error);
+          });
+      } 
+
+    });
+  }
+
   // Parse, Reset, ReDraw
   function uiRPRD (evt)  {
     evt?.target.blur();
@@ -365,24 +408,29 @@
       .then(value => {
         /* --------- rewrite ---------*/
         if (value) {
-          uiDoRewrite()
-            .catch((error) => {
-              $lsExpansionStatus = 'Rewrite failed';
-              $lsExpansion = `Error: ${error}\n\n` + $lsExpansion;
-              isInvalid = true;
-            });
+          puts(`lsys.hasQuery === ${$lsys.hasQuery} ; lsys.needsEnvironment === ${$lsys.needsEnvironment}`);
+          if ($lsys.hasQuery || $lsys.needsEnvironment) {
+            doEnviroExpansion()
+          } else {
+            uiDoRewrite()
+              .then (value => {
+                /* --------- reset ---------*/
+                resetScene();
+                /* --------- draw ---------*/
+                uiDoDraw()
+                  .catch((error) => {
+                    puts('Muffling uiDoDraw error in btnRPRD');
+                  });
+              })
+              .catch((error) => {
+                $lsExpansionStatus = 'Rewrite failed';
+                $lsExpansion = `Error: ${error}\n\n` + $lsExpansion;
+                isInvalid = true;
+              })
+          }
         } else {
           throw new Error('Source is invalid');
         }
-      })
-      .then (value => {
-        /* --------- reset ---------*/
-        resetScene();
-        /* --------- draw ---------*/
-        uiDoDraw()
-          .catch((error) => {
-            puts('Muffling uiDoDraw error in btnRPRD');
-          });
       })
       .catch (error => {
         $lsExpansionStatus = 'Reset|Parse|Rewrite|Draw failed';
@@ -392,6 +440,7 @@
       })
   }
 
+  /* ----------------------------------------------------------------------*/
 
   let ourposition = 'relative';
 
@@ -413,6 +462,8 @@
   let tip_el_drawspeed = `Number of Modules interpreted per Frame. ${speedtip}`;
 
 </script>
+
+<!-- ---------------------------------------------------------------------- -->
 
 <div class="btn-group bgroup my-0 py-0">
    <div class="gbutton nbutton my-0 py-0" >L-System <i class="bi-tools"></i></div>
@@ -476,7 +527,8 @@
 
 <slot name="interpresults"/>
 
-<!--  -->
+<!-- ---------------------------------------------------------------------- -->
+
 <style>
   #lsSrc {
     width: 100%;

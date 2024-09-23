@@ -19,7 +19,8 @@ class Turtle3d {
    static polygonStack = [];   // per TABOP usage, stores state of polygon creation
    static polygonVerts = null;   // array of vertices on edge of polygon, in order
    static fontData = null;       // only get this if needed
-  static useInstancesOnInsert = true;
+   static useInstancesOnInsert = true;
+   static visibility = true;
 
    static initColorTable(scene) {
       for (let i = 0; i < ColorTable.length; i++) {
@@ -87,6 +88,8 @@ class Turtle3d {
       this.polygonVerts = null,   // array of vertices on edge of polygon, in order
       this.useGlobalPolygons = globalPolygons;
       this.useInstancesOnInsert = true; // best performance but issues with exporting
+      this.visibility = Turtle3d.visibility;
+
       this.scene = null;
 
 
@@ -434,11 +437,18 @@ class Turtle3d {
                 L: {x: 0, y: 0, z: 0}, 
                 U: {x: 0, y: 0, z: 0}, 
                 size: 0, penIsDown: true, color: "" };
+
+      puts("populating basic TurtleState", TRTL_SETGET);
+
       Object.keys(ms).forEach((k) => { 
          if ('PHLU'.includes(k)) {
-            for (const p of 'xyz') { ms[k][p] = ts[k][p]}
+            puts(`looking at key: ${k}`, TRTL_SETGET);
+            for (const p of 'xyz') { 
+               puts(`setting ${p} to ${ts[k][p]}`, TRTL_SETGET);
+               ms[k][p] = ts[k][p]}
          } else {
             ms[k] = ts[k]
+            puts(`key: ${k} == ${ts[k]}`, TRTL_SETGET);
          }
       });
       return ms;
@@ -591,6 +601,18 @@ class Turtle3d {
       }
       this.TurtleState.isShown = true;
       return this;
+   }
+
+   // hmmm
+   static setVisibility(onOff) {
+      if (Turtle3d.visibility) {
+         if (!onOff) {
+            Turtle3d.t3dScene.getMeshesByTags('lsystem').forEach((m) => m.isVisible=false);
+         }
+      } else if (onOff) {
+         Turtle3d.t3dScene.getMeshesByTags('lsystem').forEach((m) => m.isVisible=true);
+      }
+      Turtle3d.visibility = onOff;
    }
 
    clear() {
@@ -1304,7 +1326,7 @@ class Turtle3d {
          puts(`rotated mesh to match turtle`, TRTL_DRAW)
       }
 
-      mesh.isVisible = true;
+      mesh.isVisible = Turtle3d.visibility; // true;
       BABYLON.Tags.AddTagsTo(mesh, tags, this.scene);
    }
 

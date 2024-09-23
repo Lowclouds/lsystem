@@ -769,6 +769,9 @@ t0.setHeading([0,1,0])`);
                   }
                   break;      
                case '?P':
+               case '?H':
+               case '?L':
+               case '?U':
                   if (isPM) {
                      let tsout = turtle.getBasicState();
                      if (LogTag.isSet(TRTL_SETGET) ) {
@@ -781,15 +784,16 @@ t0.setHeading([0,1,0])`);
                            }});
                      }
                      let i=0;
+                     let tparam = m[1];
                      for (const p of 'xyz') {
-                        pmArgs[i] = tsout.P[p];
-                        puts(`?P: tsout.P.${p} -> pmArgs[${i}] == ${tsout.P[p]}`, TRTL_SETGET);
+                       //puts(`?${tparam}: tsout.${tparam}.${p} -> pmArgs[${i}] == ${tsout[tparam][p]}`, TRTL_SETGET);
+                        pmArgs[i] = tsout[tparam][p];
                         i++;
                         if (i === pmArgs.length) break;
                      } 
-                     puts(`Updated ?P(xxxx) to ?P(${pmArgs})`, TRTL_SETGET);
+                    puts(`Updated ?${tparam}(xxxx) to ?${tparam}(${pmArgs})`, TRTL_SETGET);
                   } else {
-                     puts(`?T asks for turtle state, but no parameter supplied`);
+                     puts(`?X asks for turtle state, but no parameter supplied`);
                   }
                   break;
                case 'L': 

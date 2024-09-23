@@ -116,15 +116,15 @@ var ParameterizedModule = function(name, parms) {
       let nested = 0;
       for (let i = 0; i < s.length; i++) {
          //puts(`i: ${i}, pi: ${pi},${s[i]}, nested: ${nested}`)
-         if (s[i] == ',' && nested == 0) {
+         if (s[i] === ',' && nested === 0) {
             pi++;
             // puts("onto next param");
             continue;
          } else if (s[i] === '(' || s[i] === '[') {
             nested++;
-         } else if (s[i] == ')' || s[i] === ']') {
+         } else if (s[i] === ')' || s[i] === ']') {
             nested--;
-         }
+         }// else some other char
          if (p[pi]) {
             p[pi] += s[i];
          } else {
@@ -140,7 +140,7 @@ var ParameterizedModule = function(name, parms) {
          let end = v.length-1;
          let s0 = v[0];
          let s1 = v[end];
-         if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+         if (s0 == s1 && (s0 === "'" || s0 === '"') ) {
             v = v.split('');
             v[0]='"';
             v[end] = '"';
@@ -372,6 +372,8 @@ class Lsystem {
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
       this.needsEnvironment = false;
+      this.hasQuery = false;
+      this.disableDrawing = false;
       this.locals = new LsScope();
       this.locals.name = 'locals';
       this.locals._expand_ = expandF(this.locals, 'locals');
@@ -500,9 +502,9 @@ class Lsystem {
 
    initParse(parentLS = null) {
       if (parentLS) {
-         // inherit locals from parent lsystem
-         // maybe rethink this to keep lsystem variables apart and
-         // force shared variables to be global.
+         // this init only takes the globals, so sub lsystems do not 
+         // inherit variables from the  top-level system, contrary to the 
+         // initial implementation: ...init(parentLS.locals)
          this.locals.init(parentLS.globals);
       }
       this.axiom = [];
@@ -516,7 +518,8 @@ class Lsystem {
       this.current=[];
       this.interp=null;
       this.restrict = null;
-   }
+      this.hasQuery = false;
+}
 
    /*
      Parse a user supplied spec
@@ -970,8 +973,8 @@ ${msg}`;
       }
 
       // predecessors can't have nested function calls, they are either
-      // bare variables or numbers
-      function parseModules(s, isStrict = false) {
+      // bare variables or values
+      function parseModules(s, isStrict = false, ls=ls0) {
          let mods = [];
          puts('parseModules looking at: ' + s, LSYS_PARSE_MOD);
          if (s) {
@@ -982,6 +985,14 @@ ${msg}`;
                   mods.push(m[1]);
                } else {
                   mods.push(new ParameterizedModule(m[1], m[2]));
+                  if (m[1].charAt(0) === '?') {
+                     ls.hasQuery = true;
+                     puts('lsystem hasQuery = true', LSYS_PARSE_MOD);
+                     if (m[1].charAt(1) === 'E') { // maybe this is a duplicate
+                        ls.needsEnvironment = true;
+                        puts('lsystem needsEnvironment? = true', LSYS_PARSE_MOD);
+                     }
+                  }
                }
                if (isStrict) {     // only one module allowed for strict predecessor
                   return mods[0];  // return just the module, not an array
@@ -994,7 +1005,7 @@ ${msg}`;
 
       // need to handle, e.g. A((y+fn(x))), for any nested depth of function calls
       function parseSuccessor(s) {
-         puts(`parseModules in ${s}`, LSYS_PARSE_SUCC);
+         puts(`parseSuccessor: ${s}`, LSYS_PARSE_SUCC);
          let l = new Array();
          let i = 0;
          let m;
@@ -1118,6 +1129,7 @@ ${msg}`;
       let mlength;
 
       function doOnePass() {
+         mlength = mstring.length;
          puts(`doOnePass:\n${mstring}, mlength: ${mlength}`, LSYS_REWRITE_VERB);
          for (let n=0; n < mlength; n++)   {
             let module = mstring[n];
@@ -1226,19 +1238,20 @@ ${msg}`;
       }
 
       for (let i=1; i <= niter; i++) {
-         mlength = mstring.length;
          lschanges = [];    // changes introduced in this interation
+         let nchanges = 0;
          puts(`iteration ${i};`, LSYS_REWRITE);
          doOnePass();
-         mstring = this.merge(mstring, lschanges);
+         [mstring, nchanges] = this.merge(mstring, lschanges);
          if (ls.decomprules !=  null) {
             rules = ls.decomprules;
             for (let j = 1; j <= ls.decompDepth; j++) {
-               mlength = mstring.length;
+               // mlength = mstring.length;
                puts(`iteration ${i}; decomposition: ${j}`, LSYS_REWRITE);
                lschanges = [];
                doOnePass();
-               mstring = this.merge(mstring, lschanges);
+               [mstring, nchanges] = this.merge(mstring, lschanges);
+               if (nchanges === 0) { break; }
             }
             rules = ls.rules;
          }
@@ -1248,11 +1261,14 @@ ${msg}`;
       if (ls.homorules != null) {
          rules = ls.homorules;
          mstring = ls.current.slice();
-         mlength = mstring.length;
+         //mlength = mstring.length;
          for (let i = 1; i <= ls.homoDepth; i++) {
+            puts(`rewriting homomorphism interation ${i} - ${mstring}`, LSYS_REWRITE);
+            let nchanges = 0;
             lschanges=[];
             doOnePass();
-            mstring = this.merge(mstring, lschanges);
+            [mstring, nchanges] = this.merge(mstring, lschanges);
+            if (nchanges === 0) { break; }
          }
          ls.interp = mstring;
       }
@@ -1285,7 +1301,7 @@ ${msg}`;
          }
       }
     }
-    return merged;
+     return [merged, changecnt];
   }
    expand(rule) {
       puts(`expanding rule: ${rule}`, LSYS_EXPAND);
@@ -1329,7 +1345,7 @@ ${msg}`;
    formalMatch(nodeA, nodeB, scope=null) {
       puts(`formalMatch ${nodeA} against ${nodeB}`, LSYS_MATCH);
       if (typeof nodeA == typeof nodeB) {
-         if (typeof nodeA == 'string') {
+         if (typeof nodeA === 'string') {
             return nodeA == nodeB;
          } else if ((nodeA.m == nodeB.m) && (nodeA.p.length >= nodeB.p.length)) {
             if (scope !== null) {
