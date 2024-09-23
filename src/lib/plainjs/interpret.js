@@ -29,15 +29,18 @@ function turtleInterp (ti, ls, opts=null, ifcUpd) {
       //ctable: colorTableDefault,
       cpoly: null,
       useTracksAlways: false,
+     disableDraw: opts?.disableDraw ?? false, // for environmental queries - just moves turtle.
       doGencode: opts?.gencode ?? false,
       trackTag: 'lsystem',
       code: ''
    }
   if (opts != null) {
-    // for (const [k,v] of Object.entries(opts)) {
-    //   console.log(`${k}: ${v}`);
-    //   idata[k] = v;
-    // }
+    if (LogTag.isSet(NTRP_INIT)) {
+    for (const [k,v] of Object.entries(opts)) {
+      console.log(`${k}: ${v}`);
+      idata[k] = v;
+    }
+    }
     console.log('miCount: ', opts.miCount);
   }
 
@@ -48,7 +51,7 @@ function turtleInterp (ti, ls, opts=null, ifcUpd) {
    };
 
    idata.show =  function () {
-      return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}, useTracksAlways: ${idata.useTracksAlways}`;
+     return `step: ${this.step}, stemsize: ${this.stemsize}, delta: ${this.delta}, useTracksAlways: ${idata.useTracksAlways}, disableDraw: ${idata.disableDraw}`;
    }
 
    puts(`miCount: ${idata.miCount}, interval: ${idata.interval}, useMT: ${idata.useMT}`);
@@ -107,15 +110,19 @@ t0.setHeading([0,1,0])`);
    //    puts(`set ${t0.getTurtle()} material to idx ${numMat}, color ${t0.getColor()}`, NTRP_INIT);
    // }
 
-   t0.hide();
-   t0.penDown();
-   idata.gencode('t0.hide().pd();\n');
+   idata.gencode('t0.hide().');
+  t0.hide();
+  t0.penDown();
+  idata.gencode('pd();\n');
+  t0.disableDraw(idata.disableDraw);
+  idata.gencode(`.disableDraw(${idata.disableDraw}});\n`);
+
    
    var branches = [{turtle: t0, spos: 0, keep: true}]; 
    idata.gencode('var branches = [{turtle: t0, spos: 0, keep: true}];\n');
    var lstring = ls.interp;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
-   puts(`using settings with turtle ${t0.Turtle}:` + idata.show(), NTRP_INIT);
+   puts(`using settings with turtle ${t0.Turtle}, ` + idata.show(), NTRP_INIT);
 
 
   ifcUpd.updateLsysInfo ({bgcolor: 'lightgray', ndrawn: lstring.length});

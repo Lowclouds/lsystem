@@ -130,7 +130,7 @@
   let interpOpts;
   $: {
      interpOpts = {
-        gencode: $doGenCode, miCount: $drawSpeed, useMT: $useMultiTurtles, noDraw: disableDraw,
+        gencode: $doGenCode, miCount: $drawSpeed, useMT: $useMultiTurtles, disableDraw: disableDraw,
      };
   }
 
@@ -142,6 +142,7 @@
   };
   
   // ----------------
+
   function startupDone() {isStartUp=false;}
 
   function setLStextFromSrc(s) {ls_text=s.slice();}
@@ -282,13 +283,13 @@
 
     $saveDisabled = true;
     $saveModelDisabled = true;
-    drawDisabled = true;
     RPRDdisabled = true;
     isInvalid = true; // disable rewrite
     animationState.stepStart = false;
     let timerId = maybeShowAbort();
     return new Promise((resolve,reject) => {
       interpOpts.miCount = $drawSpeed;
+      puts(JSON.stringify(interpOpts));
       turtleInterp($turtle, $lsys, interpOpts, interpIfcUpdate)
         .then(value => {
           uiAbortAbort(timerId);
@@ -297,7 +298,6 @@
           } else {
             $saveModelDisabled = false;
           }
-          drawDisabled = false;
           RPRDdisabled = false;
           isInvalid = false; 
           animationState.stepStart = true;
@@ -311,7 +311,6 @@
           // $lsExpansion = `Error:\n\n + $lsExpansion`;
           $saveDisabled = false;
           $saveModelDisabled = true;
-          drawDisabled = true;
           RPRDdisabled = false;
           isInvalid = true;
           animationState.stepStart = false;
@@ -367,7 +366,7 @@
 
     let dlen = $lsys.Dlength;
     puts(`in doEnviroExpansion: dlen = ${dlen}`);
-    disableDraw = true;
+    interpOpts.disableDraw = true;
 
     return new Promise((resolve,reject) => {
 
@@ -375,13 +374,17 @@
 
       function envExpand(ntimes) {
         if (ntimes > dlen) {
+          interpOpts.disableDraw = false;
           resolve(true);
           return;
         }
         if (ntimes === dlen) {
-          disableDraw = false;
+          interpOpts.disableDraw = false;
         }
+
         puts(`in singlestep loop: ntimes: ${ntimes}, dlen: ${dlen}`);
+
+
         uiDoSingleStep()
           .then(() => {
             ntimes++;
@@ -392,11 +395,10 @@
           })
           .catch((error) => {
             ntimes = dlen+1;
-            disableDraw = false;
+            interpOpts.disableDraw = true;
             reject(error);
           });
       } 
-
     });
   }
 
@@ -417,6 +419,7 @@
                 /* --------- reset ---------*/
                 resetScene();
                 /* --------- draw ---------*/
+                interpOpts.disableDraw = false;
                 uiDoDraw()
                   .catch((error) => {
                     puts('Muffling uiDoDraw error in btnRPRD');

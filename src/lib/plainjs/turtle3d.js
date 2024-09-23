@@ -89,7 +89,7 @@ class Turtle3d {
       this.useGlobalPolygons = globalPolygons;
       this.useInstancesOnInsert = true; // best performance but issues with exporting
       this.visibility = Turtle3d.visibility;
-
+      this.drawIsDisabled = false;
       this.scene = null;
 
 
@@ -238,6 +238,10 @@ class Turtle3d {
    }
    isPenDown() {return this.TurtleState.penIsDown;}
    isPenUp() {return ! this.TurtleState.penIsDown;}
+
+   disableDraw(tf) { this.drawIsDisabled = tf; return this;}
+   shouldDraw() {return !this.drawIsDisabled && this.TurtleState.penIsDown;}
+   
    isShown() {return this.TurtleState.isShown;}
 
    isTrackStarted() {return this.TurtleState.trackPath != null;}
@@ -921,7 +925,7 @@ class Turtle3d {
    // drawing
    draw(oldPos, newPos) {
       let ts = this.TurtleState;
-      if (this.isPenDown() && ts.drawMode == Turtle3d.DRAW_IMMEDIATE) {
+      if (ts.drawMode == Turtle3d.DRAW_IMMEDIATE && this.shouldDraw()) {
          this.drawImmediate(ts, oldPos, newPos);
       }
       // update visual turtle position
@@ -1010,111 +1014,113 @@ class Turtle3d {
       }
       puts(`drawTrack: using shape ${tp.shape}, id: ${id}`, TRTL_TRACK);
 
-      let sidedness = BABYLON.Mesh.DOUBLESIDE;
-     //let cap = BABYLON.Mesh.CAP_ALL;
-      let cap = BABYLON.Mesh.NO_CAP
-      if (Turtle3d.isShapeClosed(tp.shape)) {
+     if (this.shouldDraw()) {
+       let sidedness = BABYLON.Mesh.DOUBLESIDE;
+       //let cap = BABYLON.Mesh.CAP_ALL;
+       let cap = BABYLON.Mesh.NO_CAP
+       if (Turtle3d.isShapeClosed(tp.shape)) {
          sidedness = BABYLON.Mesh.DEFAULTSIDE;
          cap = BABYLON.Mesh.NO_CAP;
-      }
+       }
 
-      let pathpts = tp.points;
-      let doSetMaterial = true;
+       let pathpts = tp.points;
+       let doSetMaterial = true;
 
-      puts(`trackPath.length: ${pathpts.length}`, TRTL_TRACK);
-      puts(`pathpts: ${pathpts}`, TRTL_DRAW);
-      let srm = tp.srm;         // scale, rotation, material at each [control] point
-      puts(`srm: ${srm}`, TRTL_DRAW);
+       puts(`trackPath.length: ${pathpts.length}`, TRTL_TRACK);
+       puts(`pathpts: ${pathpts}`, TRTL_DRAW);
+       let srm = tp.srm;         // scale, rotation, material at each [control] point
+       puts(`srm: ${srm}`, TRTL_DRAW);
 
-      function getscale(i,distance) {
+       function getscale(i,distance) {
          return srm[i].s;
-      }
-      function getrotation(i,distance) {
+       }
+       function getrotation(i,distance) {
          return srm[i].r;
-      }
-      
-      // const newmesh = ExtrudeShapeFixCustom(t,
-      const newmesh = BABYLON.MeshBuilder.ExtrudeShapeCustom(t,
-                                                             {shape: tp.shape,
-                                                              path: pathpts,
-                                                              updatable: true,
-                                                              scaleFunction: getscale,
-                                                              rotationFunction: getrotation,
-                                                              closePath: false,
-                                                              sideOrientation: sidedness,
-                                                              cap: cap,
-                                                              firstNormal: tp.firstNormal,
-                                                              adjustFrame: true});
-      /*
-        that was the easy part. now figure out if we need to do multi-materials and create
-        sub-meshes if we do. Doesn't apply to splines.
-      */
-      if (tp.type == Turtle3d.PATH_POINTS) {
+       }
+       
+       // const newmesh = ExtrudeShapeFixCustom(t,
+       const newmesh = BABYLON.MeshBuilder.ExtrudeShapeCustom(t,
+                                                              {shape: tp.shape,
+                                                               path: pathpts,
+                                                               updatable: true,
+                                                               scaleFunction: getscale,
+                                                               rotationFunction: getrotation,
+                                                               closePath: false,
+                                                               sideOrientation: sidedness,
+                                                               cap: cap,
+                                                               firstNormal: tp.firstNormal,
+                                                               adjustFrame: true});
+       /*
+         that was the easy part. now figure out if we need to do multi-materials and create
+         sub-meshes if we do. Doesn't apply to splines.
+       */
+       if (tp.type == Turtle3d.PATH_POINTS) {
          let matUsed = [];
          let matLocations = [];        // array of [path index, mat index] telling where material used
          let lastMat = null; //srm[1].m;
          for (let i = 1; i< srm.length; i++) {
-            let e = srm[i];
-            if (! matUsed.includes(e.m)) {
-               matUsed.push(e.m);
-            }
-            if (lastMat != e.m) {
-               lastMat = e.m;
-               matLocations.push([i,matUsed.indexOf(e.m)]); // associate path index w/ multimaterial index
-            }
+           let e = srm[i];
+           if (! matUsed.includes(e.m)) {
+             matUsed.push(e.m);
+           }
+           if (lastMat != e.m) {
+             lastMat = e.m;
+             matLocations.push([i,matUsed.indexOf(e.m)]); // associate path index w/ multimaterial index
+           }
          };
          //puts(matLocations);
          if (matUsed.length == 1) {
-            newmesh.material = this.materialList[matUsed[0]];
+           newmesh.material = this.materialList[matUsed[0]];
          } else {                  // need multiMaterial
            puts(`need multimaterials`, TRTL_DRAW);
-            let multimat = new BABYLON.MultiMaterial("mm", this.scene);
-            matUsed.forEach((e) => {
-               multimat.subMaterials.push(this.materialList[e]);
-            });
-            const totalVertexCnt = newmesh.getTotalVertices();
-            const totalIndices = newmesh.geometry.getTotalIndices();
-            // this is a potentially bad, but easy estimate
-            const subIndicesPerPoint = Math.floor(totalIndices/(pathpts.length-1));
-            let subVrtxRemainder = totalIndices - (subIndicesPerPoint * (pathpts.length-1));
-            // create submeshes w/approximate materials
-            let pi;            // path index
-            let ppi = 1;           // previous path index
-            let matIdx = matLocations[0][1]; // first mat index
-            let indexDiff;        // # indices between pi and ppi
-            let runningIndexCnt = 0;
-            // puts(`totalVertexCnt: ${totalVertexCnt}, total Indices: ${totalIndices}, subIndicesPerPoint: ${subIndicesPerPoint}, remainder:  ${subVrtxRemainder}`);
-            let sm;                // submesh index to create;
-            for (sm = 1; sm < matLocations.length; sm++) {
-               pi = matLocations[sm][0]; // current path index
-               indexDiff = (pi -ppi) * subIndicesPerPoint + subVrtxRemainder;
-               matIdx = matLocations[sm-1][1];
-               // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: {$runningIndexCnt}`);
-               // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, newmesh)`);
-               new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, newmesh);
-               runningIndexCnt += indexDiff
-               subVrtxRemainder = 0; // add all leftover vertices at front.
-               ppi = pi;
-            }
-            pi = pathpts.length-1;
-            indexDiff = totalIndices - runningIndexCnt;
-            matIdx = matLocations[sm-1][1];
-            // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
-            // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, newmesh)`);
-            new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, newmesh);
+           let multimat = new BABYLON.MultiMaterial("mm", this.scene);
+           matUsed.forEach((e) => {
+             multimat.subMaterials.push(this.materialList[e]);
+           });
+           const totalVertexCnt = newmesh.getTotalVertices();
+           const totalIndices = newmesh.geometry.getTotalIndices();
+           // this is a potentially bad, but easy estimate
+           const subIndicesPerPoint = Math.floor(totalIndices/(pathpts.length-1));
+           let subVrtxRemainder = totalIndices - (subIndicesPerPoint * (pathpts.length-1));
+           // create submeshes w/approximate materials
+           let pi;            // path index
+           let ppi = 1;           // previous path index
+           let matIdx = matLocations[0][1]; // first mat index
+           let indexDiff;        // # indices between pi and ppi
+           let runningIndexCnt = 0;
+           // puts(`totalVertexCnt: ${totalVertexCnt}, total Indices: ${totalIndices}, subIndicesPerPoint: ${subIndicesPerPoint}, remainder:  ${subVrtxRemainder}`);
+           let sm;                // submesh index to create;
+           for (sm = 1; sm < matLocations.length; sm++) {
+             pi = matLocations[sm][0]; // current path index
+             indexDiff = (pi -ppi) * subIndicesPerPoint + subVrtxRemainder;
+             matIdx = matLocations[sm-1][1];
+             // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: {$runningIndexCnt}`);
+             // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, newmesh)`);
+             new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, newmesh);
+             runningIndexCnt += indexDiff
+             subVrtxRemainder = 0; // add all leftover vertices at front.
+             ppi = pi;
+           }
+           pi = pathpts.length-1;
+           indexDiff = totalIndices - runningIndexCnt;
+           matIdx = matLocations[sm-1][1];
+           // puts(`sm: ${sm}, pi: ${pi}, indexDiff: ${indexDiff}, matIdx: ${matIdx}, runningVcnt: ${runningIndexCnt}`);
+           // puts(`SubMesh(${matIdx}, 0, ${totalVertexCnt}, ${runningIndexCnt}, ${indexDiff}, newmesh)`);
+           new BABYLON.SubMesh(matIdx, 0, totalVertexCnt, runningIndexCnt, indexDiff, newmesh);
 
-            newmesh.material = multimat;
+           newmesh.material = multimat;
          }
-      } else {
+       } else {
          newmesh.material = this.materialList[srm[1].m];
-      }
-      newmesh.id= t + this.newmeshID++;
-      if (!id) {
+       }
+       newmesh.id= t + this.newmeshID++;
+       if (!id) {
          this.meshCommonSetup(newmesh, {setmaterial: doSetMaterial, pos: BABYLON.Vector3.Zero()});
-      } else {
+       } else {
          puts(`added new mesh: ${newmesh.id} with id: ${id} to meshes`, TRTL_POLYGON, TRTL_MESH)
          Turtle3d.addMesh(id, newmesh);
-      }
+       }
+     }
       // position the turtle at end of path
       let tmesh = this.turtleShape;
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
@@ -1219,17 +1225,19 @@ class Turtle3d {
    }
 
    drawDisc(d = 1, arc = 1, qual = 64, scaling = null) {
-      let mesh,p, opts = {};
-      opts.radius = d/2;
-      opts.tessellation = qual;
-      opts.arc = arc;
-      //opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
-      opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
-      opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
+     if (this.shouldDraw()) {
+       let mesh,p, opts = {};
+       opts.radius = d/2;
+       opts.tessellation = qual;
+       opts.arc = arc;
+       //opts.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+       opts. frontUVs = new BABYLON.Vector4(0.5,0,1,1);
+       opts.backUVs = new BABYLON.Vector4(0,0,0.5,1);
 
-      mesh = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
+       mesh = BABYLON.MeshBuilder.CreateDisc("disc", opts, this.Scene );
 
-      this.meshCommonSetup(mesh, {scaling: scaling, setmaterial: true, pos: this.TurtleState.P, rotate: true});
+       this.meshCommonSetup(mesh, {scaling: scaling, setmaterial: true, pos: this.TurtleState.P, rotate: true});
+     }
       return this;
    }
 
@@ -1247,6 +1255,7 @@ class Turtle3d {
    }
 
    drawSphere(d=1, arc=1, qual=32, slice=1, scaling=1) {
+     if (this.shouldDraw()) {
       let opts = {};
       opts.diameter = d;
       opts.segments = qual;
@@ -1266,6 +1275,7 @@ class Turtle3d {
 
       this.insertMesh(mname, scaling);
       //this.meshCommonSetup(mesh, {scaling: scaling, setmaterial: true, pos: this.TurtleState.P, rotate: true});
+     }
       return this;
    }
 
@@ -1379,6 +1389,7 @@ class Turtle3d {
    // implements the '}' module
    endPolygon (id = null) {
       let ts = this.TurtleState;
+     if (this.shouldDraw()) {
       let pbase;
       if (this.useGlobalPolygons) {
          pbase = Turtle3d;
@@ -1433,6 +1444,7 @@ class Turtle3d {
       //    puts(`set polygonVerts to null`);
       // }
       return pmesh;
+     }
    }
 
    /**
