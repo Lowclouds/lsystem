@@ -10,6 +10,12 @@
   it to its Matrix type. So, for example, a = [1, [2], [[3]]], is invalid, 
 
  */ 
+#define aInc 0.1415
+#define bScale 1.15
+#define alpha α
+#define beta β
+#define DELTA δ
+#define theta θ
 
 /*
  a0 is a global variable, because it is defined before the first
@@ -29,6 +35,13 @@ a1 = [[0],[1],[2]]
   a2 is also local to lsystem 1, and has various types
  */
 a2 = [0, '1', {z: 2}]
+
+Start: { alpha = 1; beta = 0; DELTA = aInc; theta = bScale };
+StartEach: { beta = alpha + beta * theta;
+             alpha = alpha + DELTA;
+           }            
+EndEach: { a0[1] = alpha + alpha ;}
+End: { a0[1] = 'done';}
 
 axiom: A
 
