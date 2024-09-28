@@ -1009,6 +1009,7 @@ class Turtle3d {
    drawTrack(id = null) {
       let t = this.Turtle;
       let tp = this.TurtleState.trackPath;
+      let pathpts = tp.points;
       if (tp === null || tp.points.length < 2) {
          return;
       }
@@ -1023,7 +1024,6 @@ class Turtle3d {
          cap = BABYLON.Mesh.NO_CAP;
        }
 
-       let pathpts = tp.points;
        let doSetMaterial = true;
 
        puts(`trackPath.length: ${pathpts.length}`, TRTL_TRACK);
@@ -1126,7 +1126,6 @@ class Turtle3d {
       if (tmesh) {tmesh.position = pathpts[pathpts.length-1];}
       this.TurtleState.lastSize = this.TurtleState.size;
    }
-
    
    newTrack(ctype='p0') {
       let ptype;
