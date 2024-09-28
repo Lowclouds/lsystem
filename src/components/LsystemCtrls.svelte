@@ -331,12 +331,14 @@
         defaultTurtle.reset(true);
 
         if ($lsys.current.length === 0 && $lsys.dDone === 0) {
-           $lsys.current = $lsys.axiom.slice();
-           $lsys.interp = $lsys.current; 
-           $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
+           // $lsys.current = $lsys.axiom.slice();
+           // $lsys.interp = $lsys.current; 
+           // $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
+           $lsExpansion = listtostr($lsys.Rewrite($lsys, null, 0));
         } else {
-           $lsExpansion = listtostr($lsys.Rewrite($lsys, 1, $lsys.current));
+           $lsExpansion = listtostr($lsys.Rewrite($lsys, $lsys.current));
         }
+
         $lsExpansionStatus = `Step: ${$lsys.dDone}${($lsys.dDone==0)?" => axiom":""}`;
         $numIterations = $lsys.dDone;
          // $numNodes = $lsys.current.length;

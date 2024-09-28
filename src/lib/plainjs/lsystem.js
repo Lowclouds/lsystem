@@ -44,7 +44,7 @@ let greekSymbols = [
 ];
 
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]?";
+var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]?|γ";
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 /* test for module RE string
@@ -58,6 +58,12 @@ var varnameReStr = '\\w[\\w\\d]*';
 var startiReStr = '^(?:#?[iI]gnore:) *(';
 var endiReStr = '\+)';
 var startcReStr = '^(?:#?[cC]onsider:?) +\(';
+
+RE.Start     = new RegExp('^\\s*(?:[Ss]tart:)\\s*({.*)', 's');
+RE.StartEach = new RegExp('^\\s*(?:[Ss]tartEach:)\\s*({.*)', 's');
+RE.EndEach =   new RegExp('^\\s*(?:[Ee]nd[Ee]ach:)\\s*({.*)', 's');
+RE.End       = new RegExp('^\\s*(?:[Ee]nd:)\\s({.*)', 's');
+
 // var param1ReStr=`${numReStr}|${varnameReStr}`;
 // var expReStr = '(.*(?=->))';
 var prodNameStr = '(?:^[pP]\\d+:)';
@@ -528,7 +534,7 @@ class Lsystem {
      Returns a parsed Lsystem instance
    */ 
    static Parse (spec, lsystem = null) {
-      const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_TRANSITION=3;
+      const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_UNFINISHED_LINE = 3, P_TRANSITION=4;
       // preprocess the spec with standard Cpp-like preprocessor
       let pp = new cpp_js();
       // define these here so recursive invocations of parseHelper
@@ -537,7 +543,9 @@ class Lsystem {
       // there's a bug in cpp.js that sometimes doesn't do all replacements
       cppSpec=pp.run(cppSpec);
 
-      cppSpec=cppSpec.replaceAll(/\n\n+/g, '\n'); // remove blank lines
+      cppSpec=cppSpec.replaceAll(/\r/g, '\n').replaceAll(/\n\n+/g, '\n'); // remove cr & blank lines
+
+      puts(`cppSpec:\n${cppSpec}`, LSYS_PARSE);
 
       let end = cppSpec.length;      
       let m;                            // common match variable
@@ -608,6 +616,7 @@ class Lsystem {
       // there is one state function call per line of input
       function parseHelper (ls, isSubLs = false) {
          let line='', eol = 0;
+         let multiline = '';
          let linectr = 0;
          if (!isSubLs && cppSpec == 'no specification') {
             puts('nothing to parse');
@@ -615,8 +624,7 @@ class Lsystem {
          } 
 
          let parseState  = inItems; // initial parse state
-         let parseResult;       // {status, nextState}
-         let emsg = '';
+         let parseResult = new ParseResult();       // {status, nextState}
          let have_axiom=false;
          let have_homomorphism=false;
          while (pos < end) {
@@ -627,38 +635,44 @@ class Lsystem {
                continue;
             }
             // remove extra spaces and carriage returns
-            line = cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
+            line = multiline + cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
             // puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
             pos = eol + 1; // advance file pointer
             linectr++;
-            let loop = true;
-            do {
-               puts(`state: ${parseState.name}, ${pos} ${eol}, ${line}`, LSYS_PARSE);
-               parseResult = parseState(ls, line);
-               switch (parseResult.status) {
-               case P_ERROR:
-                  return errorState(ls, line, linectr, pos, parseResult.emsg);
-               case P_TRANSITION:
-                  parseState = parseResult.nextState;
-                  if (parseState == wantLsystem && isSubLs) {
-                     // we are in a sub Lsystem after an endlsystem statement, so
-                     // return this completed lsystem to the main one;
-                     return ls;
-                  }
-                  // intentional fall through
-               case P_HANDLED:
-                  loop = false;
-                  break;
-               case P_UNHANDLED:
-                  // not clear why we leave unhandled unhandled
-                  puts(`Unhandled parse result, on line: ${line}`);
-                  loop = false;
-                  break;
-               default:
-                  puts('unexpected parse result');
-                  return;
-               }
-            } while(loop);
+
+           puts(`state: ${parseState.name}, ${pos} ${eol}, ${line}`, LSYS_PARSE);
+           parseResult.n = parseState.name;
+
+           parseState(ls, line, parseResult);
+
+           switch (parseResult.status) {
+           case P_ERROR:
+             return errorState(ls, line, linectr, pos, parseResult.emsg);
+           case P_TRANSITION:
+             parseState = parseResult.nextState;
+             if (parseState === wantLsystem && isSubLs) {
+               // we are in a sub Lsystem after an endlsystem statement, so
+               // return this completed lsystem to the main one;
+               multiline = '';
+               return ls;
+             }
+             // intentional fall through
+           case P_HANDLED:
+             multiline = '';
+             break;
+           case P_UNFINISHED_LINE:
+             multiline += line;
+             break;
+           case P_UNHANDLED:
+             // not clear why we leave unhandled unhandled
+             //puts(`Unhandled parse result, on line: ${line}`);
+             multiline = '';
+             break;
+           default:
+             puts('unexpected parse result');
+             multiline = '';
+             return;
+           }
          } // not at end of spec
          return ls;
       }
@@ -667,9 +681,12 @@ class Lsystem {
          return {status: s, nextState: n, emsg: msg};
       }
 
-      function inItems (ls, line) {
+     // this picks up variable definitions and xxx: statements
+     // we exit inItems when axiom: is seen
+     function inItems (ls, line, pr) {
          puts(`inItems looking at: ${line}`, LSYS_IN_ITEMS);
-         let pr = new ParseResult(P_HANDLED, inItems);
+         pr.status = P_HANDLED;
+
          if (m = line.match(RE.defineStart)) {
             // start of a define section, check if there's anything beyond the open brace
             // if (m[1] != '') {
@@ -689,7 +706,10 @@ class Lsystem {
                   for (let parts of m) {
                      let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or'); //.replaceAll('!', ' not ');
                      if (labelSeen) {
-                        math.evaluate(parts[1]+'='+ parts2, ls.locals);
+                        let escope = new LsScope();
+                        escope.init(ls.locals,ls.globals);
+                        math.evaluate(parts[1]+'='+ parts2, escope);
+                        ls.locals.set(parts[1], escope.get(parts[1]));
                         puts(`set local var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
                      } else {
                         math.evaluate(parts[1]+'='+ parts2, ls.globals);
@@ -723,18 +743,50 @@ class Lsystem {
                labelSeen = true;
                ls.show('label');
             }
-         } else if (null != ( m = line.match(RE.dlength))) {
+         } else if (null !== ( m = line.match(RE.dlength))) {
             puts(`matched "derivation length: " got: ${m[1]}`, LSYS_IN_ITEMS);
             ls.Dlength = Number(m[1]);
             ls.locals.set('Dlength', ls.Dlength)
             ls.show('Dlength');
-         } else if (null != (m = line.match(RE.ignore))) {
+         } else if (null !== (m = line.match(RE.ignore))) {
             ls.ignore = Lsystem.strtolist(m[1]) 
             ls.show('ignore');
-         } else if (null != (m = line.match(RE.consider))) {
+         } else if (null !== (m = line.match(RE.consider))) {
             ls.consider = Lsystem.strtolist(m[1]) 
             ls.show('consider');
-         } else if (null != (m = line.match(RE.axiom))) {
+         } else if (null !== (m = line.match(RE.Start))) {
+            let isComplete = parseSkipBrackets(m[1]);
+            if (isComplete[1] !== null) {
+               ls.start = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+               puts(`found -> Start: ${ls.start}`, LSYS_IN_ITEMS);
+            } else {
+               pr.status = P_UNFINISHED_LINE;
+            }
+         } else if (null !== (m = line.match(RE.StartEach))) {
+            let isComplete = parseSkipBrackets(m[1]);
+            if (isComplete[1] !== null) {
+               ls.startEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+               puts(`found -> StartEach: ${ls.startEach}`, LSYS_IN_ITEMS);
+            } else {
+               pr.status = P_UNFINISHED_LINE;
+            }
+         } else if (null !== (m = line.match(RE.EndEach))) {
+            let isComplete = parseSkipBrackets(m[1]);
+            if (isComplete[1] !== null) {
+               ls.endEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+               puts(`found -> EndEach: ${ls.endEach}`, LSYS_IN_ITEMS);
+            } else {
+               pr.status = P_UNFINISHED_LINE;
+            }
+         } else if (null !== (m = line.match(RE.End))) {
+            let isComplete = parseSkipBrackets(m[1]);
+            if (isComplete[1] !== null) {
+               ls.end = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+               puts(`found -> End: ${ls.end}`, LSYS_IN_ITEMS);
+            } else {
+               pr.status = P_UNFINISHED_LINE;
+            }
+         } else if (null !== (m = line.match(RE.axiom))) {
             //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
             let tmp = m[1].replaceAll(RE.ws, ''); // remove embedded ws in axiom
             ls.axiom = parseSuccessor(tmp);
@@ -755,7 +807,7 @@ class Lsystem {
             pr.nextState = inProductions;
          } else if (null != (m = line.match(RE.anyGlobal))) {
             ls.globals.set(m[1], m[2]);
-            ls[m[1]] = m[2];
+            ls[m[1]] = m[2];    // why am i doing this?!!!
             puts(`matched "anyGlobal:" ${m[1]} = ${m[2]}`, LSYS_IN_ITEMS);
          } else {
             pr.status = P_UNHANDLED;
@@ -764,8 +816,9 @@ class Lsystem {
          return pr;
       }
 
-      function inProductions (ls, line) {
-         let pr = new ParseResult(P_HANDLED, inProductions);
+     function inProductions (ls, line, pr) {
+         pr.status = P_HANDLED;
+
          puts(`inProductions looking at: ${line}`, LSYS_IN_PROD);
          if (line.includes('homomorphism')) {
             // should pick up warnings/no warnings
@@ -788,8 +841,9 @@ class Lsystem {
          } 
          return pr;
       }
-      function inDecomposition (ls, line) {
-         let pr = new ParseResult(P_HANDLED, inProductions);
+     function inDecomposition (ls, line, pr) {
+       pr.status = P_HANDLED;
+       
          if (ls.decomprules === null) ls.decomprules=[];
          puts(`inDecomposition looking at: ${line}`, LSYS_IN_DECOMP ); // , 
          if (line.includes('homomorphism')) {
@@ -816,8 +870,9 @@ class Lsystem {
          }
          return pr;
       }
-      function inHomomorphism (ls, line) {
-         let pr = new ParseResult(P_HANDLED, inProductions);
+     function inHomomorphism (ls, line, pr) {
+         pr.status = P_HANDLED;
+
          if (ls.homorules === null) ls.homorules=[];
          puts(`inHomomorphism looking at: ${line}`, LSYS_IN_HOMO);
          if (line.includes('homomorphism')) {
@@ -845,8 +900,8 @@ class Lsystem {
          }
          return pr;
       }
-      function wantLsystem (ls, line) {
-         let pr = new ParseResult(P_HANDLED, wantLsystem);
+      function wantLsystem (ls, line, pr) {
+         pr.status = P_HANDLED;
          puts(`wantLsystem looking at: ${line}`);
          if (null != ( m = RE.lsystem.exec(line))) {
             let lbl = m[1];
@@ -1043,6 +1098,20 @@ ${msg}`;
          }
          return l;
       }
+     function parseSkipBrackets(str) {
+         let res;
+         try {
+            res = Lsystem.skipbrackets(str, 0, 1, 1);
+         } catch(err) {
+            if (err?.cause?.code ===  'UnClosed') {
+               res = [null,null];
+            } else {
+               throw new Error(err.message);
+            }
+         }
+         return res;
+      }
+
    }; // end of Parse
 
 
@@ -1096,29 +1165,46 @@ ${msg}`;
       return r;
    }
    
-   // rewrite string derivation length times
-   // generate step per cpfg docs
-   // Assumption: if arg, 'it', is not zero, then rewrite 'it' times,
-   // typically, once.
-   // the property dDone keeps track of how many total iterations have
-   // been done on the string.
+   /* rewrite lsystem string expanding parameter values
+      Parameters
+      ls : Lsystem to rewrite, defaults to this
+      string: expanded string to rewrite; defaults to null.
+              if null, rewrite ls.Dlength times, otherwise rewrite just once
+      it: if string is null, then if null -> rewrite ls.Dlength times
+                             else if zero -> just expand axiom, 
+           ignored, if string is not null                              
+    
+      the property dDone keeps track of how many total iterations have
+      been done on the string.
 
-  // Note well: string, mstring, and ls.current are arrays of modules, not actually strings
+      Note well: string, mstring, and ls.current are arrays of modules, 
+      not actually strings
+   */ 
 
-   Rewrite (ls = this, it = 0, string=null ) {
+   Rewrite (ls = this, string=null, it = null) {
       let genv = new LsScope();      // set up local and global environment
-      genv.init(ls.locals, Lsystem.globals); // locals will shadow globals
+      
      // use axiom as initial string if none supplied
       if (string === null) {
-        // evaluate any uninstantiated parameters in axiom
-        ls.current = this.expand(new LsProduction(null,null,ls.axiom.slice(), genv));
+         // but first, evaluate any Start: statement
+         if (ls.start) {
+            puts(`evaluated Start: ${ls.start}`, LSYS_EXPAND, LSYS_REWRITE);
+            math.evaluate(ls.start, ls.globals);
+         }
+         genv.init(ls.locals, ls.globals); // locals will shadow globals
+         // now expand axiom ... vlab/Lstudio doesn't do this, I think.
+         ls.current = this.expand(new LsProduction(null,null,ls.axiom.slice(), genv));
+         it = (it === null) ? ls.Dlength : 0;
+         genv.upbind();
       } else {
          ls.current = string;   // we assume the input has been rewritten/expanded
+         it = 1;                // we assume a single step
       }
 
-      let niter = (it <= 0) ? (ls.Dlength ? ls.Dlength : 1) : it;
+      let niter = it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
       puts(`Number of iterations done: ${ls.dDone} to do: ${niter}`, LSYS_REWRITE);
+
       let mstring = ls.current; 
       let lschanges;
       let lsLabel = ls.label;
@@ -1128,9 +1214,65 @@ ${msg}`;
       let restrict = ls.restrict;
       let mlength;
 
+      for (let i=1; i <= niter; i++) {
+         lschanges = [];    // changes introduced in this interation
+         let nchanges = 0;
+         puts(`iteration ${i};`, LSYS_REWRITE);
+         doOnePass();
+         [mstring, nchanges] = this.merge(mstring, lschanges);
+         if (ls.decomprules !=  null) {
+            rules = ls.decomprules;
+            for (let j = 1; j <= ls.decompDepth; j++) {
+               // mlength = mstring.length;
+               puts(`iteration ${i}; decomposition: ${j}`, LSYS_REWRITE);
+               lschanges = [];
+               doOnePass();
+               [mstring, nchanges] = this.merge(mstring, lschanges);
+               if (nchanges === 0) { break; }
+            }
+            rules = ls.rules;
+         }
+      }
+      if (niter >= ls.Dlength && ls.end) {
+         math.evaluate(ls.end, genv);
+         puts(`evaluated End: ${ls.end}`, LSYS_EXPAND, LSYS_REWRITE);
+         genv.upbind();         // probably a don't care
+      }
+
+
+      ls.current = mstring;
+      ls.interp = ls.current;
+      if (it > 0 && ls.homorules != null) {
+         rules = ls.homorules;
+         mstring = ls.current.slice();
+         //mlength = mstring.length;
+         for (let i = 1; i <= ls.homoDepth; i++) {
+            puts(`rewriting homomorphism interation ${i} - ${mstring}`, LSYS_REWRITE);
+            let nchanges = 0;
+            lschanges=[];
+            doOnePass();
+            [mstring, nchanges] = this.merge(mstring, lschanges);
+            if (nchanges === 0) { break; }
+         }
+         ls.interp = mstring;
+      }
+      if (string === null) {
+        ls.dDone = niter;      // 
+      } else {
+         ls.dDone += niter;     // step case: niter typically == 1
+      }
+
+      genv.upbind();
+
       function doOnePass() {
          mlength = mstring.length;
          puts(`doOnePass:\n${mstring}, mlength: ${mlength}`, LSYS_REWRITE_VERB);
+  
+         if (ls.startEach) {
+            puts(`evaluated StartEach: ${ls.startEach}`, LSYS_EXPAND, LSYS_REWRITE);
+            math.evaluate(ls.startEach, genv);
+            genv.upbind();         // probably a don't care
+         }
          for (let n=0; n < mlength; n++)   {
             let module = mstring[n];
             puts(`looking at module[${n}] = ${module}, Lsys: ${lsLabel}`, LSYS_REWRITE);
@@ -1235,52 +1377,23 @@ ${msg}`;
                }
             }
          }
-      }
+         if (ls.endEach) {
+            puts(`evaluated EndEach: ${ls.endEach}`, LSYS_EXPAND, LSYS_REWRITE);
+            math.evaluate(ls.endEach, genv);
+            genv.upbind();         // probably a don't care
+         }
+      } // end of doOnePass
 
-      for (let i=1; i <= niter; i++) {
-         lschanges = [];    // changes introduced in this interation
-         let nchanges = 0;
-         puts(`iteration ${i};`, LSYS_REWRITE);
-         doOnePass();
-         [mstring, nchanges] = this.merge(mstring, lschanges);
-         if (ls.decomprules !=  null) {
-            rules = ls.decomprules;
-            for (let j = 1; j <= ls.decompDepth; j++) {
-               // mlength = mstring.length;
-               puts(`iteration ${i}; decomposition: ${j}`, LSYS_REWRITE);
-               lschanges = [];
-               doOnePass();
-               [mstring, nchanges] = this.merge(mstring, lschanges);
-               if (nchanges === 0) { break; }
-            }
-            rules = ls.rules;
-         }
-      }
-      ls.current = mstring;
-      ls.interp = ls.current;
-      if (ls.homorules != null) {
-         rules = ls.homorules;
-         mstring = ls.current.slice();
-         //mlength = mstring.length;
-         for (let i = 1; i <= ls.homoDepth; i++) {
-            puts(`rewriting homomorphism interation ${i} - ${mstring}`, LSYS_REWRITE);
-            let nchanges = 0;
-            lschanges=[];
-            doOnePass();
-            [mstring, nchanges] = this.merge(mstring, lschanges);
-            if (nchanges === 0) { break; }
-         }
-         ls.interp = mstring;
-      }
-      if (string === null) {
-        ls.dDone = niter;      // 
-      } else {
-         ls.dDone += niter;     // step case: niter typically == 1
-      }
       puts(`Expanded tree has ${ls.interp.length} nodes after ${ls.dDone} interations`);
       return ls.interp;
-   }                            // end of Rewrite
+   } // end of Rewrite
 
+  /*
+    source array is original sequence of modules
+    changes is a sparse array whose keys are the indices in source which were changed
+    we get the number of changes first, then walk the source array, taking content from
+    changes if it exists
+   */
   merge(source, changes) {
     let changecnt = 0, newsourcelen = 0;
 
@@ -1295,10 +1408,8 @@ ${msg}`;
             j++;
          });
       } else {
-         if (source[i]) {
-            merged[j] = source[i];
-            j++;
-         }
+         merged[j] = source[i];
+         j++;
       }
     }
      return [merged, changecnt];
@@ -1452,6 +1563,7 @@ ${msg}`;
       return false;
    }
 
+  
    //# basically skip (\[[^]+\])* from either the left or right
    //# dir is +/- 1; +1 skips right, -1 skips left
    // returns a list of first char beyond bracketed group and its position
@@ -1520,7 +1632,8 @@ ${msg}`;
          }
       } else {
          puts(`ill-formed branch at ${start}: ${l[start]}`);
-         throw new Error(`ill-formed branch at ${start}: ${l[start]}`);
+         throw new Error(`ill-formed branch at ${start}: ${l[start]}`,
+                        {cause: {code: 'UnClosed'}});
       }
       return [c, n];
    }
