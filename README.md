@@ -87,8 +87,17 @@
    * Array specified contours and surfaces
    * L-system surface generation
    * Textures - currently just standard materials
+   * Unicode symbols for modules
 
 ## Changes since last version
+
+   * Start, StartEach, EndEach, and End statements - limited by math.js capabilities
+   * Support for some Unicode symbols for variable names
+   * Homomorphisms
+   * Environmental queries of turtle state
+   * Array support as normal arrays, sparsely tested
+
+----- Previous versions ------------
 
    * Homomorphisms and decomposition 9/6/24
    * Switched to using Webpack to build and debug, much nicer.

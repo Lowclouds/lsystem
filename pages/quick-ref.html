@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-06-14 Fri 16:14 -->
+<!-- 2024-09-16 Mon 17:19 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>L-System Explorer Quick Guide</title>
@@ -200,58 +200,59 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org8d68d4d">1. Intro</a></li>
-<li><a href="#org8869a10">2. Modules</a>
+<li><a href="#org8b3f6e3">1. Intro</a></li>
+<li><a href="#orgd71d731">2. Modules</a>
 <ul>
-<li><a href="#orgf9df7ff">2.1. Turtle Motion</a></li>
-<li><a href="#orgf069a6c">2.2. Turtle Orientation</a></li>
-<li><a href="#org5ac861a">2.3. Turtle Settings</a></li>
-<li><a href="#org71d30a8">2.4. Turtle Geometry</a></li>
-<li><a href="#org29b53f4">2.5. L-system Geometry and Control</a></li>
+<li><a href="#orga49d151">2.1. Turtle Motion</a></li>
+<li><a href="#orgdfb5623">2.2. Turtle Orientation</a></li>
+<li><a href="#orga3a1c41">2.3. Turtle Settings</a></li>
+<li><a href="#org9e26d00">2.4. Turtle Geometry</a></li>
+<li><a href="#orgc1436cf">2.5. L-system Geometry and Control</a></li>
 </ul>
 </li>
-<li><a href="#orga54c88f">3. L-System Syntax</a>
+<li><a href="#org6f3cf48">3. L-System Syntax</a>
 <ul>
-<li><a href="#org951985a">3.1. Rule-based systems</a>
+<li><a href="#orgdf1fdac">3.1. Rule-based systems</a>
 <ul>
-<li><a href="#org0fc17dc">3.1.1. Modules</a></li>
-<li><a href="#orgd5a2595">3.1.2. Axiom</a></li>
-<li><a href="#org58da0ac">3.1.3. Productions</a></li>
-<li><a href="#orgd4e51a7">3.1.4. Production Contexts</a></li>
-<li><a href="#org08cd1d7">3.1.5. Matching Order</a></li>
-<li><a href="#org6ac09d2">3.1.6. Conditional Tests</a></li>
+<li><a href="#orgec4229a">3.1.1. Modules</a></li>
+<li><a href="#org0cce086">3.1.2. Axiom</a></li>
+<li><a href="#orgb719c76">3.1.3. Productions</a></li>
+<li><a href="#org3e08bdd">3.1.4. Production Contexts</a></li>
+<li><a href="#org22a38fd">3.1.5. Matching Order</a></li>
+<li><a href="#org7b4ae4f">3.1.6. Conditional Tests</a></li>
 </ul>
 </li>
-<li><a href="#orge8b6bd7">3.2. Pre-parsing</a>
+<li><a href="#orgd9a6fab">3.2. Pre-parsing</a>
 <ul>
-<li><a href="#orgf68a3c0">3.2.1. Comments</a></li>
-<li><a href="#org0c085ee">3.2.2. Defines</a></li>
+<li><a href="#org6b3ce47">3.2.1. Comments</a></li>
+<li><a href="#orgc0ebc4e">3.2.2. Defines</a></li>
 </ul>
 </li>
-<li><a href="#org73ba810">3.3. Settings</a></li>
-<li><a href="#orga5c88e1">3.4. Variables</a></li>
-<li><a href="#org00ba321">3.5. Expressions</a></li>
+<li><a href="#orgb404327">3.3. Settings</a></li>
+<li><a href="#org5dd60cf">3.4. Variables</a></li>
+<li><a href="#org8d3f619">3.5. Expressions</a></li>
 </ul>
 </li>
-<li><a href="#org3fce367">4. UI and controls</a>
+<li><a href="#orgbf5090c">4. UI and controls</a>
 <ul>
-<li><a href="#orgf01c879">4.1. L-system controls</a></li>
-<li><a href="#org5c024ae">4.2. Turtle controls</a></li>
-<li><a href="#org44c23bf">4.3. Scene Controls</a></li>
+<li><a href="#orgdc38419">4.1. File, Settings, and Help</a></li>
+<li><a href="#orgcf2ad1a">4.2. L-system controls</a></li>
+<li><a href="#org11fc391">4.3. Turtle controls</a></li>
+<li><a href="#orgd9e6a05">4.4. Scene Controls</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org8d68d4d" class="outline-2">
-<h2 id="org8d68d4d"><span class="section-number-2">1.</span> Intro</h2>
+<div id="outline-container-org8b3f6e3" class="outline-2">
+<h2 id="org8b3f6e3"><span class="section-number-2">1.</span> Intro</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-If you just can't remember what the module for yaw is, go to the <a href="#orgf069a6c">Turtle Orientation</a> section.
+If you just can't remember what the module for yaw is, go to the <a href="#orgdfb5623">Turtle Orientation</a> section.
 </p>
 
 <p>
-If you need a bit more info on L-System syntax, skip to that section, <a href="#orga54c88f">L-System Syntax</a>
+If you need a bit more info on L-System syntax, skip to that section, <a href="#org6f3cf48">L-System Syntax</a>
 </p>
 
 <p>
@@ -262,8 +263,8 @@ have long comments.
 </div>
 </div>
 
-<div id="outline-container-org8869a10" class="outline-2">
-<h2 id="org8869a10"><span class="section-number-2">2.</span> Modules</h2>
+<div id="outline-container-orgd71d731" class="outline-2">
+<h2 id="orgd71d731"><span class="section-number-2">2.</span> Modules</h2>
 <div class="outline-text-2" id="text-2">
 <p>
    A module is either a single character, or some system-defined
@@ -289,12 +290,14 @@ Modules marked <b>n</b> are <b>new for this implementation</b><br />
 </p>
 </div>
 
-<div id="outline-container-orgf9df7ff" class="outline-3">
-<h3 id="orgf9df7ff"><span class="section-number-3">2.1.</span> Turtle Motion</h3>
+<div id="outline-container-orga49d151" class="outline-3">
+<h3 id="orga49d151"><span class="section-number-3">2.1.</span> Turtle Motion</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-  Without a parameter move 'step' amount, default 1 unit
-<b>Motion Modules</b>
+Without a parameter move 'step' amount, default 1 unit
+</p>
+<p class="verse">
+<b>Motion Modules</b><br />
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -303,24 +306,30 @@ Modules marked <b>n</b> are <b>new for this implementation</b><br />
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">F(d)</td>
 <td class="org-left">move d units w/pen down, records track point, creates geometry</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">f(d)</td>
 <td class="org-left">move d units w/pen up, records track point</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">G(d)</td>
 <td class="org-left"><code>==</code>  F(d), but does not record track points, creates geometry</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">g(d)</td>
 <td class="org-left"><code>==</code>  f(d), w/o recording track points</td>
 </tr>
@@ -328,9 +337,11 @@ Modules marked <b>n</b> are <b>new for this implementation</b><br />
 <tr>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@[Mm](x,y,z)</td>
 <td class="org-left">goto position, 'M' draw, creates geometry, or 'm' don't draw</td>
 </tr>
@@ -340,8 +351,8 @@ Modules marked <b>n</b> are <b>new for this implementation</b><br />
 </div>
 
 
-<div id="outline-container-orgf069a6c" class="outline-3">
-<h3 id="orgf069a6c"><span class="section-number-3">2.2.</span> Turtle Orientation</h3>
+<div id="outline-container-orgdfb5623" class="outline-3">
+<h3 id="orgdfb5623"><span class="section-number-3">2.2.</span> Turtle Orientation</h3>
 <div class="outline-text-3" id="text-2-2">
 <p class="verse">
 &#xa0;&#xa0;The turtle maintains three unit vectors, heading (<b>H</b>), left (<b>L</b>), and up (<b>U</b>).<br />
@@ -361,9 +372,8 @@ in an L-system with the line:<br />
 &#xa0;&#xa0;underlying Babylonjs is left-handed. This has some odd consequences when comparing<br />
 &#xa0;&#xa0;models with TABOP. <i>If I'd known I could just tell Babylonjs to use a RHS, things<br />
 &#xa0;&#xa0;would have been simpler.</i><br />
-</p>
-<p>
-<b>Orientation modules</b>
+<br />
+&#xa0;&#xa0;<b>Orientation modules</b><br />
 </p>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -372,69 +382,84 @@ in an L-system with the line:<br />
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">+(a)</td>
 <td class="org-left">yaw left 'a' degrees    ('a' optional)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">-(a)</td>
 <td class="org-left">yaw right 'a' degrees   ('a' optional)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&amp;(a)</td>
 <td class="org-left">pitch down 'a' degrees  ('a' optional)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">^(a)</td>
 <td class="org-left">pitch up 'a' degrees    ('a' optional)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">\(a)</td>
 <td class="org-left">roll left 'a' degrees   ('a' optional)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">/(a)</td>
 <td class="org-left">roll right 'a' degrees  ('a' optional)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&vert;</td>
 <td class="org-left">yaw 180 degrees</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@v</td>
 <td class="org-left">roll so U is parallel to up [y]</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@R(hx,hy,hz[,ux,uy,uz])</td>
 <td class="org-left">set heading to [hx,hy,hz]</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">set U parallel to [ux,uy,z], if supplied</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@H(h)               <b>n</b></td>
 <td class="org-left">set turtle to home position and orientation,</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">if optional h is 0, then set H to +y,</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">otherwise, H is +x. Does not draw or record point</td>
 </tr>
@@ -443,8 +468,8 @@ in an L-system with the line:<br />
 </div>
 </div>
 
-<div id="outline-container-org5ac861a" class="outline-3">
-<h3 id="org5ac861a"><span class="section-number-3">2.3.</span> Turtle Settings</h3>
+<div id="outline-container-orga3a1c41" class="outline-3">
+<h3 id="orga3a1c41"><span class="section-number-3">2.3.</span> Turtle Settings</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 Defaults without a parameter to one
@@ -456,49 +481,60 @@ Defaults without a parameter to one
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">;(i)</td>
 <td class="org-left">increase or set color/material index</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">,(i)</td>
 <td class="org-left">decrease or set color/material index</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@;(n) <b>u</b></td>
 <td class="org-left">increase or set back face color/material index</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@,(n) <b>u</b></td>
 <td class="org-left">decrease or set back face color/material index</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">#(n)</td>
 <td class="org-left">increase or set line width</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">!(n)</td>
 <td class="org-left">decrease or set line width</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Tx(n) <b>u</b></td>
 <td class="org-left">set texture index</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@D(s) <b>u</b></td>
 <td class="org-left">set scale factor of subsequent geometry</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Di(f) <b>u</b></td>
 <td class="org-left">multiply scale factor by f</td>
 </tr>
@@ -507,8 +543,8 @@ Defaults without a parameter to one
 </div>
 </div>
 
-<div id="outline-container-org71d30a8" class="outline-3">
-<h3 id="org71d30a8"><span class="section-number-3">2.4.</span> Turtle Geometry</h3>
+<div id="outline-container-org9e26d00" class="outline-3">
+<h3 id="org9e26d00"><span class="section-number-3">2.4.</span> Turtle Geometry</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 In addition to orientation and color/material, the turtle also maintains a <i>track shape</i>,
@@ -522,199 +558,240 @@ shape is a circle with an initial size, as in diameter, of one.
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@o(d)</td>
 <td class="org-left">circle of diameter d, centered at turtle position</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@C(d) <b>u</b></td>
 <td class="org-left">circle of diameter d in HL plane</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@O(d)</td>
 <td class="org-left">sphere of diameter d</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">~(S,s) <b>c</b></td>
 <td class="org-left">insert predefined surface S, with optional scale, s</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Cs(n[,t]) <b>n</b></td>
 <td class="org-left">start contour with n final pts. n==0 =&gt; use just the control pts</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">t ​=​= 0 =&gt; open contour (default), t =​= 1 =&gt; closed</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Ce(id) <b>n</b></td>
 <td class="org-left">end contour and save it as id (number or string)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Ca([t[,a]]) <b>n</b></td>
 <td class="org-left">if t=0 (default), create arc between previous 3 pts</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">if t=1, create arc from previous two points, w/ctr at p0,</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">start at p1, with angle a</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Cc([n[,t]]) <b>n</b></td>
 <td class="org-left">create Catmull-Rom spline from previous n points</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">n == 0 (default) will use <b>all</b> prior generated points.</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">t==0 =&gt; open (default) , else closed curve.</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">This will add 1 + m *(n - (t==0) ? 1 : 0) points to the contour,</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">where m = contour points per segment (default = 16)</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Ct(m1,m2) <b>n</b></td>
 <td class="org-left">create Hermite spline from previous two points, with optional</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">length multipliers m1 and m2</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Cb    <b>n</b></td>
 <td class="org-left">Create a cubic Bezier spline segment from prior four points</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Cm(m) <b>n</b></td>
 <td class="org-left">create contour of multiplicity m, default 1, only if closed type</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Cn(n) <b>n</b></td>
 <td class="org-left">Set the number of points per segment (default = 16). This is for</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">inserted arcs or  splines; control pts inserted with '.' or f, or g</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">are used as is. Total points is overridden by initial @Cs(n), if n != 0</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@#(id)</td>
 <td class="org-left">set contour(id) as current track shape. The special id, 'default',</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">sets the default circle as the track shape</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">{</td>
 <td class="org-left">start polygon</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">{(0)  <b>c</b></td>
 <td class="org-left">start path with stepwise control pts, not polygon</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">{(1)</td>
 <td class="org-left">start open path with Hermite spline control pts</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">{(2) <b>u</b></td>
 <td class="org-left">start closed path with Hermite spline control pts</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">{(3) <b>u</b></td>
 <td class="org-left">start open path with B-spline control pts</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">{(4) <b>u</b></td>
 <td class="org-left">start closed path with B-spline control pts</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">}[(id)] <b>p</b></td>
 <td class="org-left">end current polygon/path of any type and extrude contour, With</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">parameter, id, save path as mesh</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Gs</td>
 <td class="org-left">start Hermite spline path, same as '{(1).', i.e. saves point</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Ge(n,id) <b>c</b></td>
 <td class="org-left">close path started with @Gs. if n, set # intermediate points.</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">If 'id', save extrusion as mesh</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">.</td>
 <td class="org-left">add current position to path, polygon, or contour</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Gt(m1,m2)</td>
 <td class="org-left">Set tangent length multipliers - default is 1.2</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Gr(a1,l1,a2,l2)</td>
 <td class="org-left">Set slope and length of tangent vectors for radius curve</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">@Gc(n)       <b>p</b></td>
 <td class="org-left">Store control point. Optionally set number of interpolated strips</td>
 </tr>
@@ -724,8 +801,8 @@ shape is a circle with an initial size, as in diameter, of one.
 </div>
 
 
-<div id="outline-container-org29b53f4" class="outline-3">
-<h3 id="org29b53f4"><span class="section-number-3">2.5.</span> L-system Geometry and Control</h3>
+<div id="outline-container-orgc1436cf" class="outline-3">
+<h3 id="orgc1436cf"><span class="section-number-3">2.5.</span> L-system Geometry and Control</h3>
 <div class="outline-text-3" id="text-2-5">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -734,29 +811,36 @@ shape is a circle with an initial size, as in diameter, of one.
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">[</td>
 <td class="org-left">start branch, pushing state onto stack</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">]</td>
 <td class="org-left">end branch, popping branch state stack</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">% <b>p</b></td>
 <td class="org-left">cut modules to end of branch</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">$(id,scale) <b>c</b></td>
 <td class="org-left">push current Lsystem and use sub-Lsystem id</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">$</td>
 <td class="org-left">end current sub-Lsystem, return to previous</td>
 </tr>
@@ -766,12 +850,12 @@ shape is a circle with an initial size, as in diameter, of one.
 </div>
 </div>
 
-<div id="outline-container-orga54c88f" class="outline-2">
-<h2 id="orga54c88f"><span class="section-number-2">3.</span> L-System Syntax</h2>
+<div id="outline-container-org6f3cf48" class="outline-2">
+<h2 id="org6f3cf48"><span class="section-number-2">3.</span> L-System Syntax</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-org951985a" class="outline-3">
-<h3 id="org951985a"><span class="section-number-3">3.1.</span> Rule-based systems</h3>
+<div id="outline-container-orgdf1fdac" class="outline-3">
+<h3 id="orgdf1fdac"><span class="section-number-3">3.1.</span> Rule-based systems</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 An L-System is a rule-based object defined on a set of symbols; formal grammars
@@ -797,8 +881,8 @@ substitutions made, the result string becomes the input for the next evaluation
 step.
 </p>
 </div>
-<div id="outline-container-org0fc17dc" class="outline-4">
-<h4 id="org0fc17dc"><span class="section-number-4">3.1.1.</span> Modules</h4>
+<div id="outline-container-orgec4229a" class="outline-4">
+<h4 id="orgec4229a"><span class="section-number-4">3.1.1.</span> Modules</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <p>
 A module is one of
@@ -842,8 +926,8 @@ parameter is substituted into the dummy variable at match time.
 </div>
 </div>
 
-<div id="outline-container-orgd5a2595" class="outline-4">
-<h4 id="orgd5a2595"><span class="section-number-4">3.1.2.</span> Axiom</h4>
+<div id="outline-container-org0cce086" class="outline-4">
+<h4 id="org0cce086"><span class="section-number-4">3.1.2.</span> Axiom</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
    This is the starting sequence of modules, and can be any valid
@@ -869,8 +953,8 @@ axiom: CA(10)B
 </div>
 </div>
 
-<div id="outline-container-org58da0ac" class="outline-4">
-<h4 id="org58da0ac"><span class="section-number-4">3.1.3.</span> Productions</h4>
+<div id="outline-container-orgb719c76" class="outline-4">
+<h4 id="orgb719c76"><span class="section-number-4">3.1.3.</span> Productions</h4>
 <div class="outline-text-4" id="text-3-1-3">
 <p>
    A production has two main parts, the predecessor and the successor,
@@ -929,8 +1013,8 @@ and is only there for information.
 </div>
 </div>
 
-<div id="outline-container-orgd4e51a7" class="outline-4">
-<h4 id="orgd4e51a7"><span class="section-number-4">3.1.4.</span> Production Contexts</h4>
+<div id="outline-container-org3e08bdd" class="outline-4">
+<h4 id="org3e08bdd"><span class="section-number-4">3.1.4.</span> Production Contexts</h4>
 <div class="outline-text-4" id="text-3-1-4">
 <p>
    Context-sensitive matching is optional, and is based on what precedes or
@@ -949,7 +1033,7 @@ abc &lt; d &gt; efg  , which matches d in the string, ...abcdef...
 following predecessor and strings:
 </p>
 
-<pre class="example" id="org56c0815">
+<pre class="example" id="org2505eeb">
 predecessor:   a &lt; b &gt; c
 
 string 1:     aaa[bc]ddd    *matches*
@@ -1002,8 +1086,8 @@ where "a" precedes "b" with any intervening modules, except for the branching ru
 </div>
 </div>
 
-<div id="outline-container-org08cd1d7" class="outline-4">
-<h4 id="org08cd1d7"><span class="section-number-4">3.1.5.</span> Matching Order</h4>
+<div id="outline-container-org22a38fd" class="outline-4">
+<h4 id="org22a38fd"><span class="section-number-4">3.1.5.</span> Matching Order</h4>
 <div class="outline-text-4" id="text-3-1-5">
 <p>
    Rules are matched in top-down order, with the caveat that the
@@ -1011,7 +1095,7 @@ most-specific match which occurs first will be used. This means the rule
 which has the longest context. Example, given the following rules:
 </p>
 
-<pre class="example" id="org5a346fc">
+<pre class="example" id="org69f4377">
 p1: a --&gt; aa
 p2: b(i) &lt; a --&gt; c
 p3: bb(i) &lt; a : i &lt; 10 --&gt; d
@@ -1029,8 +1113,8 @@ and has the same specificity as p4, but it comes first.
 </div>
 </div>
 
-<div id="outline-container-org6ac09d2" class="outline-4">
-<h4 id="org6ac09d2"><span class="section-number-4">3.1.6.</span> Conditional Tests</h4>
+<div id="outline-container-org7b4ae4f" class="outline-4">
+<h4 id="org7b4ae4f"><span class="section-number-4">3.1.6.</span> Conditional Tests</h4>
 <div class="outline-text-4" id="text-3-1-6">
 <p>
    The simplest condition is a test, which is an expression
@@ -1067,7 +1151,7 @@ test. It's possible to use the post-condition without either pre-condition
 or test by inserting a '*' for the test:
 </p>
 
-<pre class="example" id="orgfb66a5e">
+<pre class="example" id="orgb3b0bb6">
 v=0
 axiom: bbb(4)a
 bb(i) &lt; a : * {v=i} -&gt; d(v)
@@ -1077,7 +1161,7 @@ bb(i) &lt; a : * {v=i} -&gt; d(v)
 In the UI, the parse of this system is shown as:
 </p>
 
-<pre class="example" id="orgb5f1180">
+<pre class="example" id="orgeb03019">
 axiom = bbb(4)a
 rules:= {pre, strict, post} {cond} {succ} {scope}
 {b,b(i),a,}{,true,v=i}{d(v)}{has scope}
@@ -1099,8 +1183,8 @@ bbb(4)d(4)
 </div>
 </div>
 
-<div id="outline-container-orge8b6bd7" class="outline-3">
-<h3 id="orge8b6bd7"><span class="section-number-3">3.2.</span> Pre-parsing</h3>
+<div id="outline-container-orgd9a6fab" class="outline-3">
+<h3 id="orgd9a6fab"><span class="section-number-3">3.2.</span> Pre-parsing</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
    Before parsing, the L-system text is run through a JavaScript cpp-like
@@ -1109,8 +1193,8 @@ lines and removed and the system is parsed. See <a href="https://github.com/acge
 details on how this differs from standard CPP.
 </p>
 </div>
-<div id="outline-container-orgf68a3c0" class="outline-4">
-<h4 id="orgf68a3c0"><span class="section-number-4">3.2.1.</span> Comments</h4>
+<div id="outline-container-org6b3ce47" class="outline-4">
+<h4 id="org6b3ce47"><span class="section-number-4">3.2.1.</span> Comments</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <p>
 C-style comments, '/​* stuff, including newline */​' are
@@ -1119,8 +1203,8 @@ with L-system module syntax.
 </p>
 </div>
 </div>
-<div id="outline-container-org0c085ee" class="outline-4">
-<h4 id="org0c085ee"><span class="section-number-4">3.2.2.</span> Defines</h4>
+<div id="outline-container-orgc0ebc4e" class="outline-4">
+<h4 id="orgc0ebc4e"><span class="section-number-4">3.2.2.</span> Defines</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <p>
    Lines that start with '#define macro value', 'macro' being some word,
@@ -1130,8 +1214,8 @@ the L-system before parsing starts. They are not as powerful as cpp.
 </div>
 </div>
 </div>
-<div id="outline-container-org73ba810" class="outline-3">
-<h3 id="org73ba810"><span class="section-number-3">3.3.</span> Settings</h3>
+<div id="outline-container-orgb404327" class="outline-3">
+<h3 id="orgb404327"><span class="section-number-3">3.3.</span> Settings</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
    Before the axiom is specified, settings variables can be set for the
@@ -1141,6 +1225,7 @@ settings on the same line must be separated by a semi-colon. <b>Note</b> that
 the view setting is a JS object with the properties 'position' and
 'target', whose values are JS arrays of X,Y,Z coordinates.
 </p>
+
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1148,104 +1233,126 @@ the view setting is a JS object with the properties 'position' and
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>stemsize</b></td>
 <td class="org-left">width of extrusion. default: 0.1</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>delta</b></td>
 <td class="org-left">angle in degrees of yaw, pitch, and roll. default: 90</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>step</b></td>
 <td class="org-left">distance traveled by F,f,G,g modules. default: 1</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>view</b></td>
 <td class="org-left"><b>position:</b> 3D position of viewer/camera.</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>target:</b> 3D position of view/camera target.</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">e.g. view = {position: [20,20,5], target: [0,8,0]}</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#x2014; or ---</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">auto: direction</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">where direction is one of 'X', '-X', 'Y', '-Y', 'Z', '-Z', or</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">a direction array defining where the camera position should</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">be. The target is always the center of the bounding sphere</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">of the drawn geometry and the distance from the target is</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">about twice the radius of the bounding sphere.</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">e.g. view = {auto: 'y'} will look down on the XY plane. Note,</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">case-insensitivity and quotes.</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">&#x2014; or ---</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">view = {auto: [1,1,1]} will place the camera on a line through</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">the target center parallel to the vector 1,1,1, looking at the</td>
 </tr>
 
 <tr>
 <td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">target</td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left">&#xa0;</td>
 <td class="org-left">The default view is {auto: 'X'}</td>
 </tr>
@@ -1254,8 +1361,8 @@ the view setting is a JS object with the properties 'position' and
 </div>
 </div>
 
-<div id="outline-container-orga5c88e1" class="outline-3">
-<h3 id="orga5c88e1"><span class="section-number-3">3.4.</span> Variables</h3>
+<div id="outline-container-org5dd60cf" class="outline-3">
+<h3 id="org5dd60cf"><span class="section-number-3">3.4.</span> Variables</h3>
 <div class="outline-text-3" id="text-3-4">
 <p>
    Variables used in the L-system can be set and used in the rules. If
@@ -1273,8 +1380,8 @@ scope.
 </p>
 </div>
 </div>
-<div id="outline-container-org00ba321" class="outline-3">
-<h3 id="org00ba321"><span class="section-number-3">3.5.</span> Expressions</h3>
+<div id="outline-container-org8d3f619" class="outline-3">
+<h3 id="org8d3f619"><span class="section-number-3">3.5.</span> Expressions</h3>
 <div class="outline-text-3" id="text-3-5">
 <p>
   Expressions occur in tests, parameters, and pre/post test; they
@@ -1293,19 +1400,24 @@ explicitly as
 <col  class="org-left" />
 
 <col  class="org-left" />
+
+<col  class="org-left" />
 </colgroup>
 <tbody>
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>and</b></td>
 <td class="org-left">instead of <b>'&amp;&amp;'</b></td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>or</b></td>
 <td class="org-left">instead of <b>'&vert;&vert;'</b></td>
 </tr>
 
 <tr>
+<td class="org-left">&#xa0;</td>
 <td class="org-left"><b>not</b></td>
 <td class="org-left">instead of <b>'!'</b></td>
 </tr>
@@ -1322,26 +1434,52 @@ for example:
 </div>
 </div>
 
-<div id="outline-container-org3fce367" class="outline-2">
-<h2 id="org3fce367"><span class="section-number-2">4.</span> UI and controls</h2>
+<div id="outline-container-orgbf5090c" class="outline-2">
+<h2 id="orgbf5090c"><span class="section-number-2">4.</span> UI and controls</h2>
 <div class="outline-text-2" id="text-4">
 <ul class="org-ul">
-<li>subject to constant change -</li>
+<li>subject to constant change - but may still look like the following
+On the top is a menu bar, below that the 3D drawing canvas is on the left, 
+and the L-system controls and text is on the right. You can resize the 
+relative width of these two.</li>
 </ul>
 </div>
-<div id="outline-container-orgf01c879" class="outline-3">
-<h3 id="orgf01c879"><span class="section-number-3">4.1.</span> L-system controls</h3>
+<div id="outline-container-orgdc38419" class="outline-3">
+<h3 id="orgdc38419"><span class="section-number-3">4.1.</span> File, Settings, and Help</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
-Here, you can load an L-system file from disk or enter one manually in
-the text area.  Below the choose file entry are controls to build,
-step, parse, rewrite, and draw the L-system.
+Across the top of the tab is a bar that has the file name of the current
+L-system on the left. On the right are  menus for loading and saving files,
+controlling settings, and getting help
 </p>
 <ul class="org-ul">
-<li><b>Choose File</b> allows you to load an lsystem locally. It is a text file, 
-typically with a .ls extension</li>
-<li><b>Save LS</b> allows you to save the L-system text file.</li>
+<li><b>File</b> allows you to load or save anlsystem locally. It is a text file, 
+typically with a .ls extension. If you have generated an L-system, you 
+can save it as a 3D mesh.</li>
+<li><b>Examples</b> toggles the list of example lsystems on/off.</li>
+<li><b>Settings</b> gives you control of some system settings, like auto-load on start,
+auto-build on load, use of multiple turtles, and use of instances vs mesh
+clones.
+When multi-turtles is on, the interpretation/drawing creates a new turtle 
+for each branch and then gives each turtle one step on its branch in a 
+round-robin draw mode. When a turtle reaches the end of the branch it is 
+destroyed. This mode typically appears more natural, however there are 
+several operations, including TABOP nested polygon productions, that do
+not work in this mode, so it's best to turn it off if things look wonky.
+It's also much slower in some circumstances.</li>
+</ul>
+</div>
+</div>
 
+<div id="outline-container-orgcf2ad1a" class="outline-3">
+<h3 id="orgcf2ad1a"><span class="section-number-3">4.2.</span> L-system controls</h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+This is toolbar on the top of the right pane. Here, are controls to build,
+step, parse, rewrite, and draw the L-system. You can also turn on code
+generation and save a mesh model.
+</p>
+<ul class="org-ul">
 <li><b>Build</b> will clear geometry, reset the turtle, re-parse, and rewrite the 
 L-system  before drawing.</li>
 <li><b>Step</b> will do one iteration step of the the L-system, i.e. one rewrite
@@ -1357,22 +1495,49 @@ first.</li>
 <li><b>Rewrite</b> will rewrite the parsed L-system, and, again, place the result
 in the L-system Expansion box.</li>
 <li><b>Draw</b> will interpret the expanded system and draw the geometry on the
-canvas. Note, that <b>Draw</b> neither clears, nor resets any previously 
-drawn geometry.</li>
+canvas. Note, that <b>Draw</b> neither moves the turtle, nor clears or resets
+any previously drawn geometry.</li>
 <li><b>Gen Code</b> causes the interpretation to generate the turtle code that
 it uses to draw the geometry. This is simpler in single turtle
 mode. This should run standalone (with the Turtle3d class) to
 generate the geometry</li>
-<li><b>Save LS file</b> allows you to save the text of the L-system description 
-as a .ls file.</li>
-<li><b>Save Model</b> allows you to save drawn geometry to a .babylon or GLTF/GLB file.</li>
-<li><b>MultiTurtle?</b> is a checkbox to turn this mode on/off. When on, the
-interpretation/drawing creates a new turtle for each branch and then
-gives each turtle one step on its branch in a round-robin draw mode.
-When a turtle reaches the end of the branch it is destroyed. This mode
-typically appears more natural, however there are several operations,
-including TABOP nested polygon productions, that do not work in this
-mode, so it's best to turn it off if things look wonky.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org11fc391" class="outline-3">
+<h3 id="org11fc391"><span class="section-number-3">4.3.</span> Turtle controls</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+Below the L-system controls are the turtle controls.
+</p>
+
+<ul class="org-ul">
+<li><b>Hide/Show</b> will hide or show the turtle shape, which is a mini axis of the 
+HLU system of the turtle. Note that the size of the turtle axes is 0.5 units.</li>
+<li><b>Home</b> moves the turtle back to 0,0,0 and orients it along the axes, facing up.</li>
+<li><b>Reset</b> is the same as <b>Clear</b> and <b>Home</b></li>
+<li><b>Clear</b> will clear all the geometry generated by the turtle(s).</li>
+<li><b>Show/Hide Color Table</b> to theright displays the current color/material table</li>
+<li><b>Show Positions</b> overlay positions of the turtle and the camera on the draw
+canvas. This can help setting up view parameters.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgd9e6a05" class="outline-3">
+<h3 id="orgd9e6a05"><span class="section-number-3">4.4.</span> Scene Controls</h3>
+<div class="outline-text-3" id="text-4-4">
+<ul class="org-ul">
+<li><b>Look at Turtle</b> orients the camera so the turtle is in the center of 
+view, or you can pick the origin, or the center of the drawn geometry
+bounding sphere. Helpful if you've lost track of where you are when 
+navigating around.</li>
+<li><b>Scene Menu</b>
+Here you can toggle visibility of the Ground, Sky, coordinate axes,
+and gridded planes on the primary axes. The latter can help to debug
+size issues.
+You can also toggle grids on the XY, YZ, or XZ planes to help debugging
+sizes.</li>
 </ul>
 
 <p>
@@ -1389,50 +1554,13 @@ It defaults to 200 and runs from 1 to 500. Higher rates tend to bog
 down the browser.</li>
 <li><b>Save Code</b> allows you to save that generated code as a GLB or BABYLON file.</li>
 </ul>
-</div>
-</div>
-<div id="outline-container-org5c024ae" class="outline-3">
-<h3 id="org5c024ae"><span class="section-number-3">4.2.</span> Turtle controls</h3>
-<div class="outline-text-3" id="text-4-2">
-<p>
-Below the L-system controls are the turtle controls. To the right of
-the label, "Turtle Controls" is a widget that will expand and collapse
-the controls. The first expansion is a buttonbar that controls the
-default turtle. If you open the Javascript console, you can directly
-enter Turtle3d commands to get an idea for how it works. You can also
-turn on the Gen Code mode to get examples of how the turtle is used.
-</p>
-
-<ul class="org-ul">
-<li><b>Hide/Show</b> will hide or show the turtle shape, which is a mini axis of the 
-HLU system of the turtle. Note that the size of the turtle axes is 0.5 units.</li>
-<li><b>Home</b> moves the turtle back to 0,0,0 and orients it along the axes.</li>
-<li><b>Reset</b> is the same as <b>Clear</b> and <b>Home</b></li>
-<li><b>Clear</b> will clear all the geometry generated by the turtle(s).</li>
-<li><b>Look at Turtle</b> orients the camera so the turtle is in the center of 
-view, or you can pick the origin, or the center of the drawn geometry
-bounding sphere.</li>
-<li><b>Show/Hide Color Table</b> displays the current color/material table</li>
-</ul>
-</div>
-</div>
-<div id="outline-container-org44c23bf" class="outline-3">
-<h3 id="org44c23bf"><span class="section-number-3">4.3.</span> Scene Controls</h3>
-<div class="outline-text-3" id="text-4-3">
-<p>
-Here you can toggle visibility of the Ground, Sky, coordinate axes,
-and gridded planes on the primary axes. The latter can help to debug
-size issues.You can also 'look at' the turtle, the current origin for
-the turtle, or the center of the mesh bounding sphere: helpful if
-you've lost track of where you are when navigating around.
-</p>
 <hr />
 </div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2024-06-14 Fri 16:14</p>
+<p class="date">Created: 2024-09-16 Mon 17:19</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

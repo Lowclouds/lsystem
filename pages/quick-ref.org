@@ -30,13 +30,15 @@ Modules marked *n* are *new for this implementation*
 
 ** Turtle Motion
    Without a parameter move 'step' amount, default 1 unit
- *Motion Modules*
-| F(d)         | move d units w/pen down, records track point, creates geometry |
-| f(d)         | move d units w/pen up, records track point                     |
-| G(d)         | ====  F(d), but does not record track points, creates geometry |
-| g(d)         | ====  f(d), w/o recording track points                         |
-|              |                                                                |
-| @[Mm](x,y,z) | goto position, 'M' draw, creates geometry, or 'm' don't draw   |
+#+BEGIN_VERSE   
+  *Motion Modules*
+#+END_VERSE
+|   | F(d)         | move d units w/pen down, records track point, creates geometry |
+|   | f(d)         | move d units w/pen up, records track point                     |
+|   | G(d)         | ====  F(d), but does not record track points, creates geometry |
+|   | g(d)         | ====  f(d), w/o recording track points                         |
+|   |              |                                                                |
+|   | @[Mm](x,y,z) | goto position, 'M' draw, creates geometry, or 'm' don't draw   |
 
 
 ** Turtle Orientation
@@ -58,85 +60,86 @@ in an L-system with the line:
   underlying Babylonjs is left-handed. This has some odd consequences when comparing 
   models with TABOP. /If I'd known I could just tell Babylonjs to use a RHS, things 
   would have been simpler./
-#+END_VERSE
+
   *Orientation modules*
-| +(a)                    | yaw left 'a' degrees    ('a' optional) |
-| -(a)                    | yaw right 'a' degrees   ('a' optional) |
-| &(a)                    | pitch down 'a' degrees  ('a' optional) |
-| ^(a)                    | pitch up 'a' degrees    ('a' optional) |
-| \(a)                    | roll left 'a' degrees   ('a' optional) |
-| /(a)                    | roll right 'a' degrees  ('a' optional) |
-| \vert                   | yaw 180 degrees                                   |
-| @v                      | roll so U is parallel to up [y]                   |
-| @R(hx,hy,hz[,ux,uy,uz]) | set heading to [hx,hy,hz]                         |
-|                         | set U parallel to [ux,uy,z], if supplied          |
-| @H(h)               *n* | set turtle to home position and orientation,      |
-|                         | if optional h is 0, then set H to +y,         |
-|                         | otherwise, H is +x. Does not draw or record point |
+#+END_VERSE
+|  | +(a)                    | yaw left 'a' degrees    ('a' optional)            |
+|  | -(a)                    | yaw right 'a' degrees   ('a' optional)            |
+|  | &(a)                    | pitch down 'a' degrees  ('a' optional)            |
+|  | ^(a)                    | pitch up 'a' degrees    ('a' optional)            |
+|  | \(a)                    | roll left 'a' degrees   ('a' optional)            |
+|  | /(a)                    | roll right 'a' degrees  ('a' optional)            |
+|  | \vert                   | yaw 180 degrees                                   |
+|  | @v                      | roll so U is parallel to up [y]                   |
+|  | @R(hx,hy,hz[,ux,uy,uz]) | set heading to [hx,hy,hz]                         |
+|  |                         | set U parallel to [ux,uy,z], if supplied          |
+|  | @H(h)               *n* | set turtle to home position and orientation,      |
+|  |                         | if optional h is 0, then set H to +y,             |
+|  |                         | otherwise, H is +x. Does not draw or record point |
 
 ** Turtle Settings
   Defaults without a parameter to one
-| ;(i)       | increase or set color/material index           |
-| ,(i)       | decrease or set color/material index           |
-| @;(n) *u*  | increase or set back face color/material index |
-| @,(n) *u*  | decrease or set back face color/material index |
-| #(n)       | increase or set line width                     |
-| !(n)       | decrease or set line width                     |
-| @Tx(n) *u* | set texture index                              |
-| @D(s) *u*  | set scale factor of subsequent geometry        |
-| @Di(f) *u* | multiply scale factor by f                     |
+|  | ;(i)       | increase or set color/material index           |
+|  | ,(i)       | decrease or set color/material index           |
+|  | @;(n) *u*  | increase or set back face color/material index |
+|  | @,(n) *u*  | decrease or set back face color/material index |
+|  | #(n)       | increase or set line width                     |
+|  | !(n)       | decrease or set line width                     |
+|  | @Tx(n) *u* | set texture index                              |
+|  | @D(s) *u*  | set scale factor of subsequent geometry        |
+|  | @Di(f) *u* | multiply scale factor by f                     |
 
 ** Turtle Geometry
 In addition to orientation and color/material, the turtle also maintains a /track shape/,
 which is the shape that it will extrude in moving when the pen is down. The default track
 shape is a circle with an initial size, as in diameter, of one.
-| @o(d)            | circle of diameter d, centered at turtle position                       |
-| @C(d) *u*        | circle of diameter d in HL plane                                        |
-| @O(d)            | sphere of diameter d                                                    |
-| ~(S,s) *c*       | insert predefined surface S, with optional scale, s                     |
-| @Cs(n[,t]) *n*   | start contour with n final pts. n==0 => use just the control pts        |
-|                  | t ​=​= 0 => open contour (default), t =​= 1 => closed                      |
-| @Ce(id) *n*      | end contour and save it as id (number or string)                        |
-| @Ca([t[,a]]) *n* | if t=0 (default), create arc between previous 3 pts                     |
-|                  | if t=1, create arc from previous two points, w/ctr at p0,               |
-|                  | start at p1, with angle a                                               |
-| @Cc([n[,t]]) *n* | create Catmull-Rom spline from previous n points                        |
-|                  | n == 0 (default) will use *all* prior generated points.                 |
-|                  | t==0 => open (default) , else closed curve.                             |
-|                  | This will add 1 + m *(n - (t==0) ? 1 : 0) points to the contour,        |
-|                  | where m = contour points per segment (default = 16)                     |
-| @Ct(m1,m2) *n*   | create Hermite spline from previous two points, with optional           |
-|                  | length multipliers m1 and m2                                            |
-| @Cb    *n*       | Create a cubic Bezier spline segment from prior four points             |
-| @Cm(m) *n*       | create contour of multiplicity m, default 1, only if closed type        |
-| @Cn(n) *n*       | Set the number of points per segment (default = 16). This is for        |
-|                  | inserted arcs or  splines; control pts inserted with '.' or f, or g     |
-|                  | are used as is. Total points is overridden by initial @Cs(n), if n != 0 |
-| @#(id)           | set contour(id) as current track shape. The special id, 'default',      |
-|                  | sets the default circle as the track shape                              |
-| {                | start polygon                                                           |
-| {(0)  *c*        | start path with stepwise control pts, not polygon                       |
-| {(1)             | start open path with Hermite spline control pts                         |
-| {(2) *u*         | start closed path with Hermite spline control pts                       |
-| {(3) *u*         | start open path with B-spline control pts                               |
-| {(4) *u*         | start closed path with B-spline control pts                             |
-| }[(id)] *p*      | end current polygon/path of any type and extrude contour, With          |
-|                  | parameter, id, save path as mesh                                        |
-| @Gs              | start Hermite spline path, same as '{(1).', i.e. saves point            |
-| @Ge(n,id) *c*    | close path started with @Gs. if n, set # intermediate points.           |
-|                  | If 'id', save extrusion as mesh                                         |
-| .                | add current position to path, polygon, or contour                       |
-| @Gt(m1,m2)       | Set tangent length multipliers - default is 1.2                         |
-| @Gr(a1,l1,a2,l2) | Set slope and length of tangent vectors for radius curve                |
-| @Gc(n)       *p* | Store control point. Optionally set number of interpolated strips       |
+|  | @o(d)            | circle of diameter d, centered at turtle position                       |
+|  | @C(d) *u*        | circle of diameter d in HL plane                                        |
+|  | @O(d)            | sphere of diameter d                                                    |
+|  | ~(S,s) *c*       | insert predefined surface S, with optional scale, s                     |
+|  | @Cs(n[,t]) *n*   | start contour with n final pts. n==0 => use just the control pts        |
+|  |                  | t ​=​= 0 => open contour (default), t =​= 1 => closed                      |
+|  | @Ce(id) *n*      | end contour and save it as id (number or string)                        |
+|  | @Ca([t[,a]]) *n* | if t=0 (default), create arc between previous 3 pts                     |
+|  |                  | if t=1, create arc from previous two points, w/ctr at p0,               |
+|  |                  | start at p1, with angle a                                               |
+|  | @Cc([n[,t]]) *n* | create Catmull-Rom spline from previous n points                        |
+|  |                  | n == 0 (default) will use *all* prior generated points.                 |
+|  |                  | t==0 => open (default) , else closed curve.                             |
+|  |                  | This will add 1 + m *(n - (t==0) ? 1 : 0) points to the contour,        |
+|  |                  | where m = contour points per segment (default = 16)                     |
+|  | @Ct(m1,m2) *n*   | create Hermite spline from previous two points, with optional           |
+|  |                  | length multipliers m1 and m2                                            |
+|  | @Cb    *n*       | Create a cubic Bezier spline segment from prior four points             |
+|  | @Cm(m) *n*       | create contour of multiplicity m, default 1, only if closed type        |
+|  | @Cn(n) *n*       | Set the number of points per segment (default = 16). This is for        |
+|  |                  | inserted arcs or  splines; control pts inserted with '.' or f, or g     |
+|  |                  | are used as is. Total points is overridden by initial @Cs(n), if n != 0 |
+|  | @#(id)           | set contour(id) as current track shape. The special id, 'default',      |
+|  |                  | sets the default circle as the track shape                              |
+|  | {                | start polygon                                                           |
+|  | {(0)  *c*        | start path with stepwise control pts, not polygon                       |
+|  | {(1)             | start open path with Hermite spline control pts                         |
+|  | {(2) *u*         | start closed path with Hermite spline control pts                       |
+|  | {(3) *u*         | start open path with B-spline control pts                               |
+|  | {(4) *u*         | start closed path with B-spline control pts                             |
+|  | }[(id)] *p*      | end current polygon/path of any type and extrude contour, With          |
+|  |                  | parameter, id, save path as mesh                                        |
+|  | @Gs              | start Hermite spline path, same as '{(1).', i.e. saves point            |
+|  | @Ge(n,id) *c*    | close path started with @Gs. if n, set # intermediate points.           |
+|  |                  | If 'id', save extrusion as mesh                                         |
+|  | .                | add current position to path, polygon, or contour                       |
+|  | @Gt(m1,m2)       | Set tangent length multipliers - default is 1.2                         |
+|  | @Gr(a1,l1,a2,l2) | Set slope and length of tangent vectors for radius curve                |
+|  | @Gc(n)       *p* | Store control point. Optionally set number of interpolated strips       |
 
 
 ** L-system Geometry and Control
-| [               | start branch, pushing state onto stack    |
-| ]               | end branch, popping branch state stack    |
-| % *p*           | cut modules to end of branch              |
-| $(id,scale) *c* | push current Lsystem and use sub-Lsystem id   |
-| $               | end current sub-Lsystem, return to previous  |
+|  | [               | start branch, pushing state onto stack    |
+|  | ]               | end branch, popping branch state stack    |
+|  | % *p*           | cut modules to end of branch              |
+|  | $(id,scale) *c* | push current Lsystem and use sub-Lsystem id   |
+|  | $               | end current sub-Lsystem, return to previous  |
   
 * L-System Syntax
 ** Rule-based systems
@@ -353,27 +356,27 @@ L-system values, using standard syntax, i.e. var = value. Multiple
 settings on the same line must be separated by a semi-colon. *Note* that
 the view setting is a JS object with the properties 'position' and
 'target', whose values are JS arrays of X,Y,Z coordinates.
-|------------+----------------------------------------------------------------|
-| *stemsize* | width of extrusion. default: 0.1                               |
-| *delta*    | angle in degrees of yaw, pitch, and roll. default: 90          |
-| *step*     | distance traveled by F,f,G,g modules. default: 1               |
-| *view*     | *position:* 3D position of viewer/camera.                      |
-|            | *target:* 3D position of view/camera target.                   |
-|            | e.g. view = {position: [20,20,5], target: [0,8,0]}             |
-|            | --- or ---                                                     |
-|            | auto: direction                                                |
-|            | where direction is one of 'X', '-X', 'Y', '-Y', 'Z', '-Z', or  |
-|            | a direction array defining where the camera position should    |
-|            | be. The target is always the center of the bounding sphere     |
-|            | of the drawn geometry and the distance from the target is      |
-|            | about twice the radius of the bounding sphere.                 |
-|            | e.g. view = {auto: 'y'} will look down on the XY plane. Note,  |
-|            | case-insensitivity and quotes.                                 |
-|            | --- or ---                                                     |
-|            | view = {auto: [1,1,1]} will place the camera on a line through |
-|            | the target center parallel to the vector 1,1,1, looking at the |
-|            | target                                                         |
-|            | The default view is {auto: 'X'}                                |
+
+|  | *stemsize* | width of extrusion. default: 0.1                               |
+|  | *delta*    | angle in degrees of yaw, pitch, and roll. default: 90          |
+|  | *step*     | distance traveled by F,f,G,g modules. default: 1               |
+|  | *view*     | *position:* 3D position of viewer/camera.                      |
+|  |            | *target:* 3D position of view/camera target.                   |
+|  |            | e.g. view = {position: [20,20,5], target: [0,8,0]}             |
+|  |            | --- or ---                                                     |
+|  |            | auto: direction                                                |
+|  |            | where direction is one of 'X', '-X', 'Y', '-Y', 'Z', '-Z', or  |
+|  |            | a direction array defining where the camera position should    |
+|  |            | be. The target is always the center of the bounding sphere     |
+|  |            | of the drawn geometry and the distance from the target is      |
+|  |            | about twice the radius of the bounding sphere.                 |
+|  |            | e.g. view = {auto: 'y'} will look down on the XY plane. Note,  |
+|  |            | case-insensitivity and quotes.                                 |
+|  |            | --- or ---                                                     |
+|  |            | view = {auto: [1,1,1]} will place the camera on a line through |
+|  |            | the target center parallel to the vector 1,1,1, looking at the |
+|  |            | target                                                         |
+|  |            | The default view is {auto: 'X'}                                |
 
 ** Variables
    Variables used in the L-system can be set and used in the rules. If
@@ -395,23 +398,41 @@ scope.
   Of particular note, are the logical operators which must be written
   explicitly as
 
-  |*and* |   instead of *'&&'*|
-  |*or* |  instead of *'\vert\vert'*|
-  |*not* |   instead of *'!'*|
+|  |*and* |   instead of *'&&'*|
+|  |*or* |  instead of *'\vert\vert'*|
+|  |*not* |   instead of *'!'*|
 
 for example:
   : (t > 0) and not u, instead of  (t > 0) && !u
 
 * UI and controls
-  - subject to constant change -
-** L-system controls
-  Here, you can load an L-system file from disk or enter one manually in
-  the text area.  Below the choose file entry are controls to build,
-  step, parse, rewrite, and draw the L-system.
- - *Choose File* allows you to load an lsystem locally. It is a text file, 
-   typically with a .ls extension
- - *Save LS* allows you to save the L-system text file.
+  - subject to constant change - but may still look like the following
+   On the top is a menu bar, below that the 3D drawing canvas is on the left, 
+   and the L-system controls and text is on the right. You can resize the 
+   relative width of these two.
+** File, Settings, and Help    
+   Across the top of the tab is a bar that has the file name of the current
+   L-system on the left. On the right are  menus for loading and saving files,
+   controlling settings, and getting help
+ - *File* allows you to load or save anlsystem locally. It is a text file, 
+   typically with a .ls extension. If you have generated an L-system, you 
+   can save it as a 3D mesh.
+ - *Examples* toggles the list of example lsystems on/off.
+ - *Settings* gives you control of some system settings, like auto-load on start,
+   auto-build on load, use of multiple turtles, and use of instances vs mesh
+   clones.
+   When multi-turtles is on, the interpretation/drawing creates a new turtle 
+   for each branch and then gives each turtle one step on its branch in a 
+   round-robin draw mode. When a turtle reaches the end of the branch it is 
+   destroyed. This mode typically appears more natural, however there are 
+   several operations, including TABOP nested polygon productions, that do
+   not work in this mode, so it's best to turn it off if things look wonky.
+   It's also much slower in some circumstances.
 
+** L-system controls
+   This is toolbar on the top of the right pane. Here, are controls to build,
+   step, parse, rewrite, and draw the L-system. You can also turn on code
+   generation and save a mesh model.
  - *Build* will clear geometry, reset the turtle, re-parse, and rewrite the 
    L-system  before drawing.
  - *Step* will do one iteration step of the the L-system, i.e. one rewrite
@@ -427,22 +448,35 @@ for example:
  - *Rewrite* will rewrite the parsed L-system, and, again, place the result
    in the L-system Expansion box.
  - *Draw* will interpret the expanded system and draw the geometry on the
-   canvas. Note, that *Draw* neither clears, nor resets any previously 
-   drawn geometry.
+   canvas. Note, that *Draw* neither moves the turtle, nor clears or resets
+   any previously drawn geometry.
  - *Gen Code* causes the interpretation to generate the turtle code that
    it uses to draw the geometry. This is simpler in single turtle
    mode. This should run standalone (with the Turtle3d class) to
    generate the geometry
- - *Save LS file* allows you to save the text of the L-system description 
-   as a .ls file.
- - *Save Model* allows you to save drawn geometry to a .babylon or GLTF/GLB file.
- - *MultiTurtle?* is a checkbox to turn this mode on/off. When on, the
-   interpretation/drawing creates a new turtle for each branch and then
-   gives each turtle one step on its branch in a round-robin draw mode.
-   When a turtle reaches the end of the branch it is destroyed. This mode
-   typically appears more natural, however there are several operations,
-   including TABOP nested polygon productions, that do not work in this
-   mode, so it's best to turn it off if things look wonky.
+
+** Turtle controls
+   Below the L-system controls are the turtle controls.
+
+ - *Hide/Show* will hide or show the turtle shape, which is a mini axis of the 
+   HLU system of the turtle. Note that the size of the turtle axes is 0.5 units.
+ - *Home* moves the turtle back to 0,0,0 and orients it along the axes, facing up.
+ - *Reset* is the same as *Clear* and *Home*
+ - *Clear* will clear all the geometry generated by the turtle(s).
+ - *Show/Hide Color Table* to theright displays the current color/material table
+ - *Show Positions* overlay positions of the turtle and the camera on the draw
+   canvas. This can help setting up view parameters.
+** Scene Controls   
+ - *Look at Turtle* orients the camera so the turtle is in the center of 
+   view, or you can pick the origin, or the center of the drawn geometry
+   bounding sphere. Helpful if you've lost track of where you are when 
+   navigating around.
+ - *Scene Menu*
+   Here you can toggle visibility of the Ground, Sky, coordinate axes,
+   and gridded planes on the primary axes. The latter can help to debug
+   size issues.
+   You can also toggle grids on the XY, YZ, or XZ planes to help debugging
+   sizes.
 
 Below the L-system source box are status and more controls:
 
@@ -454,28 +488,5 @@ Below the L-system source box are status and more controls:
    It defaults to 200 and runs from 1 to 500. Higher rates tend to bog
    down the browser.
  - *Save Code* allows you to save that generated code as a GLB or BABYLON file.
-** Turtle controls
-  Below the L-system controls are the turtle controls. To the right of
-  the label, "Turtle Controls" is a widget that will expand and collapse
-  the controls. The first expansion is a buttonbar that controls the
-  default turtle. If you open the Javascript console, you can directly
-  enter Turtle3d commands to get an idea for how it works. You can also
-  turn on the Gen Code mode to get examples of how the turtle is used.
-
- - *Hide/Show* will hide or show the turtle shape, which is a mini axis of the 
-   HLU system of the turtle. Note that the size of the turtle axes is 0.5 units.
- - *Home* moves the turtle back to 0,0,0 and orients it along the axes.
- - *Reset* is the same as *Clear* and *Home*
- - *Clear* will clear all the geometry generated by the turtle(s).
- - *Look at Turtle* orients the camera so the turtle is in the center of 
-   view, or you can pick the origin, or the center of the drawn geometry
-   bounding sphere.
- - *Show/Hide Color Table* displays the current color/material table
-** Scene Controls   
-   Here you can toggle visibility of the Ground, Sky, coordinate axes,
-   and gridded planes on the primary axes. The latter can help to debug
-   size issues.You can also 'look at' the turtle, the current origin for
-   the turtle, or the center of the mesh bounding sphere: helpful if
-   you've lost track of where you are when navigating around.
 -----
 
