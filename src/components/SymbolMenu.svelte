@@ -56,10 +56,7 @@ U+03C9 	ω 	969 	Greek Small Letter Omega 	0441
 
   let _symbols = [
     '\u22D0 \u22D1', '\u22D0', '\u22D1',
-    '\u0393', '\u0394', '\u0398',
-    '\u039B', '\u039E', '\u03A0',
-    '\u03A3', '\u03A6', '\u03A8',
-    '\u03A9', '\u03B1', '\u03B2',
+    '\u03B1', '\u03B2',
     '\u03B3', '\u03B4', '\u03B5', 
     '\u03B6', '\u03B7', '\u03B8', 
     '\u03B9', '\u03BA', '\u03BB',
@@ -67,7 +64,11 @@ U+03C9 	ω 	969 	Greek Small Letter Omega 	0441
     '\u03BF', '\u03C0', '\u03C1',
     '\u03C2', '\u03C3', '\u03C4',
     '\u03C5', '\u03C6', '\u03C7',
-    '\u03C8', '\u03C9', ''
+    '\u03C8', '\u03C9', 
+    '\u0393', '\u0394', '\u0398',
+    '\u039B', '\u039E', '\u03A0',
+    '\u03A3', '\u03A6', '\u03A8',
+    '\u03A9',
   ];
 
 
@@ -94,7 +95,7 @@ U+03C9 	ω 	969 	Greek Small Letter Omega 	0441
 <div class="gbutton nbutton my-0 py-0" >More Modules</div>
 <div class="dropdown">
   <button id="btn-symbols" class="gbutton tbutton" data-bs-toggle="dropdown">
-    &#x22D0 &#x0398 &#x22D1 
+    &#x22D0 &#x0394 &#x22D1 
   </button>
   <div class="dropdown-menu" aria-labelledby="btn-symbols">
     <table class="tbl" id="symboltable">

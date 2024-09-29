@@ -100,7 +100,7 @@
   $: buildOnLoad = $autoBuildOnLoad || (isStartUp && $loadDemoOnStartup)
 
   $: if ($lsSrc?.text != null ) {
-    puts('hit $lsSrc update');
+     //puts('hit $lsSrc update');
     fname = $lsSrc.fname;
     setLStextFromSrc($lsSrc.text);
     parseDisabled=false;
@@ -115,7 +115,7 @@
     }
   }
 
-  $: console.log("cpos: ", cpos);
+  // $: console.log("cpos: ", cpos);
 
   // stupid input min/max doesn't work for typed in values !
   $: {

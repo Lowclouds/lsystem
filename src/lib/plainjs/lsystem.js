@@ -43,8 +43,9 @@ let greekSymbols = [
   '\u03C8', '\u03C9',
 ];
 
+var greekReStr = '[\u03b1-\u03c9\u0393\u0394\u0398-\u039b\u039e\u03a0\u03a3\u03a6\u03a8\u03a9\u22d0\u22d1]';
 // symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = "[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]?|γ";
+var symbolReStr = `[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]|${greekReStr}`;
 // moduleReStr recognizes a module, parameterized or not
 var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
 /* test for module RE string
@@ -394,6 +395,7 @@ class Lsystem {
    show(w='all') {
       if (w == 'all') {
          for (const prop in this) {
+            if (prop === 'spec') continue;
             if (prop == 'subsystems') {
                let subs = this.subsystems.keys();
                subs.next();  /* skip main  */
@@ -416,20 +418,19 @@ class Lsystem {
    serialize() {
       let s = '';
       for (const prop in this) {
-         if (prop != 'spec') {
-            if (prop == 'subsystems') {
-               let subs = this.subsystems.keys();
-               subs.next();  /* skip main  */
-               let sub = subs.next().value;
-               while (sub) {
-                  s += `/*    ------------    */\n`;
-                  s += `sub-Lsystem ${sub}\n`;
-                  s += `${this.subsystems.get(sub).serialize()}`;
-                  sub = subs.next().value;
-               }  
-            } else {
-               s = s + this.showOneProp(prop);
-            }
+         if (prop === 'spec') continue;
+         if (prop == 'subsystems') {
+            let subs = this.subsystems.keys();
+            subs.next();  /* skip main  */
+            let sub = subs.next().value;
+            while (sub) {
+               s += `/*    ------------    */\n`;
+               s += `sub-Lsystem ${sub}\n`;
+               s += `${this.subsystems.get(sub).serialize()}`;
+               sub = subs.next().value;
+            }  
+         } else {
+            s = s + this.showOneProp(prop);
          }
       }
       return s;
@@ -440,7 +441,7 @@ class Lsystem {
       if (this[prop]) {
          switch (prop ) {
          case 'axiom':
-            s = `${prop} = ` + Lsystem.listtostr(this.axiom) + '\n';
+            s = `${prop}: ` + Lsystem.listtostr(this.axiom) + '\n';
             break;
          case 'rules':
          case 'homorules':
@@ -496,7 +497,7 @@ class Lsystem {
                  s = s + `  ${e}\n`;}
              }
            } else {
-             s = `${prop} = ${this[prop]}\n`;
+              s = `${prop}:= ${this[prop]}\n`;
            }
          }
            break;
@@ -534,7 +535,7 @@ class Lsystem {
      Returns a parsed Lsystem instance
    */ 
    static Parse (spec, lsystem = null) {
-      const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_UNFINISHED_LINE = 3, P_TRANSITION=4;
+      const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_INCOMPLETE_INPUT = 3, P_TRANSITION=4;
       // preprocess the spec with standard Cpp-like preprocessor
       let pp = new cpp_js();
       // define these here so recursive invocations of parseHelper
@@ -660,7 +661,7 @@ class Lsystem {
            case P_HANDLED:
              multiline = '';
              break;
-           case P_UNFINISHED_LINE:
+           case P_INCOMPLETE_INPUT:
              multiline += line;
              break;
            case P_UNHANDLED:
@@ -760,7 +761,7 @@ class Lsystem {
                ls.start = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> Start: ${ls.start}`, LSYS_IN_ITEMS);
             } else {
-               pr.status = P_UNFINISHED_LINE;
+               pr.status = P_INCOMPLETE_INPUT;
             }
          } else if (null !== (m = line.match(RE.StartEach))) {
             let isComplete = parseSkipBrackets(m[1]);
@@ -768,7 +769,7 @@ class Lsystem {
                ls.startEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> StartEach: ${ls.startEach}`, LSYS_IN_ITEMS);
             } else {
-               pr.status = P_UNFINISHED_LINE;
+               pr.status = P_INCOMPLETE_INPUT;
             }
          } else if (null !== (m = line.match(RE.EndEach))) {
             let isComplete = parseSkipBrackets(m[1]);
@@ -776,7 +777,7 @@ class Lsystem {
                ls.endEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> EndEach: ${ls.endEach}`, LSYS_IN_ITEMS);
             } else {
-               pr.status = P_UNFINISHED_LINE;
+               pr.status = P_INCOMPLETE_INPUT;
             }
          } else if (null !== (m = line.match(RE.End))) {
             let isComplete = parseSkipBrackets(m[1]);
@@ -784,7 +785,7 @@ class Lsystem {
                ls.end = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> End: ${ls.end}`, LSYS_IN_ITEMS);
             } else {
-               pr.status = P_UNFINISHED_LINE;
+               pr.status = P_INCOMPLETE_INPUT;
             }
          } else if (null !== (m = line.match(RE.axiom))) {
             //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
@@ -1188,8 +1189,8 @@ ${msg}`;
       if (string === null) {
          // but first, evaluate any Start: statement
          if (ls.start) {
-            puts(`evaluated Start: ${ls.start}`, LSYS_EXPAND, LSYS_REWRITE);
             math.evaluate(ls.start, ls.globals);
+            puts(`evaluated Start: ${ls.start}`, LSYS_EXPAND, LSYS_REWRITE);
          }
          genv.init(ls.locals, ls.globals); // locals will shadow globals
          // now expand axiom ... vlab/Lstudio doesn't do this, I think.
@@ -1269,9 +1270,9 @@ ${msg}`;
          puts(`doOnePass:\n${mstring}, mlength: ${mlength}`, LSYS_REWRITE_VERB);
   
          if (ls.startEach) {
-            puts(`evaluated StartEach: ${ls.startEach}`, LSYS_EXPAND, LSYS_REWRITE);
             math.evaluate(ls.startEach, genv);
             genv.upbind();         // probably a don't care
+            puts(`evaluated StartEach: ${ls.startEach}`, LSYS_EXPAND, LSYS_REWRITE);
          }
          for (let n=0; n < mlength; n++)   {
             let module = mstring[n];
