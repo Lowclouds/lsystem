@@ -1,4 +1,4 @@
-<script>
+e<script>
   import {getContext, afterUpdate, onMount} from 'svelte';
 
   import {defaultTurtle, resetView, clearLsystem, homeTurtle, resetScene, showColorTable
@@ -330,7 +330,7 @@
         Turtle3d.clearTracksByTag('lsystem');
         defaultTurtle.reset(true);
 
-        if ($lsys.current.length === 0 && $lsys.dDone === 0) {
+        if (! $lsys.current.length && $lsys.dDone === 0) {
            // $lsys.current = $lsys.axiom.slice();
            // $lsys.interp = $lsys.current; 
            // $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
@@ -372,7 +372,7 @@
 
     return new Promise((resolve,reject) => {
 
-      envExpand(1);
+      envExpand(0);
 
       function envExpand(ntimes) {
         if (ntimes > dlen) {
@@ -385,7 +385,6 @@
         }
 
         puts(`in singlestep loop: ntimes: ${ntimes}, dlen: ${dlen}`);
-
 
         uiDoSingleStep()
           .then(() => {

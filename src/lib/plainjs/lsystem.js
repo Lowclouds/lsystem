@@ -31,69 +31,61 @@
 */
     
 // RE is the container for all regular expressions. this s.b. in LSystem class
-const RE = {};
-let greekSymbols = [
-  '\u22D0', '\u22D1', '\u0393', '\u0394', '\u0398',
-  '\u039B', '\u039E', '\u03A0', '\u03A3', '\u03A6',
-  '\u03A8', '\u03A9', '\u03B1', '\u03B2', '\u03B3',
-  '\u03B4', '\u03B5', '\u03B6', '\u03B7', '\u03B8', 
-  '\u03B9', '\u03BA', '\u03BB', '\u03BC', '\u03BD',
-  '\u03BE', '\u03BF', '\u03C0', '\u03C1', '\u03C2',
-  '\u03C3', '\u03C4', '\u03C5', '\u03C6', '\u03C7',
-  '\u03C8', '\u03C9',
-];
+const RE = makeRegExps();
+function makeRegExps( ) {
+   // selected greek letters and some brackets
+   let greekReStr = '[\u03b1-\u03c9\u0393\u0394\u0398-\u039b\u039e\u03a0\u03a3\u03a6\u03a8\u03a9\u22d0\u22d1]';
+   // symbolReStr is the recognizer for ALL module names in an axiom or production 
+   let symbolReStr = `[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[EPHLU]|${greekReStr}`;
+   // moduleReStr recognizes a module, parameterized or not
+   let moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
+   /* test for module RE string
+      'AB F(n)fGg@M(1,2,3)+-&^\\(1)/(3)|$% @v@c(x,y,z)?P(x,y,z)~S~S12'.matchAll(RE.module)
+   */
+   let prodNameStr = '(?:^[pP]\\d+:)';
 
-var greekReStr = '[\u03b1-\u03c9\u0393\u0394\u0398-\u039b\u039e\u03a0\u03a3\u03a6\u03a8\u03a9\u22d0\u22d1]';
-// symbolReStr is the recognizer for ALL module names in an axiom or production 
-var symbolReStr = `[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[PHLU]|${greekReStr}`;
-// moduleReStr recognizes a module, parameterized or not
-var moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
-/* test for module RE string
-   'AB F(n)fGg@M(1,2,3)+-&^\\(1)/(3)|$% @v@c(x,y,z)?P(x,y,z)~S~S12'.matchAll(RE.module)
-*/
+   let numReStr = '\\d+(?:\\.\\d+)?';
+   let varnameReStr = '\\w[\\w\\d]*';
+   // let startdReStr='^(?:define)[ \\t]+{';
+   // let enddReStr = '\)[ \\t]+([^ \\t].*)';
+   let startiReStr = '^(?:#?[iI]gnore:) *(';
+   let endiReStr = '\+)';
+   let startcReStr = '^(?:#?[cC]onsider:?) +\(';
 
-var numReStr = '\\d+(?:\\.\\d+)?';
-var varnameReStr = '\\w[\\w\\d]*';
-// var startdReStr='^(?:define)[ \\t]+{';
-// var enddReStr = '\)[ \\t]+([^ \\t].*)';
-var startiReStr = '^(?:#?[iI]gnore:) *(';
-var endiReStr = '\+)';
-var startcReStr = '^(?:#?[cC]onsider:?) +\(';
+   let RE = {}
 
-RE.Start     = new RegExp('^\\s*(?:[Ss]tart:)\\s*({.*)', 's');
-RE.StartEach = new RegExp('^\\s*(?:[Ss]tartEach:)\\s*({.*)', 's');
-RE.EndEach =   new RegExp('^\\s*(?:[Ee]nd[Ee]ach:)\\s*({.*)', 's');
-RE.End       = new RegExp('^\\s*(?:[Ee]nd:)\\s({.*)', 's');
+   RE.Start     = new RegExp('^\\s*(?:[Ss]tart:)\\s*({.*)', 's');
+   RE.StartEach = new RegExp('^\\s*(?:[Ss]tartEach:)\\s*({.*)', 's');
+   RE.EndEach =   new RegExp('^\\s*(?:[Ee]nd[Ee]ach:)\\s*({.*)', 's');
+   RE.End       = new RegExp('^\\s*(?:[Ee]nd:)\\s({.*)', 's');
 
-// var param1ReStr=`${numReStr}|${varnameReStr}`;
-// var expReStr = '(.*(?=->))';
-var prodNameStr = '(?:^[pP]\\d+:)';
+   //RE.defineStart = new RegExp('^(?:[\\s]*define:\\s+){[\\s]*(.*)','d'); probably won't implement this
 
-RE.defineStart = new RegExp('^(?:[\\s]*define:\\s+){[\\s]*(.*)','d');
+   RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`);
+   RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`);
+   RE.dlength = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
+   RE.axiom = /^[aA]xiom:\s*(\S.*)/;  // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
+   RE.lsystem = /^[lL][sS]ystem: *([^ \\t]+)/;
+   RE.modules = new RegExp(`${moduleReStr} *`,'g');
+   RE.successorModule = new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
+   RE.ws = /\s+/g;
+   RE.asterisk = /^\s*\*\s*/;
+   RE.prodTop = new RegExp(`${prodNameStr}? *(.*?)--?>(.*)`)
+   RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
+   RE.pre_condition = /^ *({.+)/;  
+   RE.post_condition = /} *$/;
+   RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
+   RE.maxDepth = /^ *[Mm]ax.* +depth: *(\d+)/;
 
-RE.ignore = new RegExp(`${startiReStr}(${symbolReStr})${endiReStr}`);
-RE.consider = new RegExp(`${startcReStr}(${symbolReStr})${endiReStr}`);
-RE.dlength = new RegExp(`^(?:[Dd](?:erivation )?length): *\(\\d+)`);
-RE.axiom = /^[aA]xiom:\s*(\S.*)/;  // new RegExp(`(?:^axiom: *)?${moduleReStr}`,'g')
-RE.lsystem = /^[lL][sS]ystem: *([^ \\t]+)/;
-RE.modules = new RegExp(`${moduleReStr} *`,'g');
-RE.successorModule = new RegExp(`(${symbolReStr})(\\(.*)?`, 'gd');
-RE.ws = /\s+/g;
-RE.asterisk = /^\s*\*\s*/;
-RE.prodTop = new RegExp(`${prodNameStr}? *(.*?)--?>(.*)`)
-RE.leftSide = /(?:([^<>:]+)<)?([^>:]+)(?:>([^:]+))?(?::(.+))?/;
-RE.pre_condition = /^ *({.+)/;  
-RE.post_condition = /} *$/;
-RE.var = new RegExp(`^${varnameReStr} *= *(.+)`);
-RE.maxDepth = /^ *[Mm]ax.* +depth: *(\d+)/;
+   RE.assignAny = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*([^;]+);?`,'g');
+   RE.assignNum = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*(${numReStr}),?`,'g');
+   RE.anyGlobal = new RegExp(`(${varnameReStr}):[ \t]*([\\S]+)`,'i');
 
-RE.assignAny = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*([^;]+);?`,'g');
-RE.assignNum = new RegExp(`(${varnameReStr})[ \t]*=[ \t]*(${numReStr}),?`,'g');
-RE.anyGlobal = new RegExp(`(${varnameReStr}):[ \t]*([\\S]+)`,'i');
-
-// this accepts function expressions only, not function declarations, not arrow functions
-RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)`, 'g');
-
+   // this accepts function expressions only, not function declarations, not arrow functions
+   RE.assignFun = new RegExp(`(${varnameReStr}) *= *function *\\(([^\\)]*)\\) *(.*)`, 'g');
+ 
+   return RE;
+}
 /* ParameterizedModule class
    {m: <modulename>, p: <parameter array> }
    A module in an L-system is either a bare string of one or more characters, or 
@@ -688,19 +680,8 @@ class Lsystem {
          puts(`inItems looking at: ${line}`, LSYS_IN_ITEMS);
          pr.status = P_HANDLED;
 
-         if (m = line.match(RE.defineStart)) {
-            // start of a define section, check if there's anything beyond the open brace
-            // if (m[1] != '') {
-            //    pos = m.indices[1][0]; // reset pos to whatever's there
-            // }
-            nestPos = pos;
-            nesting = [1];
-            puts(`Unimplemented: would call parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
-            //puts(`calling parseDefine at nextPos=${nestPos}`, LSYS_IN_ITEMS);
-            pr.status = P_HANDLED;
-            pr.nextState = inItems;
-         } else if (RE.var.test(line)) {
-            //m = line.matchAll(RE.assignNum);
+        if (RE.var.test(line)) {
+           //m = line.matchAll(RE.assignNum);
             m = line.matchAll(RE.assignAny);
             if (m) {
                try {
@@ -1136,8 +1117,9 @@ ${msg}`;
       let l= new Array();
       let i=0;
       let m=[];
-      let mRe = new RegExp(`${moduleReStr}`,'g');
-      while ( m = mRe.exec(s)) {
+      // let mRe = new RegExp(`${moduleReStr}`,'g');
+      // while ( m = mRe.exec(s)) {
+      while ( m = RE.modules.exec(s)) {
          //console.log(m);
          if (m[2] === undefined) {
             l[i] = m[1];
@@ -1755,23 +1737,23 @@ function flatten( list) {
    return r;
 }
 
-function strtolist(s) {
-   let l= new Array();
-   let i=0;
-   let m=[];
-   // let mRe = new RegExp(`${moduleReStr}`,'g');
-   while ( m = RE.module.exec(s)) {
-      //console.log(m);
-      if (m[2] === undefined) {
-         l[i] = m[1];
-      } else {
-         l[i] = new ParameterizedModule(m[1], m[2]);
-      }
-      //console.log(l[i]);
-      i++;
-   }
-   return l;
-}
+// function strtolist(s) {
+//    let l= new Array();
+//    let i=0;
+//    let m=[];
+//    // let mRe = new RegExp(`${moduleReStr}`,'g');
+//    while ( m = RE.module.exec(s)) {
+//       //console.log(m);
+//       if (m[2] === undefined) {
+//          l[i] = m[1];
+//       } else {
+//          l[i] = new ParameterizedModule(m[1], m[2]);
+//       }
+//       //console.log(l[i]);
+//       i++;
+//    }
+//    return l;
+// }
 
 function listtostr(l) {
    let r= new String('');
