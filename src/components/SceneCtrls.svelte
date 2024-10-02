@@ -20,7 +20,7 @@
   }
   function lookMesh(evt) {
     evt?.target.blur();
-    SCtrl.resetView('lsystem', {targetMesh: true});
+    SCtrl.resetView('lsystem', {target: 'mesh'});
   }
 
   function showHideAxes(evt) {

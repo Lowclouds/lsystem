@@ -29,22 +29,22 @@ function turtleInterp (ti, ls, opts=null, ifcUpd) {
       //ctable: colorTableDefault,
       cpoly: null,
       useTracksAlways: false,
-     disableDraw: opts?.disableDraw ?? false, // for environmental queries - just moves turtle.
+      disableDraw: opts?.disableDraw ?? false, // for environmental queries - just moves turtle.
       doGencode: opts?.gencode ?? false,
       trackTag: 'lsystem',
       code: ''
    }
-  if (opts != null) {
-    if (LogTag.isSet(NTRP_INIT)) {
-    for (const [k,v] of Object.entries(opts)) {
-      console.log(`${k}: ${v}`);
-      idata[k] = v;
-    }
-    }
-    console.log('miCount: ', opts.miCount);
-  }
-
-   idata.gencode = (snippet) => {
+   if (opts != null) {
+      if (LogTag.isSet(NTRP_INIT)) {
+         for (const [k,v] of Object.entries(opts)) {
+            console.log(`${k}: ${v}`);
+            idata[k] = v;
+         }
+      }
+      console.log('miCount: ', opts.miCount);
+   }
+   
+   idata.gencode = (snippet) => {3
       if (idata.doGencode) {
          idata.code += snippet;
       }
@@ -80,6 +80,7 @@ function turtleInterp (ti, ls, opts=null, ifcUpd) {
 
    idata.ndelta= -1*idata.delta;
 
+   let isEnviroCall = false;
    
    var t0;
    if (idata.useDefaultTurtle) {
@@ -111,13 +112,12 @@ t0.setHeading([0,1,0])`);
    // }
 
    idata.gencode('t0.hide().');
-  t0.hide();
-  t0.penDown();
-  idata.gencode('pd();\n');
-  t0.disableDraw(idata.disableDraw);
-  idata.gencode(`.disableDraw(${idata.disableDraw}});\n`);
+   t0.hide();
+   t0.penDown();
+   idata.gencode('pd();\n');
+   t0.disableDraw(idata.disableDraw);
+   idata.gencode(`.disableDraw(${idata.disableDraw}});\n`);
 
-   
    var branches = [{turtle: t0, spos: 0, keep: true}]; 
    idata.gencode('var branches = [{turtle: t0, spos: 0, keep: true}];\n');
    var lstring = ls.interp;
@@ -125,7 +125,7 @@ t0.setHeading([0,1,0])`);
    puts(`using settings with turtle ${t0.Turtle}, ` + idata.show(), NTRP_INIT);
 
 
-  ifcUpd.updateLsysInfo ({bgcolor: 'lightgray', ndrawn: lstring.length});
+   ifcUpd.updateLsysInfo ({bgcolor: 'lightgray', ndrawn: lstring.length});
 
    // if (idata.useTrackAlways) {
    //    t0.newTrack();
@@ -175,16 +175,16 @@ t0.setHeading([0,1,0])`);
             puts('done with lstring and turtle.branchStack.length == 0', NTRP_PROGRESS);
          }
 
-        ifcUpd.updateView(idata.trackTag, idata.view);
+         ifcUpd.updateView(idata.trackTag, idata.view);
 
-        ifcUpd?.updateTurtleInfo(ti,0);
-        ifcUpd?.updateLsysInfo ({bgcolor: 'lightgreen', code: idata.code});
+         ifcUpd?.updateTurtleInfo(ti,0);
+         ifcUpd?.updateLsysInfo ({bgcolor: 'lightgreen', code: idata.code});
          resolve(true);
       }
 
-     function doInterp() {
-       let rAF = requestAnimationFrame(doModule);
-     }
+      function doInterp() {
+         let rAF = requestAnimationFrame(doModule);
+      }
 
       function doModule () {
          if (branches.length == 0) {
@@ -199,7 +199,7 @@ t0.setHeading([0,1,0])`);
 
          let isPM = false;
          
-        idata.gencode(`let turtle = branches[${branch}].turtle;\n`);
+         idata.gencode(`let turtle = branches[${branch}].turtle;\n`);
          // assumption is that lstring is not empty, so lstring[branchpos] is not empty
          do {
             try {
@@ -414,34 +414,34 @@ t0.setHeading([0,1,0])`);
                   break;
                }
                case '!': {   // decrease or set stem/branch size
-                 let inhibitTaper = false; // taper is default
+                  let inhibitTaper = false; // taper is default
                   if (isPM ) {
                      idata.stemsize = p0;
-                    if (pM.p.length > 1) {
-                      inhibitTaper = pM.p[1] ? true : false;
-                    }
+                     if (pM.p.length > 1) {
+                        inhibitTaper = pM.p[1] ? true : false;
+                     }
                   } else {
                      idata.stemsize -= idata.stemsize > .1 ? .1 : 0;
                   }
                   puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
-                 turtle.setSize(idata.stemsize, inhibitTaper);
-                 idata.gencode(`turtle.setSize(${idata.stemsize}, ${inhibitTaper});\n`);
+                  turtle.setSize(idata.stemsize, inhibitTaper);
+                  idata.gencode(`turtle.setSize(${idata.stemsize}, ${inhibitTaper});\n`);
                   break;
                }
                case '#': {    // increase or set stem/branch size
-                 let inhibitTaper = false; // taper is default
+                  let inhibitTaper = false; // taper is default
                   if (isPM ) {
                      idata.stemsize = p0;
-                    if (pM.p.length > 1) {
-                      inhibitTaper = pM.p[1] ? true : false;
-                    }
+                     if (pM.p.length > 1) {
+                        inhibitTaper = pM.p[1] ? true : false;
+                     }
                   } else {
                      let os = turtle.getSize();
                      idata.stemsize = os+1;
                   }
                   puts(`set stemsize to: ${idata.stemsize}`, NTRP_SIZE);
-                 turtle.setSize(idata.stemsize, inhibitTaper);
-                 idata.gencode(`turtle.setSize(${idata.stemsize}, ${inhibitTaper});\n`);
+                  turtle.setSize(idata.stemsize, inhibitTaper);
+                  idata.gencode(`turtle.setSize(${idata.stemsize}, ${inhibitTaper});\n`);
                   break;
                }
                case ',': {            // decrement color table index
@@ -569,7 +569,7 @@ t0.setHeading([0,1,0])`);
                   } else {
                      let tt = turtle.getDrawMode();
                      if (tt > Turtle3d.CAPTURE_NONE) {
-                       puts(`--->>>end track: ${pmArgs}`, NTRP_TRACKS);
+                        puts(`--->>>end track: ${pmArgs}`, NTRP_TRACKS);
                         if (!isPM) {
                            turtle.endTrack();
                            idata.gencode(`turtle.endTrack(});\n`);
@@ -598,11 +598,11 @@ t0.setHeading([0,1,0])`);
                      idata.gencode(`turtle.setTrackQuality(${p0});\n`);
                   }
                   let id = (pmArgs.length == 2) ? pmArgs[1] : null;
-                                 
+                  
                   turtle.endTrack(id);
                   idata.gencode(`turtle.endTrack(${id});\n`);
                }
-                 break;
+                  break;
                case '.': // record a polygon or path point
                   turtle.storePoint(turtle.getPos());
                   idata.gencode(`turtle.storePoint(turtle.getPos());\n`);
@@ -610,15 +610,15 @@ t0.setHeading([0,1,0])`);
                   break;
                case '@Gc': {
                   if (isPM) {
-                    turtle.setTrackQuality({strips: p0});
-                    idata.gencode(`turtle.setTrackQuality({strips: ${p0}});\n`);
+                     turtle.setTrackQuality({strips: p0});
+                     idata.gencode(`turtle.setTrackQuality({strips: ${p0}});\n`);
                   }
                   // idata.cpoly.push(otoa(turtle.getPos()));
                   turtle.storePoint(turtle.getPos());
                   idata.gencode(`turtle.storePoint(turtle.getPos());\n`);
                   puts(`added pt ${turtle.getPos()}, using "."`, NTRP_TRACKS);
                }
-                 break;
+                  break;
                case '@Gt': {
                   if (!isPM || pmArgs.length != 2) {
                      console.warn('module @Gt requires two parameters!');
@@ -628,7 +628,7 @@ t0.setHeading([0,1,0])`);
                      puts(`turtle.setTrackMultipliers(${p0},${pmArgs[1]})`, NTRP_TRACKS);
                   }
                }
-                 break;
+                  break;
                case '@Gr': {
                   if (!isPM) {
                      console.warn('module @Gt requires two or four parameters!');
@@ -646,12 +646,12 @@ t0.setHeading([0,1,0])`);
                      }
                   }
                }
-                 break;
+                  break;
                case '@Cs': {
                   if (isPM) {
                      // we're capturing points for a contour. can specify
                      // number of final points, and open, 0, or closed, 1
-                    let p1 = pM.p.length > 1 ? (pM.p[1] ?  true : false) : false; // s.b. 0 or 1
+                     let p1 = pM.p.length > 1 ? (pM.p[1] ?  true : false) : false; // s.b. 0 or 1
                      if (p0 == 0 || p0 > 1) {
                         turtle.beginContour(p0, p1);
                         idata.gencode(`turtle.beginContour(${p0}, ${p1}));\n`);
@@ -670,11 +670,11 @@ t0.setHeading([0,1,0])`);
                }
                case '@Ce': {
                   if (isPM) {
-                    turtle.endContour(p0); // use default number of points = 8
-                    idata.gencode(`turtle.endContour(${p0});\n`);
+                     turtle.endContour(p0); // use default number of points = 8
+                     idata.gencode(`turtle.endContour(${p0});\n`);
 
-                    puts(`endContour(${p0})`, NTRP_CONTOUR);
-                    puts(`getTrackShape(${p0}) = ${turtle.getTrackShape(p0)}`, NTRP_CONTOUR)
+                     puts(`endContour(${p0})`, NTRP_CONTOUR);
+                     puts(`getTrackShape(${p0}) = ${turtle.getTrackShape(p0)}`, NTRP_CONTOUR)
                   } else {
                      throw new Error('@Ce end Contour module requires an id parameter');
                   }
@@ -683,56 +683,56 @@ t0.setHeading([0,1,0])`);
                   break;
                }
                case '@Ca': {
-                 let type = (isPM) ? p0 : 0;
-                 let opts;
-                 switch (type) {
-                 case 0:       // arc through 3 last pts
-                   turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_3PT);
-                   idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_3PT);`);
-                   break;
-                 case 1: // arc center at pt1, start at pt2, radius-angle = p1
-                   opts = pM.p.length > 1 ? {angle: pM.p[1]} : null;
-                   turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_CENTER, opts);
-                   idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_CENTER, ${opts});`);
-                   break;
-                 default:
-                   throw new Error('@Ca: unsupported arc type: ' + p0);
-                 }
+                  let type = (isPM) ? p0 : 0;
+                  let opts;
+                  switch (type) {
+                  case 0:       // arc through 3 last pts
+                     turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_3PT);
+                     idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_3PT);`);
+                     break;
+                  case 1: // arc center at pt1, start at pt2, radius-angle = p1
+                     opts = pM.p.length > 1 ? {angle: pM.p[1]} : null;
+                     turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_CENTER, opts);
+                     idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_ARC_CENTER, ${opts});`);
+                     break;
+                  default:
+                     throw new Error('@Ca: unsupported arc type: ' + p0);
+                  }
                }
-                 break;
+                  break;
                case '@Cb':
-                 turtle.generateContourSegment(Turtle3d.CONTOUR_BEZIER);
-                 idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_BEZIER);\n`);
-                 break;
+                  turtle.generateContourSegment(Turtle3d.CONTOUR_BEZIER);
+                  idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_BEZIER);\n`);
+                  break;
                case '@Cm':
-                 if (isPM && p0 >= 1) {
-                   turtle.setContourMultiplicity(p0);
-                   idata.gencode(`turtle.setContourMultiplicity(${p0};\n`);
-                   puts(`setting multiplicity to ${p0}`, NTRP_CONTOUR);
-                 } else {
-                   throw new Error('@Cm(n) requires a parameter n >= 1 specifying multiplicity');
-                 }
-                 break;
+                  if (isPM && p0 >= 1) {
+                     turtle.setContourMultiplicity(p0);
+                     idata.gencode(`turtle.setContourMultiplicity(${p0};\n`);
+                     puts(`setting multiplicity to ${p0}`, NTRP_CONTOUR);
+                  } else {
+                     throw new Error('@Cm(n) requires a parameter n >= 1 specifying multiplicity');
+                  }
+                  break;
                case '@Cn':
-                 if (isPM && p0 >= 4) {
-                   turtle.setContourSegmentPoints(p0);
-                   idata.gencode(`turtle.setContourSegmentPoints(${p0};\n`);
-                 } else {
-                   console.warn('Contour segment points must >= 4');
-                 }
-                 break;
+                  if (isPM && p0 >= 4) {
+                     turtle.setContourSegmentPoints(p0);
+                     idata.gencode(`turtle.setContourSegmentPoints(${p0};\n`);
+                  } else {
+                     console.warn('Contour segment points must >= 4');
+                  }
+                  break;
                case '@Cc': {
-                 let opts = {npts: 0, isClosed: 0};
-                 if (isPM && p0 >= 0) {
-                   opts.npts = p0 > 2 || p0 == 0 ? p0 : 0;
-                   if (pM.p.length > 1) {
-                     opts.isClosed = pM.p[1] != 0;
-                   }
-                 }
-                 turtle.generateContourSegment(Turtle3d.CONTOUR_CATMULLROM,opts);
-                 idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_CATMULLROM,${opts});`);
+                  let opts = {npts: 0, isClosed: 0};
+                  if (isPM && p0 >= 0) {
+                     opts.npts = p0 > 2 || p0 == 0 ? p0 : 0;
+                     if (pM.p.length > 1) {
+                        opts.isClosed = pM.p[1] != 0;
+                     }
+                  }
+                  turtle.generateContourSegment(Turtle3d.CONTOUR_CATMULLROM,opts);
+                  idata.gencode(`turtle.generateContourSegment(Turtle3d.CONTOUR_CATMULLROM,${opts});`);
                }
-                 break;
+                  break;
                case '@Ct':
                   if (isPM) {
                      if (pM.p.length == 2) {
@@ -750,7 +750,7 @@ t0.setHeading([0,1,0])`);
                      turtle.setTrackShape(p0);
                      idata.gencode(`turtle.setTrackShape(${p0});\n`);
                      puts (`setTrackShape(${p0})`, NTRP_CONTOUR);
-                    //puts (`trackPath.shape = ${turtle.TurtleState.trackShape}`);
+                     //puts (`trackPath.shape = ${turtle.TurtleState.trackShape}`);
                   } else {
                      throw new Error('@#/setTrackShape module requires an id parameter');
                   }
@@ -775,30 +775,49 @@ t0.setHeading([0,1,0])`);
                      idata.gencode('.pitch(-90);\n');
                   }
                   break;      
+               case '?E':
+                  isEnviroCall = true;
                case '?P':
                case '?H':
                case '?L':
                case '?U':
                   if (isPM) {
-                     let tsout = turtle.getBasicState();
-                     if (LogTag.isSet(TRTL_SETGET) ) {
-                        Object.keys(tsout).forEach((k) => { 
+                     let tstate = turtle.getBasicState();
+                     if (LogTag.areSet([NTRP_ENVIRO]) ) {
+                        Object.keys(tstate).forEach((k) => { 
                            puts(`looking at key: ${k}`);
                            if ('PHLU'.includes(k)) {
                               for (const p of 'xyz') { 
-                                 puts(`tsout.${k}.${p} = ${tsout[k][p]}`);
+                                 puts(`tstate.${k}.${p} = ${tstate[k][p]}`);
                               }
                            }});
                      }
-                     let i=0;
-                     let tparam = m[1];
-                     for (const p of 'xyz') {
-                       //puts(`?${tparam}: tsout.${tparam}.${p} -> pmArgs[${i}] == ${tsout[tparam][p]}`, TRTL_SETGET);
-                        pmArgs[i] = tsout[tparam][p];
-                        i++;
-                        if (i === pmArgs.length) break;
-                     } 
-                    puts(`Updated ?${tparam}(xxxx) to ?${tparam}(${pmArgs})`, TRTL_SETGET);
+                     if (isEnviroCall) {
+                        if (! ls?.enviroFunc) {
+                           console.warn('no enviroFunc supplied. bailing');
+                           throw new Error('no enviroFunc supplied. bailing');
+                           break;
+                        }
+                        puts(`enviroCall: ${ls?.enviroFunc.name}`, NTRP_ENVIRO);
+                        //let pdata = {};
+                        
+                        let res = ls.enviroFunc(branchpos, tstate, pdata );
+                        if (res?.done) {
+                           puts(`enviroFunc returned: ${JSON.stringify(res)}`);
+                        } else {
+                           puts(`enviroFunc returned: ${JSON.stringify(res)}`);
+                        }
+                     } else {
+                        let i=0;
+                        let tparam = m[1];
+                        for (const p of 'xyz') {
+                           //puts(`?${tparam}: tstate.${tparam}.${p} -> pmArgs[${i}] == ${tstate[tparam][p]}`, TRTL_SETGET);
+                           pmArgs[i] = tstate[tparam][p];
+                           i++;
+                           if (i === pmArgs.length) break;
+                        } 
+                        puts(`Updated ?${tparam}(xxxx) to ?${tparam}(${pmArgs})`, NTRP_ENVIRO);
+                     }
                   } else {
                      puts(`?X asks for turtle state, but no parameter supplied`);
                   }

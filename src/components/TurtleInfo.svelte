@@ -17,7 +17,8 @@
 
   let isShown; // = 'none';
   let doShowTurtleInfo = getContext('doShowTurtleInfo');
-  
+  let doUpdateTurtleInfo = getContext('doUpdateTurtleInfo');
+
   $: if ( $doShowTurtleInfo ) { // || (tPos.x || tPos.y || tPos.z))
     updturtle();
     isShown = 'flex';
@@ -25,7 +26,14 @@
     isShown = 'none';
   }
 
-  function updturtle(evt) {
+  $: if ($doShowTurtleInfo && $doUpdateTurtleInfo) {
+     updturtle();
+     $doUpdateTurtleInfo = false;
+  } else {
+     $doUpdateTurtleInfo = false;
+  }
+
+  function  updturtle(evt) {
     tid = turtle.getTurtle();
     tPos = vround(turtle.getPos(), 3);
     tH = vround(turtle.getH(), 3);

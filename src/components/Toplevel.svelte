@@ -12,8 +12,16 @@
   import Topbar from '/src/components/Topbar.svelte'
   import {Settings} from '/src/lib/settings.js'
 
+  // a bunch of global objects, cause I don't know how to play right, yet
   createReactiveContext('engine', undefined);
   createReactiveContext('scene', undefined);
+
+  createReactiveContext('turtle', undefined);
+
+  // TurtleInfo is in the canvas, while the rest of the 
+  createReactiveContext('doShowTurtleInfo', false);
+  createReactiveContext('doUpdateTurtleInfo', false);
+
 
   createReactiveContext('showExamples', false);
   createReactiveContext('doSaveCode', false);

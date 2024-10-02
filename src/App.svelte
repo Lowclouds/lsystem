@@ -3,11 +3,6 @@
   import {createReactiveContext} from '/src/lib/reactiveContext.js';
   import Toplevel from "/src/components/Toplevel";
 
-  createReactiveContext('doShowTurtleInfo', false);
-
-  // a bunch of global objects, cause I don't know how to play right, yet
-  createReactiveContext('turtle', undefined);
-
 </script>
 
 <main>

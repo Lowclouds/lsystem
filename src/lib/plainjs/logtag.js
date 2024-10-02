@@ -132,3 +132,5 @@ const TRTL_SETGET        = 2n**33n;
 const TRTL_TEXTURE       = 2n**34n;
 const TRTL_TRACK         = 2n**35n;
 const TRTL_CT_NOLABELS   = 2n**35n;
+const NTRP_ENVIRO        = 2n**36n;
+const LSYS_REWRITE_SCOPE = 2n**37n;

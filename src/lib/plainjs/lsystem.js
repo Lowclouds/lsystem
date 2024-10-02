@@ -34,9 +34,9 @@
 const RE = makeRegExps();
 function makeRegExps( ) {
    // selected greek letters and some brackets
-   let greekReStr = '[\u03b1-\u03c9\u0393\u0394\u0398-\u039b\u039e\u03a0\u03a3\u03a6\u03a8\u03a9\u22d0\u22d1]';
+   let greekReStr = '\u03b1-\u03c9\u0393\u0394\u0398-\u039b\u039e\u03a0\u03a3\u03a6\u03a8\u03a9\u22d0\u22d1';
    // symbolReStr is the recognizer for ALL module names in an axiom or production 
-   let symbolReStr = `[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[EPHLU]|${greekReStr}`;
+   let symbolReStr = `[\\w\\d\\+\\-\\][,;'{}&^\\\\/#!\\.\\_|\\$%~]|@C[abcemnst]|@b[od]|@[#!bcoOsvMmRTD]|@G[scetr]|@Di]|@H|\\?[EPHLU]|[${greekReStr}]`;
    // moduleReStr recognizes a module, parameterized or not
    let moduleReStr = `(${symbolReStr})(?:\\((\[^)]+)\\))?`; // A(m,n), or &, or $(3), or ?P(x,y)
    /* test for module RE string
@@ -45,7 +45,7 @@ function makeRegExps( ) {
    let prodNameStr = '(?:^[pP]\\d+:)';
 
    let numReStr = '\\d+(?:\\.\\d+)?';
-   let varnameReStr = '\\w[\\w\\d]*';
+   let varnameReStr = `[\\w${greekReStr}][\\w\\d]*`;
    // let startdReStr='^(?:define)[ \\t]+{';
    // let enddReStr = '\)[ \\t]+([^ \\t].*)';
    let startiReStr = '^(?:#?[iI]gnore:) *(';
@@ -371,6 +371,7 @@ class Lsystem {
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
       this.needsEnvironment = false;
+      this.enviroFunc = null;
       this.hasQuery = false;
       this.disableDrawing = false;
       this.locals = new LsScope();
@@ -1178,11 +1179,12 @@ ${msg}`;
          // now expand axiom ... vlab/Lstudio doesn't do this, I think.
          ls.current = this.expand(new LsProduction(null,null,ls.axiom.slice(), genv));
          it = (it === null) ? ls.Dlength : 0;
-         genv.upbind();
       } else {
          ls.current = string;   // we assume the input has been rewritten/expanded
          it = 1;                // we assume a single step
+         genv.init(ls.locals, ls.globals); // locals will shadow globals
       }
+      genv.upbind();
 
       let niter = it;
       puts(`axiom: ${ls.current}`, LSYS_REWRITE);
@@ -1361,7 +1363,7 @@ ${msg}`;
             }
          }
          if (ls.endEach) {
-            puts(`evaluated EndEach: ${ls.endEach}`, LSYS_EXPAND, LSYS_REWRITE);
+            puts(`evaluating EndEach: ${ls.endEach}`, LSYS_EXPAND, LSYS_REWRITE);
             math.evaluate(ls.endEach, genv);
             genv.upbind();         // probably a don't care
          }

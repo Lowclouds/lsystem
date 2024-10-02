@@ -1,4 +1,4 @@
-e<script>
+<script>
   import {getContext, afterUpdate, onMount} from 'svelte';
 
   import {defaultTurtle, resetView, clearLsystem, homeTurtle, resetScene, showColorTable
@@ -53,6 +53,7 @@ e<script>
 
     // the default turtle
   let turtle = getContext('turtle');
+  let doUpdateTurtleInfo = getContext('doUpdateTurtleInfo');
 
   //------ svelte reactive actions ----------------
 
@@ -177,7 +178,9 @@ e<script>
     $doGenCode=!$doGenCode;
   }
   
-  function updateTurtleInfo(t,idx) { }
+  function updateTurtleInfo(t,idx) {
+     $doUpdateTurtleInfo = true;
+  }
 
   function updateLsysInfo(linfo) {
     if (linfo.ndrawn) {
@@ -468,7 +471,6 @@ e<script>
 </script>
 
 <!-- ---------------------------------------------------------------------- -->
-
 <div class="btn-group bgroup my-0 py-0">
    <div class="gbutton nbutton my-0 py-0" >L-System <i class="bi-tools"></i></div>
    <button class="gbutton tbutton" id="btn-build" disabled={parseDisabled}

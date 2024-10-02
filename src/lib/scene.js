@@ -167,68 +167,71 @@ export const resetView = (tag, view) => {
    if (view?.target) {
      if (typeof view.target === 'string') {
        let tgt = view.target.toLowerCase();
-       if ('turtle' === tgt) {
-         lookAtTurtle();
-       } else if ('colortable' === tgt) {
-         lookAtColortable()
+        switch(tgt) {
+        case 'turtle':
+           lookAtTurtle();
+           break;
+        case 'colortable':
+           lookAtColortable()
+           break;
+        case 'mesh':
+           let bi = Turtle3d.getBoundingInfoByTag(tag);
+           if (bi) {
+              camera.setTarget(bi.boundingSphere.center);
+              puts(`camera target: ${camera.target} from bounding info`, NTRP_SETTING);
+           }
        }
      } else {
        camera.setTarget( BABYLON.Vector3.FromArray(view.target.toArray()));
        puts(`camera target: ${camera.target} from view.target`, NTRP_SETTING);
      }
    } else {
-     let bi = Turtle3d.getBoundingInfoByTag(tag);
-     if (bi) {
-       if (view?.targetMesh) {
-         //let fPlanes = BABYLON.Frustum.GetPlanes(camera.getTransformationMatrix());               
-         camera.setTarget(bi.boundingSphere.center);
-         puts(`camera target: ${camera.target} from bounding info`, NTRP_SETTING);
-       } else {
+      let bi = Turtle3d.getBoundingInfoByTag(tag);
+      if (bi) {
          if (view.auto) {
-           //let fPlanes = Frustum.GetPlanes(camera.getTransformationMatrix());               
-           let target = bi.boundingSphere.center;
-           let bx = target.x;
-           let by = target.y;
-           let bz = target.z;
-           let distance = 3 * bi.boundingSphere.radius;
-           let campos;
-           if ('object' == typeof view.auto ) {
-             // assume it's a vector specifying direction from camera to center
-             campos = BABYLON.Vector3.FromArray(view.auto.toArray()).normalize();
-             campos.scaleInPlace(distance).addInPlace(target);
-           } else {         // assume string
-             campos = newV(bx + distance, by, bz);
-             switch (view.auto.toUpperCase()) {
-             case 'Y':
-               campos.x = bx;
-               campos.y = by + distance;
-               break;
-             case '-Y':
-               campos.x = bx;
-               campos.y = by - distance;
-               break;
-             case 'Z':
-               campos.x = bx;
-               campos.z = bz + distance;
-               break;
-             case '-Z':
-               campos.x = bx;
-               campos.z = bz - distance;
-               break;
-             case '-X':
-               campos.x= bx - distance;
-               break;
-             case 'X':
-             default:
-             }
-           }
-           camera.position.copyFrom(campos);
-           camera.setTarget(target);
-           puts(`camera position: ${camera.position}, target: ${camera.target}`, NTRP_SETTING)
-           //puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
+            //let fPlanes = Frustum.GetPlanes(camera.getTransformationMatrix());               
+            let target = bi.boundingSphere.center;
+            let bx = target.x;
+            let by = target.y;
+            let bz = target.z;
+            let distance = 3 * bi.boundingSphere.radius;
+            let campos;
+            if ('object' == typeof view.auto ) {
+               // assume it's a vector specifying direction from camera to center
+               campos = BABYLON.Vector3.FromArray(view.auto.toArray()).normalize();
+               campos.scaleInPlace(distance).addInPlace(target);
+            } else {         // assume string
+               campos = newV(bx + distance, by, bz);
+               switch (view.auto.toUpperCase()) {
+               case 'Y':
+                  campos.x = bx;
+                  campos.y = by + distance;
+                  break;
+               case '-Y':
+                  campos.x = bx;
+                  campos.y = by - distance;
+                  break;
+               case 'Z':
+                  campos.x = bx;
+                  campos.z = bz + distance;
+                  break;
+               case '-Z':
+                  campos.x = bx;
+                  campos.z = bz - distance;
+                  break;
+               case '-X':
+                  campos.x= bx - distance;
+                  break;
+               case 'X':
+               default:
+               }
+            }
+            camera.position.copyFrom(campos);
+            camera.setTarget(target);
+            puts(`camera position: ${camera.position}, target: ${camera.target}`, NTRP_SETTING)
+            //puts(`camera position: ${camera.position.toArray()}, target: ${camera.target.toArray()}`, NTRP_SETTING)
          }
-       }
-     }
+      }
    }
 }
 
