@@ -27,7 +27,7 @@ lsystem: 1
 derivation length:5
 delta = 30
 /*
-  a1 is local to this lsystem, and it is a mathjs Matrix
+  a1 is local to this lsystem, and it is a mathjs 1x3 Matrix
  */ 
 a1 = [[0],[1],[2]]
 
@@ -50,8 +50,8 @@ p2: B(x) : x < 3 --> B(x+1)F(x)
 p3: B(x) --> *
 p4: C(y)  : y < 4 --> C(y+1)-F(y)
 p5: C(y) --> *
-p6: D(z) : z.z < 5 --> D(z.z+1)+F(z.z)
-p7: D(z) --> *
+p6: theta(z) : z.z < 5 --> theta(z.z+1)+F(z.z)
+p7: theta(z) --> *
 
 endlsystem
 
