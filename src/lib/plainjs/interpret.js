@@ -3,7 +3,7 @@
 */ 
 var idata;
 
-function turtleInterp (ti, ls, opts=null, ifcUpd) {
+async function turtleInterp (ti, ls, opts=null, ifcUpd) {
    let desiredFps = 10;
 
    if (ls.interp.length === 0) {
@@ -80,7 +80,7 @@ function turtleInterp (ti, ls, opts=null, ifcUpd) {
 
    idata.ndelta= -1*idata.delta;
 
-   let isEnviroCall = false;
+   let hasEnviroCall = false;
    
    var t0;
    if (idata.useDefaultTurtle) {
@@ -149,44 +149,15 @@ t0.setHeading([0,1,0])`);
 
    let ipromise = new Promise((resolve, reject) => {
       //console.log('in Promise');
-      
+      let ePromises  = [];
+
       doInterp();
 
-      function packItUp(turtle) {
-         let ts = turtle.getState()
-         if (turtle.branchStack.length > 0) {
-            puts(' done with lstring'); // , NTRP_INIT
-            puts(`turtleMode: track=${ts.trackType}, drawMode=${ts.drawMode}, branchStacklength: ${turtle.branchStack.length}`); // , NTRP_PROGRESS
-            //   puts(`tp.shape is: ${turtle.getState().trackPath.shape}`);
-            if (ts.trackPath != null) {
-               if (idata.useTrackAlways) {
-                  turtle.endTrack();
-                  idata.gencode('turtle.endTrack();\n');
-               } else {
-                  ts.trackPath = null;
-                  console.warn('trackPath not null at end of interpretation');
-               }
-            }
-         } else {
-            if (idata.useTrackAlways && ts.trackPath != null) {
-               turtle.endTrack();
-               idata.gencode('turtle.endTrack();\n');
-            }
-            puts('done with lstring and turtle.branchStack.length == 0', NTRP_PROGRESS);
-         }
-
-         ifcUpd.updateView(idata.trackTag, idata.view);
-
-         ifcUpd?.updateTurtleInfo(ti,0);
-         ifcUpd?.updateLsysInfo ({bgcolor: 'lightgreen', code: idata.code});
-         resolve(true);
-      }
-
       function doInterp() {
-         let rAF = requestAnimationFrame(doModule);
+         let rAF = requestAnimationFrame(doSomeModules);
       }
 
-      function doModule () {
+      function doSomeModules () {
          if (branches.length == 0) {
             packItUp(t0);
             return;
@@ -196,7 +167,6 @@ t0.setHeading([0,1,0])`);
          let turtle = branches[branch].turtle;
          let branchpos = branches[branch].spos;
          let i = 0;
-
          let isPM = false;
          
          idata.gencode(`let turtle = branches[${branch}].turtle;\n`);
@@ -776,7 +746,7 @@ t0.setHeading([0,1,0])`);
                   }
                   break;      
                case '?E':
-                  isEnviroCall = true;
+                  hasEnviroCall = true;
                case '?P':
                case '?H':
                case '?L':
@@ -792,21 +762,19 @@ t0.setHeading([0,1,0])`);
                               }
                            }});
                      }
-                     if (isEnviroCall) {
+                     if (hasEnviroCall) {
+                        hasEnviroCall = false; // reset
                         if (! ls?.enviroFunc) {
                            console.warn('no enviroFunc supplied. bailing');
-                           throw new Error('no enviroFunc supplied. bailing');
-                           break;
+                           // throw new Error('no enviroFunc supplied. bailing');
+                           // break;
+
+                           ls.enviroFunc = enviroDefault;
+
                         }
                         puts(`enviroCall: ${ls?.enviroFunc.name}`, NTRP_ENVIRO);
-                        //let pdata = {};
+                        ePromises.push(ls.enviroFunc({turtle: tstate, mIndex: branchpos, mArgs: pmArgs}));
                         
-                        let res = ls.enviroFunc(branchpos, tstate, pdata );
-                        if (res?.done) {
-                           puts(`enviroFunc returned: ${JSON.stringify(res)}`);
-                        } else {
-                           puts(`enviroFunc returned: ${JSON.stringify(res)}`);
-                        }
                      } else {
                         let i=0;
                         let tparam = m[1];
@@ -858,13 +826,14 @@ t0.setHeading([0,1,0])`);
                   }
                }
             } catch (error) {
-               puts('Caught error in doModule');
+               puts('Caught error in doSomeModules');
                reject(error);
                //return error;
                return
             }
             idata.mi++;         // for UI
          } while (i < idata.miCount && branches.length>0);
+
 
          ifcUpd.updateLsysInfo ({ndrawn: idata.mi});
 
@@ -880,14 +849,67 @@ t0.setHeading([0,1,0])`);
            setTimeout(doInterp,0);
          }
       }
+
+
+      async function packItUp(turtle) {
+         if (ePromises.length > 0) {
+            puts('results of enviroCall');
+            let results = await Promise.all(ePromises);
+            results.forEach((element) => {
+               console.log(JSON.stringify(element));
+            });
+         }
+
+         let ts = turtle.getState()
+         if (turtle.branchStack.length > 0) {
+            puts(' done with lstring'); // , NTRP_INIT
+            puts(`turtleMode: track=${ts.trackType}, drawMode=${ts.drawMode}, branchStacklength: ${turtle.branchStack.length}`); // , NTRP_PROGRESS
+            //   puts(`tp.shape is: ${turtle.getState().trackPath.shape}`);
+            if (ts.trackPath != null) {
+               if (idata.useTrackAlways) {
+                  turtle.endTrack();
+                  idata.gencode('turtle.endTrack();\n');
+               } else {
+                  ts.trackPath = null;
+                  console.warn('trackPath not null at end of interpretation');
+               }
+            }
+         } else {
+            if (idata.useTrackAlways && ts.trackPath != null) {
+               turtle.endTrack();
+               idata.gencode('turtle.endTrack();\n');
+            }
+            puts('done with lstring and turtle.branchStack.length == 0', NTRP_PROGRESS);
+         }
+
+         ifcUpd.updateView(idata.trackTag, idata.view);
+
+         ifcUpd?.updateTurtleInfo(ti,0);
+         ifcUpd?.updateLsysInfo ({bgcolor: 'lightgreen', code: idata.code});
+         resolve(true);
+      }
+
    });
 
-   return ipromise;
+   return ipromise
 }
 
-// function otoa (o) {
-//    let a = new Array();
-//    a.push(o.x); a.push(o.y); a.push(o.z);
-//    return a;
-// }
+/*
+  temporary default environmental program
+ */ 
 
+function enviroDefault(input) {
+   puts(`enviroDefault entry\nTurtle position: ${JSON.stringify(input.turtle.P)}, moduleIndex: ${input.mIndex}, moduleArgs: ${input.mArgs}`);
+   
+   let res = [];
+   let tstr = 'xyz';
+   let tndx = 0;
+   input.mArgs.forEach( v => {res.push(tndx + v + input.turtle.P[tstr[tndx]]); tndx = (tndx+1)%3;});
+   return new Promise((resolve,reject) => {
+      setTimeout(() => {
+         console.log('enviro results: ',JSON.stringify(res))
+         resolve(res);
+      }, 100);
+   });
+}
+                      
