@@ -850,14 +850,20 @@ t0.setHeading([0,1,0])`);
          }
       }
 
+      async function collectEnviroResponse(promises) {
+         puts('results of enviroCall');
+         let results = await Promise.all(promises);
+         results.forEach((element) => {
+            console.log(JSON.stringify(element));
+            let pM = lstring[element.ndx];
+            pM.p.forEach((e,i) => pM.p[i] = element.argVals[i])
+         });
+      }
 
       async function packItUp(turtle) {
          if (ePromises.length > 0) {
-            puts('results of enviroCall');
-            let results = await Promise.all(ePromises);
-            results.forEach((element) => {
-               console.log(JSON.stringify(element));
-            });
+
+            await collectEnviroResponse(ePromises);
          }
 
          let ts = turtle.getState()
@@ -901,15 +907,16 @@ t0.setHeading([0,1,0])`);
 function enviroDefault(input) {
    puts(`enviroDefault entry\nTurtle position: ${JSON.stringify(input.turtle.P)}, moduleIndex: ${input.mIndex}, moduleArgs: ${input.mArgs}`);
    
-   let res = [];
+   let res = {ndx: input.mIndex, argVals: []}; // must return module index
    let tstr = 'xyz';
    let tndx = 0;
-   input.mArgs.forEach( v => {res.push(tndx + v + input.turtle.P[tstr[tndx]]); tndx = (tndx+1)%3;});
+   // for each input arg, return a potential return value
+   input.mArgs.forEach( v => {res.argVals.push(tndx + v + input.turtle.P[tstr[tndx]]); tndx = (tndx+1)%3;});
    return new Promise((resolve,reject) => {
       setTimeout(() => {
          console.log('enviro results: ',JSON.stringify(res))
          resolve(res);
-      }, 100);
+      }, Math.floor(Math.random() * 100));
    });
 }
                       
