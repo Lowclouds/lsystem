@@ -87,7 +87,8 @@ import shell_2   from '../../assets/examples/misc/shell-2.ls';
 import simple    from '../../assets/examples/misc/simple.ls';
 import size      from '../../assets/examples/misc/size.ls';
 
-
+import enviro_basic from '../../assets/examples/envirosensitive/enviro-basic.ls';
+import query_position from '../../assets/examples/envirosensitive/query-position.ls';
 
 import _3d_a1              from '../../assets/examples/tabop/3d-a1.ls';
 import _3d_a2              from '../../assets/examples/tabop/3d-a2.ls';
@@ -258,4 +259,8 @@ export var eg = [
                         {lsfile:'size.ls', src: size     },
                         ]
   },
+   {dir:'enviro sensitive', files:  [ {lsfile:'enviro-basic.ls', src: enviro_basic },
+                          {lsfile:'query-position.ls', src: query_position },
+                        ]
+   },
 ];
