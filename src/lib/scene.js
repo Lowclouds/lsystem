@@ -288,7 +288,7 @@ export const showColorTable = () => {
      if (toggle) {
        resetView('', {target: 'colortable'});
      } else {
-       resetView('', {auto: 'X'});
+       resetView('lsystem', {auto: 'X'});
      }
       return toggle;
    }

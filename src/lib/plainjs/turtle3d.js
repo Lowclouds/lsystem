@@ -566,13 +566,13 @@ class Turtle3d {
    setTag(val) {this.TurtleState.trackTag = val;}
    getTag() {return this.TurtleState.trackTag;}
    addTag(tag) {
-      let tt = ` ${tag} `;
+      let tt = ` ${tag}`;
       if (! this.TurtleState.trackTag.includes(tt)) {
          this.TurtleState.trackTag += tt;
       }
    }
    removeTag(tag) {
-      this.TurtleState.trackTag.replace(` ${tag} `,'');
+      this.TurtleState.trackTag.replace(` ${tag}`,'');
    }
    
    penUp() {
