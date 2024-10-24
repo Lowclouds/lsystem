@@ -154,7 +154,7 @@ t0.setHeading([0,1,0])`);
       doInterp();
 
       function doInterp() {
-         let rAF = requestAnimationFrame(doSomeModules);
+        setTimeout(doSomeModules,0); // faster than above, but you still need to all frames to run
       }
 
       function doSomeModules () {
@@ -846,7 +846,7 @@ t0.setHeading([0,1,0])`);
            if (idata.view?.continuousUpdate) {
              ifcUpd.updateView(idata.trackTag, idata.view);
            }
-           setTimeout(doInterp,0);
+           doInterp();
          }
       }
 

@@ -259,7 +259,7 @@ export var eg = [
                         {lsfile:'size.ls', src: size     },
                         ]
   },
-   {dir:'enviro sensitive', files:  [ {lsfile:'enviro-basic.ls', src: enviro_basic },
+   {dir:'EnviroSensitive', files:  [ {lsfile:'enviro-basic.ls', src: enviro_basic },
                           {lsfile:'query-position.ls', src: query_position },
                         ]
    },

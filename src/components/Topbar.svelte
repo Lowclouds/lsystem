@@ -224,6 +224,19 @@
             <li><a class="dropdown-item" href="http://algorithmicbotany.org/" target="_blank"
                    data-bs-toggle="tooltip" data-bs-title={tip_btn_aborg}
                    > Algorithmic Botany </a></li>
+            <li><a class="dropdown-item" href="http://www.algorithmicbotany.org/virtual_laboratory/docs/CPFGmanual.pdf" target="_blank"
+                   data-bs-toggle="tooltip" data-bs-title={tip_btn_aborg}
+                   > CPFG manual (for vlab)</a></li>
+            <li><span class="dropdown-item-text" style="color: gray">----</span></li>
+            <li><a class="dropdown-item" href="https://mathjs.org/docs/index.html" target="_blank"
+                   data-bs-toggle="tooltip" data-bs-title={tip_btn_aborg}
+                   > Math.js Docs</a></li>
+            <li><a class="dropdown-item" href="https://mathjs.org/docs/expressions/syntax.html" target="_blank"
+                   data-bs-toggle="tooltip" data-bs-title={tip_btn_aborg}
+                   > Math.js Expression Syntax</a></li>
+            <li><a class="dropdown-item" href="https://mathjs.org/docs/reference/functions.html" target="_blank"
+                   data-bs-toggle="tooltip" data-bs-title={tip_btn_aborg}
+                   > Math.js Function Reference </a></li>
           </ul>
         </div>
       </div>

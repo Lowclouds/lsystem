@@ -28,7 +28,7 @@
   let numDrawn = getContext('numDrawn');
   let elNumDrawn;
   let drawSpeed = getContext('interpSpeed'); // 250;
-  let speedtip = 'Min:1, Max:500, default: 250. Depends on your platform and if you want to see drawing as it happens';
+  let speedtip = 'Min:1, Max:1000, default: 500. Depends on your platform and if you want to see drawing as it happens';
 
   let doSaveCode = getContext('doSaveCode');
 
@@ -120,7 +120,7 @@
 
   // stupid input min/max doesn't work for typed in values !
   $: {
-    $drawSpeed = $drawSpeed > 500 ? 500 : $drawSpeed < 1 ? 1 : $drawSpeed;
+    $drawSpeed = $drawSpeed > 1000 ? 1000 : $drawSpeed < 1 ? 1 : $drawSpeed;
   }
       
   $: if ($doSaveCode) {
@@ -470,7 +470,11 @@
 
 </script>
 
-<!-- ---------------------------------------------------------------------- -->
+<!-- 
+@component
+
+Some mouseover text?     
+---------------------------------------------------------------------- -->
 <div class="btn-group bgroup my-0 py-0">
    <div class="gbutton nbutton my-0 py-0" >L-System <i class="bi-tools"></i></div>
    <button class="gbutton tbutton" id="btn-build" disabled={parseDisabled}
@@ -522,7 +526,7 @@
   <div style="display: flex">
     <label class="lbla" for="drawSpeedSlider" data-bs-toggle="tooltip" data-bs-title={tip_el_drawspeed}>Speed: </label>
     <!-- <div class="box" style="background-color: aquamarine" id="el-drawspeed" >{$drawSpeed}</div> -->
-    <input border type="number" id="drawSpeedSlider" min={1} max={500} bind:value={$drawSpeed} style="background-color: aquamarine"/>
+    <input border type="number" id="drawSpeedSlider" min={1} max={1000} bind:value={$drawSpeed} style="background-color: aquamarine"/>
 
     <!-- <Tooltip target="drawSpeedSlider" class="text-start">Number of Modules interpreted per Frame.<br/> -->
     <!--   {speedtip} -->
