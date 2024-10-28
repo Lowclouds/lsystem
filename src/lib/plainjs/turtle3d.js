@@ -1131,7 +1131,7 @@ class Turtle3d {
       let ptype;
       let tp;
       let ts = this.TurtleState;
-      if (ts.trackShape == null) {
+      if (ts.trackShape === null) {
          ts.trackShape = Turtle3d.trackContours.get(ts.trackShapeID);
       }
 
@@ -2068,7 +2068,7 @@ class Contour {
   #ngonSideLength(n, r) {
     n = Math.floor(n);
     if (n < 2) {return 0;}
-    if (n == 2) {return 2*r;}
+    if (n === 2) {return 2*r;}
     
     let extangle = 360/n;
     let intangle = 180-extangle;
@@ -2208,7 +2208,7 @@ class TrackPath {
       } else {
          this.type = opts.type;
       }
-     this.totalStrips=0;        // number of strips/segments desired in final path, zero implies whatever
+     this.totalSegments=0;        // number of strips/segments desired in final path, zero implies whatever
       this.points=[];
       this.srm = [];               // scale, rotation, material
       this.distance = 0;           // sum of straight-line lengths
@@ -2218,7 +2218,7 @@ class TrackPath {
    }
 
    setNumStrips(n) {
-     this.totalStrips = n;
+     this.totalSegments = n;
    } 
 
    /**
@@ -2270,22 +2270,48 @@ class TrackPath {
 
    length () { return this.points.length; }
 
-  generatePath() {
-    if (this.totalStrips > 0 && 
-        this.totalStrips+1 != this.points.length) {
-      let p3d = new BABYLON.Path3D(this.points).getPoints();
-      this.points=[];
-      let step = 1/(this.totalStrips);
-      for (let t=0; t<=1+step/2; t+= step) {
-        this.points.push(p3d.getPointAt(t));
+   generatePath() {
+      if (this.totalSegments > 0 && 
+          this.totalSegments+1 != this.points.length) {
+         let len0 = this.points.length;
+         let len1 = this.totalSegments+1;
+         let p3d  = new BABYLON.Path3D(this.points);
+         let rArray= Array.from({length: len0});
+         this.srm.forEach((e,i) => {rArray[i] = e.s;});
+         
+         this.points= Array.from({length: len1});
+         let newSRM= Array.from({length: len1});
+
+         let segRatio = (len0-1)/(len1-1);
+         let Ja = 0, Jb = 0, Fij = 0;
+         let a, b;
+         let step = 1/(len1-1);
+         //puts(`len0: ${len0}, len1: ${len1}, segRatio: ${segRatio}, step: ${step}`);
+         for (let i = 0, t=0 ; i < len1-1; i++) {
+            this.points[i] = p3d.getPointAt(t);
+            // indexes into old size array, rArray
+            Ja = Math.floor(i*segRatio);
+            Jb = Ja + 1;
+            Fij = i*segRatio - Ja; // fraction into interval
+            a = rArray[Ja];
+            b = rArray[Jb];
+            newSRM[i] = new SRM(Fij*(b-a) + a, this.srm[Ja].r, this.srm[Ja].m);
+            // puts(`i: ${i},t: ${dround(t,2)}, Ja: ${Ja}, Jb: ${Jb}, Fij: ${dround(Fij, 3)}, a: ${a}, b: ${b}, s: ${newSRM[i].s}`);
+            t += step;
+         }
+         // 
+         this.points[len1-1] = p3d.getPointAt(1);
+         Ja = len0-1;
+         newSRM[len1-1] = new SRM(rArray[Ja], this.srm[Ja].r, this.srm[Ja].m);
+         this.srm = newSRM;
+         //puts(`i: ${len1-1}, Ja: ${Ja}, Jb: ---, Fij: ---, a: ${rArray[Ja]}, b: ---, s: ${newSRM[len1-1].s}`);
+         puts(`trackpath with ${this.totalSegments} segments, & total points: ${this.points}`, TRTL_TRACK);
       }
-      puts(`trackpath with ${this.totalStrips} segments, & total points: ${this.points}`, TRTL_TRACK);
-    }
-  }
+   }
    clone (opts) {
       let tpc = new TrackPath({s: Array.from(this.shape)});
       tpc.type = this.type;
-      tpc.totalStrips = this.totalStrips;
+      tpc.totalSegments = this.totalSegments;
       tpc.maxTwist = this.maxTwist;
       tpc.points = Array.from(this.points);
       tpc.srm = Array.from(this.srm);
@@ -2301,18 +2327,19 @@ class TrackPath {
   }
 };
 
+
 class SRM {
-  constructor (s, r, m) {
-    this.s = s;
-    this.r = r;
-    this.m = m;
-  }
-  toString() {
-    return `{s: ${this.s}, r: ${this.r}, m: ${this.m}}`;
-  }
-  clone() {
-    return new SRM(this.s, this.r, this.m);
-  }
+   constructor (s, r, m) {
+      this.s = s;
+      this.r = r;
+      this.m = m;
+   }
+   toString() {
+      return `{s: ${this.s}, r: ${this.r}, m: ${this.m}}`;
+   }
+   clone() {
+      return new SRM(this.s, this.r, this.m);
+   }
 }
 
 class PointPair {
@@ -2325,7 +2352,8 @@ class PointPair {
     
     this.p1 = null;
     this.t1 = null;
-    this.rt = null;
+
+
     this.normt = null;
     this.tm1 = tm1;
 
@@ -2352,8 +2380,8 @@ class HermiteSpline extends TrackPath {
    constructor (t=null, opts={}) {
       super(opts);
       this.type = Turtle3d.PATH_HERMITE_OPEN;
-      this.totalStrips = opts.totalStrips || 7; // default
-      this.ptsPerSegment = this.totalStrips + 1;
+      this.totalSegments = opts.totalSegments || 7; // default
+      this.ptsPerSegment = this.totalSegments + 1;
       this.material = t ? t.getMaterial() : null; // default
       this.controlPoints = [];
       this.pointPair = new PointPair(1.2, 1.2, null, this.ptsPerSegment);
@@ -2368,7 +2396,7 @@ class HermiteSpline extends TrackPath {
       let clone = new HermiteSpline()
      Object.assign(clone, this);
      //  clone.type = this.type;
-     //  clone.totalStrips = this.totalStrips;
+     //  clone.totalSegments = this.totalSegments;
      //  clone.ptsPerSegment = this.ptsPerSegment;
      //  clone.maxTwist = this.maxTwist;
      //  clone.material = this.material;
@@ -2474,8 +2502,8 @@ class HermiteSpline extends TrackPath {
             puts(`${rs}`, TRTL_HERMITE);
             let bheading = p1.subtract(p0).normalize();
             let r0, r1, prb, prt, tl0,tl1;
-            tl0 = (rs[1] == 0) ? 1/(pp.rt - pp.rb) : rs[1];
-            tl1 = (rs[3] == 0) ? 1/(pp.rt - pp.rb) : rs[3];
+            tl0 = (rs[1] === 0) ? 1/(pp.rt - pp.rb) : rs[1];
+            tl1 = (rs[3] === 0) ? 1/(pp.rt - pp.rb) : rs[3];
 
             let x = cosd(90 - rs[0]);
             let y = sind(90 - rs[0]);
@@ -2484,8 +2512,8 @@ class HermiteSpline extends TrackPath {
 
             x = cosd(90 - rs[2]);
             y = sind(90 - rs[2]);
-           prt = newV(pp.rt,1,0);
-           // prt = newV(pp.rt,blen,0);
+            prt = newV(pp.rt,1,0);
+            // prt = newV(pp.rt,blen,0);
             r1 = newV(x,y,0).scale(tl1);
 
             puts(`Hermite radiusSpline: ${prb}, ${r0} ${prt} ${r1}`, TRTL_HERMITE);
@@ -2518,7 +2546,7 @@ class HermiteSpline extends TrackPath {
             let extpath = new BABYLON.Path3D(pathspline.getPoints());
             for (let i = (ppi > 0) ? 1 : 0; i < tmap.length; i++) {
                this.points.push(extpath.getPointAt(tmap[i]));
-              this.srm.push(new SRM(radii[i]*2, twistInc, this.material)); // <<<<<< *2??
+               this.srm.push(new SRM(radii[i]*2, twistInc, this.material)); // <<<<<< *2??
             }
             puts(`Hermite points with radius spline: ${this.points}`, TRTL_HERMITE);
          } else {
@@ -2527,7 +2555,7 @@ class HermiteSpline extends TrackPath {
             let radiusInc = (pp.rt - pp.rb)/(pp.ptsPerSeg - 1);
             for (let i = (ppi > 0) ? 1 : 0; i < pts.length; i++) {
                this.points.push(pts[i]);
-              this.srm.push(new SRM(pp.rb + i*radiusInc, twistInc, this.material));
+               this.srm.push(new SRM(pp.rb + i*radiusInc, twistInc, this.material));
             }
            puts(`Hermite points w/o radius spline: ${this.points}`, TRTL_HERMITE);
          }
@@ -2949,6 +2977,8 @@ function doMultiplicity(pts, m, r=0.5) {
    return opts;
 }
 
+/*
+
 function supershapeFn(p = {a: 1, b: 1, n1: 2, n2: 2, n3: 1, m: 0, f: function (rho) {return 1;}}) {
    let a = p?.a ?? 1;
    let b = p?.b ?? 1;
@@ -2974,3 +3004,5 @@ function supershapeContour(ssf, q=36, alpha=2*Math.PI) {
    }
    return pts;
 }
+
+*/

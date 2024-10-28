@@ -599,9 +599,9 @@ t0.setHeading([0,1,0])`);
                   }
                }
                   break;
-               case '@Gr': {
+               case '@Gr': {    // set the radius curve for the spline
                   if (!isPM) {
-                     console.warn('module @Gt requires two or four parameters!');
+                     console.warn('module @Gr requires two or four parameters!');
                   } else {
                      if (pmArgs.length == 2) {
                         turtle.setTrackRadiusSpline(p0,pmArgs[1], p0, pmArgs[1]);
