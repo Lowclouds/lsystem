@@ -99,11 +99,19 @@ function makeRegExps( ) {
    Note that parameter expressions are not validated or evaluated here, except that
    matching parentheses
 */ 
-var ParameterizedModule = function(name, parms) {
+var ParameterizedModule = function(name, parms, noParse=false) {
    this.m = name;
-   this.p = parseParens(parms);
+   this.p = noParse ? parms.slice() : parseParens(parms);
+
    normalizeStrings(this);
-   this.toString = function() {return this.m + '(' + this.p.toString() + ')';}
+
+   this.toString = function() {
+      let s = this.m + '(' ;
+      this.p.forEach((v,i) => {s += v.toString(); if (i < this.p.length-1) s += ','});
+      s += ')';
+      return s;
+   } // JSON.stringify(this.p)
+
    this.clone = function() {
       let pm =  new ParameterizedModule(this.m, '');
       pm.p = Array.from(this.p);
@@ -481,7 +489,7 @@ class Lsystem {
             break;
          default: {
            let t = Lsystem.myTypeOf(this[prop]);
-           if (t == 'map') { 
+           if (t === 'map') { 
              if (this[prop] == '') {
                return `${prop} is empty\n`;
              } else {
@@ -654,7 +662,7 @@ class Lsystem {
            case P_HANDLED:
              multiline = '';
              break;
-           case P_INCOMPLETE_INPUT:
+           case P_INCOMPLETE_INPUT: // inefficient, but simple
              multiline += line;
              break;
            case P_UNHANDLED:
@@ -742,14 +750,16 @@ class Lsystem {
             if (isComplete[1] !== null) {
                ls.start = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> Start: ${ls.start}`, LSYS_IN_ITEMS);
+               ls.startX = math.compile(ls.start);
             } else {
                pr.status = P_INCOMPLETE_INPUT;
             }
          } else if (null !== (m = line.match(RE.StartEach))) {
             let isComplete = parseSkipBrackets(m[1]);
             if (isComplete[1] !== null) {
-               ls.startEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
-               puts(`found -> StartEach: ${ls.startEach}`, LSYS_IN_ITEMS);
+              ls.startEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+              puts(`found -> StartEach: ${ls.startEach}`, LSYS_IN_ITEMS);
+              ls.startEachX = math.compile(ls.startEach);
             } else {
                pr.status = P_INCOMPLETE_INPUT;
             }
@@ -758,6 +768,7 @@ class Lsystem {
             if (isComplete[1] !== null) {
                ls.endEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> EndEach: ${ls.endEach}`, LSYS_IN_ITEMS);
+               ls.endEachX = math.compile(ls.endEach);
             } else {
                pr.status = P_INCOMPLETE_INPUT;
             }
@@ -766,6 +777,7 @@ class Lsystem {
             if (isComplete[1] !== null) {
                ls.end = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
                puts(`found -> End: ${ls.end}`, LSYS_IN_ITEMS);
+               ls.endX = math.compile(ls.end);
             } else {
                pr.status = P_INCOMPLETE_INPUT;
             }
@@ -1172,7 +1184,7 @@ ${msg}`;
       if (string === null) {
          // but first, evaluate any Start: statement
          if (ls.start) {
-            math.evaluate(ls.start, ls.globals);
+            ls.startX.evaluate(ls.globals);
             puts(`evaluated Start: ${ls.start}`, LSYS_EXPAND, LSYS_REWRITE);
          }
          genv.init(ls.locals, ls.globals); // locals will shadow globals
@@ -1219,7 +1231,7 @@ ${msg}`;
          }
       }
       if (niter >= ls.Dlength && ls.end) {
-         math.evaluate(ls.end, genv);
+         ls.endX.evaluate(genv);
          puts(`evaluated End: ${ls.end}`, LSYS_EXPAND, LSYS_REWRITE);
          genv.upbind();         // probably a don't care
       }
@@ -1253,10 +1265,11 @@ ${msg}`;
          mlength = mstring.length;
          puts(`doOnePass:\n${mstring}, mlength: ${mlength}`, LSYS_REWRITE_VERB);
   
-         if (ls.startEach) {
-            math.evaluate(ls.startEach, genv);
-            genv.upbind();         // probably a don't care
+         if (ls.startEachX) {
+            //math.evaluate(ls.startEach, genv);
+            ls.startEachX.evaluate(genv);
             puts(`evaluated StartEach: ${ls.startEach}`, LSYS_EXPAND, LSYS_REWRITE);
+            genv.upbind();         // probably a don't care
          }
          for (let n=0; n < mlength; n++)   {
             let module = mstring[n];
@@ -1301,7 +1314,7 @@ ${msg}`;
                   }
                   // See if the condition is valid
                   // this will evaluate preCondition, and, if successful, postCondition
-                  if (scope == null || scope.test()) {
+                  if (scope === null || scope.test()) {
                      if (bestrule === null) {
                         bestrule = rule;
                         bestruleContextLength = 0;
@@ -1364,7 +1377,7 @@ ${msg}`;
          }
          if (ls.endEach) {
             puts(`evaluating EndEach: ${ls.endEach}`, LSYS_EXPAND, LSYS_REWRITE);
-            math.evaluate(ls.endEach, genv);
+            ls.endEachX.evaluate(genv);
             genv.upbind();         // probably a don't care
          }
       } // end of doOnePass
