@@ -106,9 +106,6 @@ class Turtle3d {
             Turtle3d.initColorTable(this.scene);
          } 
          Turtle3d.materials.forEach((e,i) => this.materialList[i] = e);
-         // this.materialList.push(new BABYLON.StandardMaterial("trackMat", scene));
-         // this.materialList[0].diffuseColor = this.toColorVector();
-         // this.materialList[0].ambientColor = this.toColorVector();
          
          Turtle3d.trackContours.set('"default"', generateCircle(0.5,0.5));
          this.TurtleState.trackShape = Turtle3d.trackContours.get('"default"');
@@ -445,14 +442,19 @@ class Turtle3d {
       puts("populating basic TurtleState", TRTL_SETGET);
 
       Object.keys(ms).forEach((k) => { 
-         if ('PHLU'.includes(k)) {
-            puts(`looking at key: ${k}`, TRTL_SETGET);
-            for (const p of 'xyz') { 
-               puts(`setting ${p} to ${ts[k][p]}`, TRTL_SETGET);
-               ms[k][p] = ts[k][p]}
-         } else {
-            ms[k] = ts[k]
-            puts(`key: ${k} == ${ts[k]}`, TRTL_SETGET);
+         switch (k) {
+           case 'P':
+           case 'H':
+           case 'L':
+           case 'U':
+              puts(`looking at key: ${k}`, TRTL_SETGET);
+              for (const p of 'xyz') { 
+                 puts(`setting ${p} to ${ts[k][p]}`, TRTL_SETGET);
+                 ms[k][p] = ts[k][p]}
+              break;
+           default:
+              ms[k] = ts[k]
+              puts(`key: ${k} == ${ts[k]}`, TRTL_SETGET);
          }
       });
       return ms;
@@ -995,11 +997,7 @@ class Turtle3d {
                                                cap: cap,
                                                firstNormal: ts.lastNormal
                                               });
-         // segment.isVisible=true;
-         // segment.material = this.materialList[ts.trackMaterial];
-         // BABYLON.Tags.AddTagsTo(segment, tag, this.scene);
          ts.accumRoll = 0;
-         // ts.lastSize = ts.size;
          break;
       }
       puts(`drawImmediate: mesh type: ${type}, position: ${segment.position}`, TRTL_DRAW);
@@ -2208,7 +2206,7 @@ class TrackPath {
       } else {
          this.type = opts.type;
       }
-     this.totalSegments=0;        // number of strips/segments desired in final path, zero implies whatever
+      this.totalSegments=0;        // number of strips/segments desired in final path, zero implies whatever
       this.points=[];
       this.srm = [];               // scale, rotation, material
       this.distance = 0;           // sum of straight-line lengths

@@ -80,7 +80,7 @@ async function turtleInterp (ti, ls, opts=null, ifcUpd) {
 
    idata.ndelta= -1*idata.delta;
 
-   let hasEnviroCall = false;
+   let isEnviroCall = false;
    
    var t0;
    if (idata.useDefaultTurtle) {
@@ -118,12 +118,14 @@ t0.setHeading([0,1,0])`);
    t0.disableDraw(idata.disableDraw);
    idata.gencode(`.disableDraw(${idata.disableDraw}});\n`);
 
+  puts(`lsystem. dDone = ${ls.dDone}`);
+   var iDone = ls.dDone;
    var branches = [{turtle: t0, spos: 0, keep: true}]; 
    idata.gencode('var branches = [{turtle: t0, spos: 0, keep: true}];\n');
    var lstring = ls.interp;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
    puts(`using settings with turtle ${t0.Turtle}, ` + idata.show(), NTRP_INIT);
-
+   
 
    ifcUpd.updateLsysInfo ({bgcolor: 'lightgray', ndrawn: lstring.length});
 
@@ -746,50 +748,51 @@ t0.setHeading([0,1,0])`);
                   }
                   break;      
                case '?E':
-                  hasEnviroCall = true;
+                   isEnviroCall = true;
                case '?P':
                case '?H':
                case '?L':
                case '?U':
-                  if (isPM) {
+                 if (iDone > 0) {
+                   if (isPM) {
                      let tstate = turtle.getBasicState();
                      if (LogTag.areSet([NTRP_ENVIRO]) ) {
-                        Object.keys(tstate).forEach((k) => { 
-                           puts(`looking at key: ${k}`);
-                           if ('PHLU'.includes(k)) {
-                              for (const p of 'xyz') { 
-                                 puts(`tstate.${k}.${p} = ${tstate[k][p]}`);
-                              }
-                           }});
+                       Object.keys(tstate).forEach((k) => { 
+                         puts(`looking at key: ${k}`);
+                         if ('PHLU'.includes(k)) {
+                           for (const p of 'xyz') { 
+                             puts(`tstate.${k}.${p} = ${tstate[k][p]}`);
+                           }
+                         }});
                      }
-                     if (hasEnviroCall) {
-                        hasEnviroCall = false; // reset
-                        if (! ls?.enviroFunc) {
-                           console.warn('no enviroFunc supplied. bailing');
-                           // throw new Error('no enviroFunc supplied. bailing');
-                           // break;
+                     if (isEnviroCall) {
+                       isEnviroCall = false; // reset
+                       if (! ls?.environment) {
+                         console.warn('no environment supplied. bailing');
+                         // throw new Error('no environment supplied. bailing');
+                         // break;
 
-                           ls.enviroFunc = enviroDefault;
-
-                        }
-                        puts(`enviroCall: ${ls?.enviroFunc.name}`, NTRP_ENVIRO);
-                        ePromises.push(ls.enviroFunc({turtle: tstate, mIndex: branchpos, mArgs: pmArgs}));
-                        
+                         ls.environment = new enviroDefault();
+                       }
+                       ls.environment.init();
+                       puts(`enviroCall: ${ls?.environment.name}`, NTRP_ENVIRO);
+                       ePromises.push(ls.environment.update({mIndex: branchpos, mArgs: pmArgs, turtle: tstate}));
                      } else {
-                        let i=0;
-                        let tparam = m[1];
-                        for (const p of 'xyz') {
-                           //puts(`?${tparam}: tstate.${tparam}.${p} -> pmArgs[${i}] == ${tstate[tparam][p]}`, TRTL_SETGET);
-                           pmArgs[i] = tstate[tparam][p];
-                           i++;
-                           if (i === pmArgs.length) break;
-                        } 
-                        puts(`Updated ?${tparam}(xxxx) to ?${tparam}(${pmArgs})`, NTRP_ENVIRO);
+                       let i=0;
+                       let tparam = m[1];
+                       for (const p of 'xyz') {
+                         //puts(`?${tparam}: tstate.${tparam}.${p} -> pmArgs[${i}] == ${tstate[tparam][p]}`, TRTL_SETGET);
+                         pmArgs[i] = tstate[tparam][p];
+                         i++;
+                         if (i === pmArgs.length) break;
+                       } 
+                       puts(`Updated ?${tparam}(xxxx) to ?${tparam}(${pmArgs})`, NTRP_ENVIRO);
                      }
-                  } else {
+                   } else {
                      puts(`?X asks for turtle state, but no parameter supplied`);
-                  }
-                  break;
+                   }
+                 }
+                 break;
                case 'L': 
                   break;
                default: 
@@ -854,15 +857,16 @@ t0.setHeading([0,1,0])`);
          puts('results of enviroCall');
          let results = await Promise.all(promises);
          results.forEach((element) => {
-            console.log(JSON.stringify(element));
-            let pM = lstring[element.ndx];
-            pM.p.forEach((e,i) => pM.p[i] = element.argVals[i])
+           console.log(`mIndex: ${element.mIndex} <-- ${JSON.stringify(element)}`);
+           let pM = lstring[element.mIndex];
+           pM.p.forEach((e,i) => {pM.p[i] = element.argVals[i];
+                                  console.log(`    param: ${i} = ${element.argVals[i]}`);});
          });
       }
 
       async function packItUp(turtle) {
          if (ePromises.length > 0) {
-
+            ls.environment.finalize(ePromises);
             await collectEnviroResponse(ePromises);
          }
 
@@ -903,20 +907,47 @@ t0.setHeading([0,1,0])`);
 /*
   temporary default environmental program
  */ 
+class enviroDefault {
+  constructor() {
+    this.zeropt = null;
+    this.eResults = [];
+  }
+  init() {}
+  update(input) {
+    puts(`enviroDefault entry\nTurtle position: ${JSON.stringify(input.turtle.P)}, moduleIndex: ${input.mIndex}, moduleArgs: ${input.mArgs}`);
+    
+    let eresult = {mIndex: input.mIndex, argVals: []}; // must return module index
+    let tstr = 'xyz';
+    let tndx = 0;
+    eresult.argVals.push(input.mArgs[0]); // no change
+    if (input.mArgs[0] === 0) {
+      if (this.zeropt === null){
+        this.zeropt = 0;
+        eresult.argVals.push(0);
+      } 
+      // this shouldn't happen
+    } else {
+      this.zeropt++;
+      if (input.mArgs[0] % 4 === 0) {
+        eresult.argVals.push(1);
+      } else {
+        eresult.argVals.push(0);
+      }
+    }
 
-function enviroDefault(input) {
-   puts(`enviroDefault entry\nTurtle position: ${JSON.stringify(input.turtle.P)}, moduleIndex: ${input.mIndex}, moduleArgs: ${input.mArgs}`);
-   
-   let res = {ndx: input.mIndex, argVals: []}; // must return module index
-   let tstr = 'xyz';
-   let tndx = 0;
-   // for each input arg, return a potential return value
-   input.mArgs.forEach( v => {res.argVals.push(tndx + v + input.turtle.P[tstr[tndx]]); tndx = (tndx+1)%3;});
-   return new Promise((resolve,reject) => {
-      setTimeout(() => {
-         console.log('enviro results: ',JSON.stringify(res))
-         resolve(res);
-      }, Math.floor(Math.random() * 100));
-   });
+
+    // eResults and the epromises array are parallel, there must be
+    // one eresult per promise, below
+    this.eResults.push(eresult);
+
+    return new Promise((res, rej) => {
+      eresult.resolve = res;
+      eresult.reject = rej;
+    });
+  }
+
+  finalize(){
+    console.log(JSON.stringify(this.eResults));
+    this.eResults.forEach((eresult) => eresult.resolve(eresult));
+  }
 }
-                      

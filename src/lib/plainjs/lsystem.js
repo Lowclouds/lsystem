@@ -1,4 +1,4 @@
-/*
+e/*
   The goal is to handle most L-systems defined in The Algorithmic Beauty of Plants,
   referred to here as TABOP, or by the Lsystems programs developed by Przemyslaw 
   Prusinkiewicz' group at the University of Calgary, available here: 
@@ -378,8 +378,9 @@ class Lsystem {
       this.ignore=[];
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
+      this.environmentModuleCount = 0;
       this.needsEnvironment = false;
-      this.enviroFunc = null;
+      this.enviroment = null;
       this.hasQuery = false;
       this.disableDrawing = false;
       this.locals = new LsScope();
@@ -1039,8 +1040,9 @@ ${msg}`;
                      ls.hasQuery = true;
                      puts('lsystem hasQuery = true', LSYS_PARSE_MOD);
                      if (m[1].charAt(1) === 'E') { // maybe this is a duplicate
-                        ls.needsEnvironment = true;
-                        puts('lsystem needsEnvironment? = true', LSYS_PARSE_MOD);
+/* delete  this */                        ls.needsEnvironment = true;
+                        ls.environmentModuleCount++;
+                        puts('lsystem environmentModuleCount = ', LSYS_PARSE_MOD);
                      }
                   }
                }
