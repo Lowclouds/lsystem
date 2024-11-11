@@ -54,7 +54,6 @@
   $: if (lsFiles) {
     for (const file of lsFiles) {
       $lsSrc.fname = file.name;
-
       let reader = new FileReader();
       reader.onload = function() {
         // this will be processed in LsystemCtrls
@@ -176,7 +175,7 @@
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="d-flex flex-row-reverse collapse navbar-collapse" id="navbarSupportedContent">
+    <div class="collapse navbar-collapse flex-row-reverse" id="navbarSupportedContent">
       <div class="navbar-nav ">
         <div class="nav-item dropdown-center" >
           <button class="nav-link dropdown-toggle"  data-bs-toggle="dropdown" aria-expanded="false">
