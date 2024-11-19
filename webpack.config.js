@@ -126,7 +126,7 @@ module.exports = {
           delete: [ './public' ],
         },
         onEnd: {
-          mkdir: ['./public', './public/code', './public/assets/examples'],
+           mkdir: ['./public', './public/code', './public/code/user', './public/assets/examples'],
           copy: [
             { source: './node_modules/bootstrap/dist/js/bootstrap.bundle.min.js',
               destination: './public/code/vendor/',
@@ -149,8 +149,12 @@ module.exports = {
             { source: './node_modules/babylonjs-gui/babylon.gui.min.js',
               destination: './public/code/vendor/babylonjs/',
             },
-            { source: './src/lib/plainjs/*.js', destination: './public/code'},
-            { source: './assets/*', destination: './public' },
+            { source: './src/lib/classconst.js', destination: './public/code/'},
+            { source: './src/lib/plainjs/*.js', destination: './public/code/'},
+            { source: './src/user/*.js', destination: './public/code/user'},
+            { source: './assets/*.ico', destination: './public' },
+            { source: './assets/*.png', destination: './public' },
+            { source: './assets/*.json', destination: './public/assets' },
             { source: './assets/examples/**/', destination: './public/assets/examples' },
             { source: './pages/*.html', destination: './public/'},
             { source: './pages/*.pdf', destination: './public/'},

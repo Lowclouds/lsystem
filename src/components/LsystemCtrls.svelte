@@ -9,6 +9,7 @@
   import SaveMesh from '/src/components/SaveMesh.svelte';
   import Modal from '/src/components/Modal.svelte';
   import SymbolMenu from '/src/components/SymbolMenu.svelte';
+//  import {default as cppLsystem} from '/src/lib/lscpp.js';
 
   let settings = Settings.getSettings();
   let lsys = getContext('lsystem');
@@ -218,34 +219,57 @@
     $saveModelDisabled = true;
     return new Promise((resolve, reject) => {
       let spec = ls_text;
-      $numIterations = 0;
-      $numNodes = 0;
-      $numDrawn = 0;
-      elNumDrawn.style.backgroundColor = 'lightgray';
-      try {
-        $lsys = Lsystem.Parse(spec);
-        isInvalid = $lsys.axiom.length == 0;
-        if (! isInvalid) {
-          $numIterations = $lsys.dDone;
-          $lsExpansionStatus = 'Parse Result';
-          $lsExpansion = $lsys.serialize();
-          animationState.stepStart = true;
-          RPRDdisabled = false;
-          resolve(true);
-        } else {
-          $lsExpansionStatus = 'Parse failed';
-          $lsExpansion = 'No axiom found';
-          isInvalid = true;
-          animationState.stepStart = false;
-          reject(false);
-          //reject('No axiom found');
-        }
-      } catch(error) {
-        $lsExpansionStatus = 'Parse failed';
-        $lsExpansion = `Error: ${error}\n\n` + $lsExpansion;
-        isInvalid = true;
-        //reject(error);
-      }
+      let cppSrc;
+      let enviroImports = null;
+      let lsopts = {};
+      let enviroClass;
+      cppLsystem(spec, null)
+        .then((res) => {
+          [cppSrc, enviroImports] = res;
+          //console.log(`\nuiDoParse: cppSrc:${cppSrc}`);
+          if (enviroImports != null && enviroImports.length > 0) {
+            //console.log(`\nenviroImports: ${enviroImports}`);
+            console.log(`\nFirst import is: ${enviroImports[0].name}`);
+            lsopts.enviroClass = enviroImports[0]
+           // console.log(`uiDoParse: lsopts = ${lsopts.enviroClass}`);
+          }
+          // console.log(Object.keys(lsopts));
+
+          $numIterations = 0;
+          $numNodes = 0;
+          $numDrawn = 0;
+          elNumDrawn.style.backgroundColor = 'lightgray';
+          try {
+            $lsys = Lsystem.Parse(cppSrc, lsopts);
+            isInvalid = $lsys.axiom.length === 0;
+            if (! isInvalid) {
+              $numIterations = $lsys.dDone;
+              $lsExpansionStatus = 'Parse Result';
+              $lsExpansion = $lsys.serialize();
+              animationState.stepStart = true;
+              RPRDdisabled = false;
+              resolve(true);
+            } else {
+              $lsExpansionStatus = 'Parse failed';
+              $lsExpansion = 'No axiom found';
+              isInvalid = true;
+              animationState.stepStart = false;
+              reject(false);
+              //reject('No axiom found');
+            }
+          } catch(error) {
+            $lsExpansionStatus = 'Parse failed';
+            $lsExpansion = `${error}\n\n` + $lsExpansion;
+            isInvalid = true;
+            //reject(error);
+          }
+        })
+        . catch((error) => {
+            $lsExpansionStatus = 'Parse failed';
+            $lsExpansion = `${error}\n\n` + $lsExpansion;
+            isInvalid = true;
+            //reject(error);
+        })
     });
   }
 

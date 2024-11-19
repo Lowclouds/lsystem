@@ -4,7 +4,7 @@
 var idata;
 
 async function turtleInterp (ti, ls, opts=null, ifcUpd) {
-   let desiredFps = 10;
+   let desiredFps = 30;
 
    if (ls.interp.length === 0) {
       puts('top level lsystem is empty, returning');
@@ -80,8 +80,6 @@ async function turtleInterp (ti, ls, opts=null, ifcUpd) {
 
    idata.ndelta= -1*idata.delta;
 
-   let isEnviroCall = false;
-   
    var t0;
    if (idata.useDefaultTurtle) {
       t0 = ti;
@@ -125,8 +123,8 @@ t0.setHeading([0,1,0])`);
    var lstring = ls.interp;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
    puts(`using settings with turtle ${t0.Turtle}, ` + idata.show(), NTRP_INIT);
-   
-
+  var enviroInst = null;
+  
    ifcUpd.updateLsysInfo ({bgcolor: 'lightgray', ndrawn: lstring.length});
 
    // if (idata.useTrackAlways) {
@@ -170,6 +168,7 @@ t0.setHeading([0,1,0])`);
          let branchpos = branches[branch].spos;
          let i = 0;
          let isPM = false;
+         let isEnviroCall = false;
          
          idata.gencode(`let turtle = branches[${branch}].turtle;\n`);
          // assumption is that lstring is not empty, so lstring[branchpos] is not empty
@@ -767,16 +766,19 @@ t0.setHeading([0,1,0])`);
                      }
                      if (isEnviroCall) {
                        isEnviroCall = false; // reset
-                       if (! ls?.environment) {
-                         console.warn('no environment supplied. bailing');
-                         // throw new Error('no environment supplied. bailing');
-                         // break;
-
-                         ls.environment = new enviroDefault();
+                       if (enviroInst === null) {
+                         if (ls?.enviroClass) {
+                           enviroInst = new ls.enviroClass();
+                         } else {
+                           console.warn('no environment supplied. Using default for now');
+                           // throw new Error('no environment supplied. bailing');
+                           // break;
+                           enviroInst = new enviroDefault();
+                         }
                        }
-                       ls.environment.init();
-                       puts(`enviroCall: ${ls?.environment.name}`, NTRP_ENVIRO);
-                       ePromises.push(ls.environment.update({mIndex: branchpos, mArgs: pmArgs, turtle: tstate}));
+                       if (! enviroInst.isInitialized) {enviroInst.init();}
+                       puts(`enviroCall: ${enviroInst.name}`, NTRP_ENVIRO);
+                       ePromises.push(enviroInst.update({mIndex: branchpos, mArgs: pmArgs, turtle: tstate}));
                      } else {
                        let i=0;
                        let tparam = m[1];
@@ -866,8 +868,8 @@ t0.setHeading([0,1,0])`);
 
       async function packItUp(turtle) {
          if (ePromises.length > 0) {
-            ls.environment.finalize(ePromises);
-            await collectEnviroResponse(ePromises);
+           enviroInst.finalize(ePromises);
+           await collectEnviroResponse(ePromises);
          }
 
          let ts = turtle.getState()
@@ -908,11 +910,16 @@ t0.setHeading([0,1,0])`);
   temporary default environmental program
  */ 
 class enviroDefault {
-  constructor() {
+  zeropt = null;
+  eResults;
+  isInitialized = false;
+
+  init(opts = {count: 0}) {
     this.zeropt = null;
-    this.eResults = [];
+    this.eResults = Array.from({length: opts.count});
+    this.isInitialized = true;
   }
-  init() {}
+
   update(input) {
     puts(`enviroDefault entry\nTurtle position: ${JSON.stringify(input.turtle.P)}, moduleIndex: ${input.mIndex}, moduleArgs: ${input.mArgs}`);
     
@@ -934,10 +941,13 @@ class enviroDefault {
         eresult.argVals.push(0);
       }
     }
+/* 
+ *  from here to the end is pretty much boilerplate
+ */
+    // eResults and the epromises are parallel, there must be
+    // one eresult per promise. The promise may already be resolved,
+    // but here we wait until the finalize call
 
-
-    // eResults and the epromises array are parallel, there must be
-    // one eresult per promise, below
     this.eResults.push(eresult);
 
     return new Promise((res, rej) => {
@@ -946,8 +956,14 @@ class enviroDefault {
     });
   }
 
-  finalize(){
+  async finalize(){
+    /* here is where'd you put some delayed computation
+       compute eresults;
+       -- or you could have been doing it asynchronously in the background
+       -- then here's where you'd wait for it to complete
+    */
     console.log(JSON.stringify(this.eResults));
     this.eResults.forEach((eresult) => eresult.resolve(eresult));
+    this.isInitialized = false;
   }
 }

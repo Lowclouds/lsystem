@@ -36,6 +36,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+console.log('loading lscpp.js');
+
 function cpp_js(settings) {
         "use strict";
 
@@ -144,10 +146,7 @@ function cpp_js(settings) {
                 
                 include_func : null,
                 completion_func : null,
-           traditional : true,            // dcd mod for lsystem
-           want_line_continuation : false // dcd mod for lsystem
         };
-        
         // apply default settings
         if (settings) {
                 for(var k in default_settings) {
@@ -356,7 +355,7 @@ function cpp_js(settings) {
                 // an optional string that is used in error messages as file name.
                 run : function(text, name) {
                         name = name || '<unnamed>';
-                        
+                  if (typeof text !== 'string') throw TypeError('text is not a string');
                         text = settings.comment_stripper(text);
                         var blocks = text.split(block_re);
                         
@@ -1214,7 +1213,67 @@ function cpp_js(settings) {
 	};
 };
 
-// node.js interface
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports.create = cpp_js;
+/*--------------------------------------------------------------------------------
+ *   lsystem specific function to
+ *   1. process include files, and
+ *   2. get by an apparent bug where cpp_js misses replacements
+ */
+/*
+  It seems that webpack mucks with the import() statement, requiring the
+  target to be somewhere it controls, and then bundling everything in the 
+  same directory into the webpack bundle. Since I was hoping to allow a 
+  user to toy with the imported program running locally, this makes it 
+  impossible to have this bundled by webpack, so this file is copied into
+  /public/code. The import is then from a relative ./user/ path
+ */
+function cppLsystem (spec) {
+  //
+  // need some logic to deal with reloading the same script
+  // 
+  let enviroImports = null;
+  let ci=1;
+
+  return new Promise((resolve, reject) => {
+    let settings = { 
+      traditional : true,            // dcd mod for lsystem
+      want_line_continuation : false, // dcd mod for lsystem
+      signal_char : '#',
+      include_func : function(file, is_global, resumer, error) {
+        enviroImports = (enviroImports === null) ? [] : enviroImports;
+        let fpath = './user/' + file;
+        console.log(`trying to import: ${fpath}`);
+        import(fpath)
+          .then((emod) => {
+            const {default: enviroClass} = emod;
+            console.log(`loaded: ${enviroClass.name}`);
+            enviroImports.unshift(enviroClass); // first module is env
+            resumer(`include_${ci} = '${file}'\nincludeClass = '${enviroClass.name}'\n`);
+            ci++;
+          })
+          .catch((error) => {
+            //console.log(error.message.toString(),error.cause);
+            reject(new Error(`${error.toString()} while importing ${file}`), {cause: error});
+            resumer(`${error.toString()} while importing ${file}`);
+          });
+      },
+      
+      completion_func : function(data) {
+	// console.log(data);
+        // may need to re-create pp without include_func to run it again synchronously
+        let settings = { 
+          traditional : true,            // dcd mod for lsystem
+          want_line_continuation : false, // dcd mod for lsystem
+        }
+        let pp = cpp_js(settings);
+        // there's a bug in cpp.js that sometimes doesn't do all replacements
+        // rerun cpp, then remove cr & blank lines;
+        let cppSpec =pp.run(data).replaceAll(/\r/g, '\n').replaceAll(/\s+\n/g, '\n'); 
+        console.log(`lscpp says: cppSpec:\n${cppSpec}`);
+        resolve([cppSpec, enviroImports]);
+      }
+    };
+
+    var pp = cpp_js( settings );
+    pp.run(spec);
+  });
 }

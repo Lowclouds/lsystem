@@ -75,20 +75,22 @@ class LogTag {
 }
 
 // if you're gonna have classes, yer gonna want class constants, sheesh
-function classConst (obj, map) {
-   Object.keys(map).forEach(key => {
-      Object.defineProperty(obj, key, {
-         value: map[key],
-         writable: false,
-         enumerable: true,
-         configurable: false
-      });
-   });
-}
+// function classConst (obj, map) {
+//    Object.keys(map).forEach(key => {
+//       Object.defineProperty(obj, key, {
+//          value: map[key],
+//          writable: false,
+//          enumerable: true,
+//          configurable: false
+//       });
+//    });
+// }
 
-classConst(LogTag, {
-   LOG_ANYOF: 0,                // log if any of tags are set
-   LOG_ALLOF: 1,                // log only if all tags are set
+import('./classconst.js').then((module) => {
+   module.classConst(LogTag, {
+      LOG_ANYOF: 0,                // log if any of tags are set
+      LOG_ALLOF: 1,                // log only if all tags are set
+   });
 });
 
 const  puts = LogTag.log;

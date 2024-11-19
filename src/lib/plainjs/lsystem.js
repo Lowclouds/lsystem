@@ -1,4 +1,4 @@
-e/*
+/*
   The goal is to handle most L-systems defined in The Algorithmic Beauty of Plants,
   referred to here as TABOP, or by the Lsystems programs developed by Przemyslaw 
   Prusinkiewicz' group at the University of Calgary, available here: 
@@ -31,6 +31,7 @@ e/*
 */
     
 // RE is the container for all regular expressions. this s.b. in LSystem class
+// it's convenient for development for it to be here.
 const RE = makeRegExps();
 function makeRegExps( ) {
    // selected greek letters and some brackets
@@ -52,7 +53,7 @@ function makeRegExps( ) {
    let endiReStr = '\+)';
    let startcReStr = '^(?:#?[cC]onsider:?) +\(';
 
-   let RE = {}
+   let RE = {};
 
    RE.Start     = new RegExp('^\\s*(?:[Ss]tart:)\\s*({.*)', 's');
    RE.StartEach = new RegExp('^\\s*(?:[Ss]tartEach:)\\s*({.*)', 's');
@@ -380,7 +381,7 @@ class Lsystem {
       this.restrict = null; // either ignore or consider
       this.environmentModuleCount = 0;
       this.needsEnvironment = false;
-      this.enviroment = null;
+      this.environment = null;
       this.hasQuery = false;
       this.disableDrawing = false;
       this.locals = new LsScope();
@@ -509,6 +510,7 @@ class Lsystem {
    }
    // ------------------------------------------------------------
 
+
    initParse(parentLS = null) {
       if (parentLS) {
          // this init only takes the globals, so sub lsystems do not 
@@ -528,35 +530,26 @@ class Lsystem {
       this.interp=null;
       this.restrict = null;
       this.hasQuery = false;
-}
+   }
 
    /*
-     Parse a user supplied spec
+     Parse a user supplied spec - s.b. preprocessed. 
      The Parse function is a wrapper for a bunch of variables used in the parse functions and 
      delegates all the work to parseHelper.
      Returns a parsed Lsystem instance
+     
    */ 
-   static Parse (spec, lsystem = null) {
+  static Parse (cppSpec, opts = {}) {
       const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_INCOMPLETE_INPUT = 3, P_TRANSITION=4;
-      // preprocess the spec with standard Cpp-like preprocessor
-      let pp = new cpp_js();
-      // define these here so recursive invocations of parseHelper
-      // all use the same spec and indices into it.
-      let cppSpec = pp.run(spec), pos = 0;
-      // there's a bug in cpp.js that sometimes doesn't do all replacements
-      cppSpec=pp.run(cppSpec);
-
-      cppSpec=cppSpec.replaceAll(/\r/g, '\n').replaceAll(/\n\n+/g, '\n'); // remove cr & blank lines
-
-      puts(`cppSpec:\n${cppSpec}`, LSYS_PARSE);
-
+    puts(JSON.stringify(opts), LSYS_PARSE);
+      let pos = 0;
       let end = cppSpec.length;      
       let m;                            // common match variable
       let nestPos;                      // where we left line mode
       let nesting = [];
       let ls0;
-      if (lsystem) {
-         ls0 = lsystem;
+      if (opts?.lsystem) {
+         ls0 = opts.lsystem;
       } else {
          ls0 = new Lsystem(cppSpec, 'main'); // preemptively naming it 
       }
@@ -579,6 +572,7 @@ class Lsystem {
          }
       }
       ls0.subsystems = Lsystem.lsystems;
+      ls0.enviroClass = opts?.enviroClass;
       ls0.verbose=0;
       ls0.show();
 
@@ -621,7 +615,7 @@ class Lsystem {
          let line='', eol = 0;
          let multiline = '';
          let linectr = 0;
-         if (!isSubLs && cppSpec == 'no specification') {
+         if (!isSubLs && cppSpec === 'no specification') {
             puts('nothing to parse');
             return;
          } 
@@ -1041,8 +1035,6 @@ ${msg}`;
                      puts('lsystem hasQuery = true', LSYS_PARSE_MOD);
                      if (m[1].charAt(1) === 'E') { // maybe this is a duplicate
 /* delete  this */                        ls.needsEnvironment = true;
-                        ls.environmentModuleCount++;
-                        puts('lsystem environmentModuleCount = ', LSYS_PARSE_MOD);
                      }
                   }
                }
@@ -1243,7 +1235,7 @@ ${msg}`;
       ls.interp = ls.current;
       if (it > 0 && ls.homorules != null) {
          rules = ls.homorules;
-         mstring = ls.current.slice();
+         ls.current = mstring.slice();
          //mlength = mstring.length;
          for (let i = 1; i <= ls.homoDepth; i++) {
             puts(`rewriting homomorphism interation ${i} - ${mstring}`, LSYS_REWRITE);
@@ -1388,11 +1380,11 @@ ${msg}`;
       return ls.interp;
    } // end of Rewrite
 
-  /*
-    source array is original sequence of modules
-    changes is a sparse array whose keys are the indices in source which were changed
-    we get the number of changes first, then walk the source array, taking content from
-    changes if it exists
+   /*
+     source array is original sequence of modules
+     changes is a sparse array whose keys are the indices in source which were changed
+     we get the number of changes first, then walk the source array, taking content from
+     changes if it exists
    */
   merge(source, changes) {
     let changecnt = 0, newsourcelen = 0;
@@ -1403,16 +1395,16 @@ ${msg}`;
     let merged = Array.from({length: source.length + newsourcelen - changecnt});
     for (let i = 0, j=0; i < source.length; i++) {
       if (changes[i]) {
-         changes[i].forEach((e) => {
-            merged[j] = e;
-            j++;
-         });
+        changes[i].forEach((e) => {
+          merged[j] = e;
+          j++;
+        });
       } else {
-         merged[j] = source[i];
-         j++;
+        merged[j] = source[i];
+        j++;
       }
     }
-     return [merged, changecnt];
+    return [merged, changecnt];
   }
    expand(rule) {
       puts(`expanding rule: ${rule}`, LSYS_EXPAND);
@@ -1844,16 +1836,16 @@ function includeJavascript(src) {
 // Include javascript src file
 //includeJavascript("http://www.mydomain.com/script/mynewscript.js");
 
-const loadScript = src => {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.type = 'text/javascript'
-    script.onload = resolve
-    script.onerror = reject
-    script.src = src
-    document.head.append(script)
-  })
-}
+// const loadScript = (src) => {
+//   return new Promise((resolve, reject) => {
+//      const script = document.createElement('script');
+//      script.type = 'text/javascript';
+//      script.onload = resolve;
+//      script.onerror = reject;
+//      script.src = src;
+//      document.head.append(script);
+//   })
+// }
 
 // loadScript('https://code.jquery.com/jquery-3.4.1.min.js')
 //   .then(() => loadScript('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'))

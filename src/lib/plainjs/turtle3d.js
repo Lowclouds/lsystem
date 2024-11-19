@@ -107,7 +107,7 @@ class Turtle3d {
          } 
          Turtle3d.materials.forEach((e,i) => this.materialList[i] = e);
          
-         Turtle3d.trackContours.set('"default"', generateCircle(0.5,0.5));
+         Turtle3d.trackContours.set('"default"', Turtle3d.generateCircle(0.5,0.5));
          this.TurtleState.trackShape = Turtle3d.trackContours.get('"default"');
          Turtle3d.Turtles.set(this.Turtle, this);
          return true;
@@ -1544,7 +1544,7 @@ class Turtle3d {
       Turtle3d.trackContours.forEach((v,k,m) => {
          m.delete(k);
       });
-      Turtle3d.trackContours.set('"default"', generateCircle(0.5,0.5));
+      Turtle3d.trackContours.set('"default"', Turtle3d.generateCircle(0.5,0.5));
    }
 
    storePoint(pos=null, hdg=null) {
@@ -1787,6 +1787,18 @@ class Turtle3d {
       tu.removeTag('colortable');
       tu.setState(tstate);
    }
+
+   static generateCircle (r1=0.5,r2=0.5, q=24) {
+      var p = [];
+      let a = 2*Math.PI/q;         // arc of each section
+      for (let i = 0; i < q; i++) {
+         let v = newV(r1*Math.cos(i*a), r2*Math.sin(i*a), 0)
+         //p.push(vclamp(v));
+         p.push(v);
+      }
+      p.push(p[0]);
+      return p;
+   }
 }
 
 Turtle3d.prototype.fd = Turtle3d.prototype.forward;
@@ -1796,37 +1808,40 @@ Turtle3d.prototype.pu = Turtle3d.prototype.penUp;
 Turtle3d.prototype.pd = Turtle3d.prototype.penDown;
 Turtle3d.prototype.seth = Turtle3d.prototype.setHeading;
 
+import('./classconst.js').then((module) => {
+   module.classConst(Turtle3d, {
+      //classConst(Turtle3d, {
+      DRAW_IMMEDIATE: 0,           // TurtleState.drawMode
+      CAPTURE_NONE: 0,             // synonym of DRAW_IMMEDIATE
+      CAPTURE_PATH: 1,
+      CAPTURE_POLYGON: 2,
+      CAPTURE_CONTOUR: 3,
+      
+      TRACK_LINE: 0,               // TurtleState.trackType
+      TRACK_TUBE: 1,
+      TRACK_EXT: 2,
+      TRACK_RIBBON: 3,
+      
+      PATH_POINTS: 0,              // trackPath.type
+      PATH_HERMITE_OPEN: 1,
+      PATH_HERMITE_CLOSED:  2,
+      PATH_BSPLINE_OPEN: 3,
+      PATH_BSPLINE_CLOSED: 4,
+      
+      /* CONTOUR_POINTS: 0  default segment type */
+      CONTOUR_ARC_3PT: 0,
+      CONTOUR_ARC_CENTER: 1,       // center, radius, arc length
+      CONTOUR_HERMITE: 2,
+      CONTOUR_BEZIER: 3,
+      CONTOUR_CATMULLROM: 4,
+      
+      RIBBON_OPEN: 1,    // RibbonPath.type
+      RIBBON_PRIMORDIA_OPEN: 2,
+      RIBBON_PRIMORDIA_CLOSED: 3,
+   });
+})
 
-// classConst is in logtag.js
-classConst(Turtle3d, {
-  DRAW_IMMEDIATE: 0,           // TurtleState.drawMode
-  CAPTURE_NONE: 0,             // synonym of DRAW_IMMEDIATE
-  CAPTURE_PATH: 1,
-  CAPTURE_POLYGON: 2,
-  CAPTURE_CONTOUR: 3,
 
-  TRACK_LINE: 0,               // TurtleState.trackType
-  TRACK_TUBE: 1,
-  TRACK_EXT: 2,
-  TRACK_RIBBON: 3,
-
-  PATH_POINTS: 0,              // trackPath.type
-  PATH_HERMITE_OPEN: 1,
-  PATH_HERMITE_CLOSED:  2,
-  PATH_BSPLINE_OPEN: 3,
-  PATH_BSPLINE_CLOSED: 4,
-  
-  /* CONTOUR_POINTS: 0  default segment type */
-  CONTOUR_ARC_3PT: 0,
-  CONTOUR_ARC_CENTER: 1,       // center, radius, arc length
-  CONTOUR_HERMITE: 2,
-  CONTOUR_BEZIER: 3,
-  CONTOUR_CATMULLROM: 4,
-
-  RIBBON_OPEN: 1,    // RibbonPath.type
-  RIBBON_PRIMORDIA_OPEN: 2,
-  RIBBON_PRIMORDIA_CLOSED: 3,
-});
 // leaving space here for different triangulation routines
 
 
@@ -2192,7 +2207,7 @@ class Contour {
 class TrackPath {
    constructor (opts={}) {
       if (! opts?.s ) {
-         this.shape = generateCircle();
+         this.shape = Turtle3d.generateCircle();
       } else {
          this.shape = opts.s;
       }
@@ -2220,7 +2235,7 @@ class TrackPath {
    } 
 
    /**
-    * addPathPt at a point when in path mode
+    * addPathPt
     * ts = TurtleState
     * newPos = position to add
     **/
@@ -2562,6 +2577,7 @@ class HermiteSpline extends TrackPath {
    }
 } /* end HermiteSpline */
 
+/*
 // Base class for ribbon-based meshes
 class RibbonPath {
    constructor(opts = {}) {
@@ -2579,42 +2595,8 @@ class RibbonPath {
       return rpc;
    }
 }
-
-class Primordia extends RibbonPath {
-   constructor(t, opts = {}) {
-      super(opts);
-      this.contour = [];
-      if (opts.nPts) {
-         let npts = opts.npts % 2 ? opts.npts : opts.npts + 1;
-         this.nContourPts = npts >= 3 ? npts : 9;
-      }
-      this.type = Turtle3d.RIBBON_PRIMORDIA_OPEN;
-      if (opts.nPts) {
-      } else {
-         this.nContourPts = 2*9+2;
-      }
-      this.weights=[0,0,0];
-   }
-}
-class PrimordiaClosed extends Primordia {
-   constructor(t, opts = {}) {
-      super(opts);
-   }
-}
-
-function generateCircle(r1=0.5,r2=0.5, q=24) {
-   
-   var p = [];
-   let a = 2*Math.PI/q;         // arc of each section
-   for (let i = 0; i < q; i++) {
-      let v = newV(r1*Math.cos(i*a), r2*Math.sin(i*a), 0)
-      //p.push(vclamp(v));
-      p.push(v);
-   }
-   p.push(p[0]);
-   return p;
-}
-
+*/
+/*
 function generateMint(r=1, d=0.2, q=8) {
    const cs45 = cosd(45);
    if (d > r*(1 - cs45)) {
@@ -2639,42 +2621,6 @@ function generateMint(r=1, d=0.2, q=8) {
    p.push(p[0]);
    return p;
 }
-
-/*
-  function showColorTable(tu) {
-  let tstate = tu.getState();
-  tu.penUp();
-  tu.home();
-  tu.goto(0,1,0);
-  let size = tu.materialList.length;
-  let rows = Math.round(Math.sqrt(size) + 0.5);
-  puts (`ct size: ${size}, rows: ${rows}`);
-  let m = 0;
-  tu.setTag('colortable')
-  tu.setSize(0.025, true);
-  tu.penDown();
-  for (let r = 0; r < rows; r++) {
-  let c; let pos;
-  for (c = 0; m < size && c < rows; c++, m++) {
-  tu.setMaterial(254);   // black
-  tu.newPolygon();
-  tu.updatePolygon();
-  for (let s=0; s<4; s++) {
-  tu.fd(1, s<3);
-  tu.yaw((s % 2 == 1) ?120 : 60);
-  }
-  tu.setMaterial(m);
-  tu.endPolygon();
-  tu.fd(1);
-  }
-  tu.bk(c);                 // go back
-  tu.yaw(90);
-  tu.fd(1);                 // goto next row
-  tu.yaw(-90);
-  }
-  tu.removeTag('colortable');
-  tu.setState(tstate);
-  }
 */
 // some helper functions
 //var puts = console.log;          // nod to TCL
@@ -2684,7 +2630,7 @@ function betterTypeOf (o) {
 
 const radtodeg = 180/Math.PI;
 const degtorad = Math.PI/180;
-const eps = Number.EPSILON;
+const eps = 1e-9; // Number.EPSILON;
 function cosd(deg) {return Math.cos(degtorad*deg);}
 function sind(deg) {return Math.sin(degtorad*deg);}
 function acosd (v) { return radtodeg * Math.acos(v);}
@@ -2713,7 +2659,6 @@ function clamp (v, epsilon = eps) {
    return v.fromArray(va);
 }
 function vclamp(v) {
-   const eps = 1e-9;
    if (Math.abs(v.x) < eps) {v.x=0;}
    if (Math.abs(v.y) < eps) {v.y=0;}
    if (Math.abs(v.z) < eps) {v.z=0;}
@@ -2724,7 +2669,7 @@ function vclamp(v) {
 function dround(f,d) {
    d=Math.round(d);
    if (d < -15 || d>15) {return f;}
-   if (d==0) { return Math.round(f);}
+   if (d === 0) { return Math.round(f);}
    let s = Math.pow(10,d);
    let ff = s*f;
    return Math.round(ff)/s;
