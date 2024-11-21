@@ -282,7 +282,7 @@
           drawDisabled = true;
           RPRDdisabled = true;
           animationState.stepStart = false;
-          $lsExpansion = listtostr($lsys.Rewrite()); //.toString();
+          $lsExpansion = Lsystem.listtostr($lsys.Rewrite()); //.toString();
           $numIterations = $lsys.dDone;
           $numNodes = $lsys.interp.length;
           $lsExpansionStatus = 'Rewrite Done';
@@ -361,9 +361,9 @@
            // $lsys.current = $lsys.axiom.slice();
            // $lsys.interp = $lsys.current; 
            // $lsExpansion = listtostr($lsys.current); // lsys.axiom startString
-           $lsExpansion = listtostr($lsys.Rewrite($lsys, null, 0));
+           $lsExpansion = Lsystem.listtostr($lsys.Rewrite($lsys, null, 0));
         } else {
-           $lsExpansion = listtostr($lsys.Rewrite($lsys, $lsys.current));
+           $lsExpansion = Lsystem.listtostr($lsys.Rewrite($lsys, $lsys.current));
         }
 
         $lsExpansionStatus = `Step: ${$lsys.dDone}${($lsys.dDone==0)?" => axiom":""}`;

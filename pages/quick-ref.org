@@ -81,8 +81,8 @@ in an L-system with the line:
   Defaults without a parameter to one
 |  | ;(i)       | increase or set color/material index           |
 |  | ,(i)       | decrease or set color/material index           |
-|  | @;(n) *u*  | increase or set back face color/material index |
-|  | @,(n) *u*  | decrease or set back face color/material index |
+|  | ;(n) *u*   | increase or set back face color/material index |
+|  | ,(n) *u*   | decrease or set back face color/material index |
 |  | #(n)       | increase or set line width                     |
 |  | !(n)       | decrease or set line width                     |
 |  | @Tx(n) *u* | set texture index                              |

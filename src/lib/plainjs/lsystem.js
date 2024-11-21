@@ -102,16 +102,37 @@ function makeRegExps( ) {
 */ 
 var ParameterizedModule = function(name, parms, noParse=false) {
    this.m = name;
-   this.p = noParse ? parms.slice() : parseParens(parms);
-
-   normalizeStrings(this);
+   if (noParse) {
+      this.p = parms.slice();
+   } else {
+      this.p = parseParens(parms);
+      normalizeStrings(this);
+   }
 
    this.toString = function() {
       let s = this.m + '(' ;
-      this.p.forEach((v,i) => {s += v.toString(); if (i < this.p.length-1) s += ','});
+      let commastop = this.p.length-1;
+      this.p.forEach((v,i) => {
+         switch (typeof v) {
+         case 'object':
+            if (Array.isArray(v)) {
+               s += `[${v[0].toString()}...]`;
+            } else {
+               for (let prop in v) {
+                  s += `{${prop}: ${v[prop].toString()}...}`;
+                  break;
+               }
+            }
+            break;
+         default:
+            s += v.toString();
+            break;
+         }
+         if (i < commastop) s += ',';
+      });
       s += ')';
       return s;
-   } // JSON.stringify(this.p)
+   }
 
    this.clone = function() {
       let pm =  new ParameterizedModule(this.m, '');
@@ -199,13 +220,17 @@ class LsScope extends Map {
    // bind formal parameters of modules in rule scope
    bind (v, exp) {
       puts(`bind(${v}=${exp})`, LSYS_PARSE_PROD);
-      let end = exp.length-1;
-      let s0 = exp[0];
-      let s1 = exp[end];
-      if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
-         this.set(v, exp); // keep strings
+      if (typeof exp === 'string') {
+         let end = exp.length-1;
+         let s0 = exp[0];
+         let s1 = exp[end];
+         if (s0 == s1 && (s0 == "'" || s0 == '"') ) {
+            this.set(v, exp); // keep strings
+         } else {
+            math.evaluate(v + '=' + exp, this);
+         }
       } else {
-         math.evaluate(v + '=' + exp, this);
+         this.set(v,exp);
       }
       this.scopeMap.set(v,null); // just set rule scope to null
    }
@@ -1140,19 +1165,20 @@ ${msg}`;
    }
 
    static listtostr(l) {
-      let r= new String('');
-      if ('string' == typeof l) {return l;}
+      let r = Array(l.length);
+      let i = 0;
+      if ('string' === typeof l) {return l;}
       l.forEach(e => { 
          if (e) {
-            if ('object' == typeof e && e?.m != null) {
-               r+= e.m + '(' + e.p + ')';
-            } else  {
-               r  += e;
+            if (typeof e === 'object') {
+               r[i] = e.toString();
+            } else {
+               r[i] = e;
             }
+            i++
          }
-         return '?';
       });
-      return r;
+      return r.join('');
    }
    
    /* rewrite lsystem string expanding parameter values
@@ -1209,15 +1235,20 @@ ${msg}`;
          lschanges = [];    // changes introduced in this interation
          let nchanges = 0;
          puts(`iteration ${i};`, LSYS_REWRITE);
-         doOnePass();
+
+         doOnePass();           // first pass of rewrite
+
          [mstring, nchanges] = this.merge(mstring, lschanges);
+
          if (ls.decomprules !=  null) {
             rules = ls.decomprules;
             for (let j = 1; j <= ls.decompDepth; j++) {
                // mlength = mstring.length;
                puts(`iteration ${i}; decomposition: ${j}`, LSYS_REWRITE);
                lschanges = [];
-               doOnePass();
+
+               doOnePass();     // second pass, decomposition rewrite
+
                [mstring, nchanges] = this.merge(mstring, lschanges);
                if (nchanges === 0) { break; }
             }
@@ -1230,7 +1261,6 @@ ${msg}`;
          genv.upbind();         // probably a don't care
       }
 
-
       ls.current = mstring;
       ls.interp = ls.current;
       if (it > 0 && ls.homorules != null) {
@@ -1241,7 +1271,9 @@ ${msg}`;
             puts(`rewriting homomorphism interation ${i} - ${mstring}`, LSYS_REWRITE);
             let nchanges = 0;
             lschanges=[];
-            doOnePass();
+
+            doOnePass();        // third pass, homomorphism rewrite
+
             [mstring, nchanges] = this.merge(mstring, lschanges);
             if (nchanges === 0) { break; }
          }
@@ -1280,8 +1312,8 @@ ${msg}`;
                continue;
             }
             // 
-            let doExpand = false;
             // find best rule match
+            // 
             let bestrule = null;
             let bestruleContextLength = 0;
             let bestscope = null;
@@ -1339,7 +1371,7 @@ ${msg}`;
                }
                puts(`expanded ${mstring[n]} to ${lschanges[n]}`, LSYS_REWRITE, LSYS_EXPAND);
             }
-            //          if (! doExpand) {
+
             // special case a few module types
             if (ls.formalMatch(Lsystem.modLsystemStart, module, null)) {
                let sublslabel = module.p[0].toString();
@@ -1716,9 +1748,9 @@ function expandF(scope, name) {
          } else {
             puts(`${n}: evaluating ${arg}`, LSYS_EXPAND);
             let r = math.evaluate(arg, scope);
-            if (typeof r === 'object') {
-               r = JSON.stringify(r);
-            }
+            // if (typeof r === 'object') {
+            //    r = JSON.stringify(r);
+            // }
             module.p[ndx] = r;
          }
       });
@@ -1764,75 +1796,77 @@ function flatten( list) {
 //    return l;
 // }
 
-function listtostr(l) {
-   let r= new String('');
-   if ('string' == typeof l) {return l;}
-   l.forEach(e => { 
-      if (e) {
-         if ('object' == typeof e) {
-            r+= e.toString();
-         } else  {
-            r  += e;
-         }
-      }
-      return;
-   });
-   return r;
-}
+// function listtostr(l) {
+//    let r = Array(l.length);
+//    let i = 0;
+//    if ('string' == typeof l) {return l;}
+//    l.forEach(e => { 
+//       if (e) {
+//          if ('object' == typeof e) {
+//             r[i] = e.toString();
+//          } else  {
+//             r[i] = e;
+//          }
+//          i++
+//       }
+//       //return;
+//    });
+//    return r.join('');
+// }
 
 
 
 
-function substitute(defs, expr ) {
-   let didSub, nexpr;
-   let res = [];
-   defs.forEach((v,k) => {
-      res.push( {re: new RegExp(`\\b${k}\\b`, 'g'), sub: v});
-   });
-   res.forEach((def) => {puts(`${def.re}, ${def.sub}`);});
+// function substitute(defs, expr ) {
+//    let didSub, nexpr;
+//    let res = [];
+//    defs.forEach((v,k) => {
+//       res.push( {re: new RegExp(`\\b${k}\\b`, 'g'), sub: v});
+//    });
+//    res.forEach((def) => {puts(`${def.re}, ${def.sub}`);});
 
-   do {
-      didSub = false;
-      res.forEach((def) => {
-         nexpr = expr.replaceAll(def.re, def.sub);
-         if (nexpr != expr) {
-            didSub = true;
-            expr = nexpr;
-         }
-      });
-   } while (didSub);
-   return expr;
-}
+//    do {
+//       didSub = false;
+//       res.forEach((def) => {
+//          nexpr = expr.replaceAll(def.re, def.sub);
+//          if (nexpr != expr) {
+//             didSub = true;
+//             expr = nexpr;
+//          }
+//       });
+//    } while (didSub);
+//    return expr;
+// }
 
-function lappend (larray, ...items) {
-   larray.splice(larray.length,0, ...items);
-}
+// function lappend (larray, ...items) {
+//    larray.splice(larray.length,0, ...items);
+// }
 
 
-function flattenv( list) {
-   let r=[];
-   for (let i=0;i<list.length;i++) {
-      v=list[i].asArray();
-      if (Array.isArray(v)) {
-         puts('list[' + i + ']: ' + v + ' is an array');
-         v.forEach(m => {r.push(m)});
-      } else {
-         puts('list[' + i + ']: ' + v + ' is NOT an array');
-         r.push(v);
-      }
-   }
-   return r;
-}
+// function flattenv( list) {
+//    let r=[];
+//    for (let i=0;i<list.length;i++) {
+//       v=list[i].asArray();
+//       if (Array.isArray(v)) {
+//          puts('list[' + i + ']: ' + v + ' is an array');
+//          v.forEach(m => {r.push(m)});
+//       } else {
+//          puts('list[' + i + ']: ' + v + ' is NOT an array');
+//          r.push(v);
+//       }
+//    }
+//    return r;
+// }
 
-function includeJavascript(src) {
-   if (document.createElement && document.getElementsByTagName) {
-      var head_tag = document.getElementsByTagName('head')[0];
-      var script_tag = document.createElement('script');
-      script_tag.setAttribute('type', 'text/javascript');
-      script_tag.setAttribute('src', src);
-      head_tag.appendChild(script_tag);
-   }
-}
+// function includeJavascript(src) {
+//    if (document.createElement && document.getElementsByTagName) {
+//       var head_tag = document.getElementsByTagName('head')[0];
+//       var script_tag = document.createElement('script');
+//       script_tag.setAttribute('type', 'text/javascript');
+//       script_tag.setAttribute('src', src);
+//       head_tag.appendChild(script_tag);
+//    }
+// }
 // Include javascript src file
 //includeJavascript("http://www.mydomain.com/script/mynewscript.js");
 

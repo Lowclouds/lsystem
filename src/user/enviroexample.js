@@ -48,7 +48,7 @@ export default class enviroDefault {
     });
   }
 
-  finalize(){
+  async finalize(){
     /* here is where'd you put some delayed computation
        compute eresults;
        -- or you could have been doing it asynchronously in the background

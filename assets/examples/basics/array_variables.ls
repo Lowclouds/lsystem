@@ -1,15 +1,16 @@
 /*
-  array variable definition
-  Simply assign an array value to a variable name just as in JavaScript
+  Arrays and array variable definition
 
+  Simply assign an array value to a variable name just as in JavaScript, __EXCEPT__...
   Two caveats when using arrays:
+  
   First, note that in mathjs array indexing starts at 1, not 0, so you need to do that, too.
 
-  Second, arrays can contain other types, BUT, if an array element is an array, then all the
-  elements at that level in the array must ALSO be arrays, since mathjs will try to convert
-  it to its Matrix type. So, for example, a = [1, [2], [[3]]], is invalid, 
+  Second, arrays can contain other types, __BUT__, if an array element is an array, 
+  then all the elements at that level in the array must ALSO be arrays, since mathjs 
+  will try to convert it to its Matrix type. So, for example, a = [1, [2], [[3]]], is invalid, 
 
- */ 
+*/ 
 #define aInc 0.1415
 #define bScale 1.15
 #define alpha α
