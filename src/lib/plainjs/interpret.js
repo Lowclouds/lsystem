@@ -123,7 +123,7 @@ t0.setHeading([0,1,0])`);
    var lstring = ls.interp;
    puts(`lsystem has ${lstring.length} modules`, NTRP_INIT);
    puts(`using settings with turtle ${t0.Turtle}, ` + idata.show(), NTRP_INIT);
-  var enviroInst = null;
+  var enviroInst = ls.environment;
   
    ifcUpd.updateLsysInfo ({bgcolor: 'lightgray', ndrawn: lstring.length});
 
@@ -752,7 +752,7 @@ t0.setHeading([0,1,0])`);
                case '?H':
                case '?L':
                case '?U':
-                 if (iDone > 0) {
+                 if (iDone >= 0) {
                    if (isPM) {
                      let tstate = turtle.getBasicState();
                      if (LogTag.areSet([NTRP_ENVIRO]) ) {
@@ -767,16 +767,22 @@ t0.setHeading([0,1,0])`);
                      if (isEnviroCall) {
                        isEnviroCall = false; // reset
                        if (enviroInst === null) {
-                         if (ls?.enviroClass) {
-                           enviroInst = new ls.enviroClass();
+                         if (ls?.environmentClass) {
+                           enviroInst = new ls.environmentClass();
+                           puts(`Instantiated enviroClass ${enviroInst.name}`, NTRP_ENVIRO);
                          } else {
                            console.warn('no environment supplied. Using default for now');
                            // throw new Error('no environment supplied. bailing');
                            // break;
                            enviroInst = new enviroDefault();
                          }
+                         ls.environment = enviroInst;
                        }
-                       if (! enviroInst.isInitialized) {enviroInst.init();}
+                       if (! enviroInst.isInitialized) {
+                         let opts = ls.enviroInitOpts ?? {};
+                         enviroInst.init(opts);
+                         puts(`Called enviroInst.init(${JSON.stringify(opts)}): ${enviroInst.name}`, NTRP_ENVIRO);
+                       }
                        puts(`enviroCall: ${enviroInst.name}`, NTRP_ENVIRO);
                        ePromises.push(enviroInst.update({mIndex: branchpos, mArgs: pmArgs, turtle: tstate}));
                      } else {

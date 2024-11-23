@@ -404,8 +404,8 @@ class Lsystem {
       this.ignore=[];
       this.consider=[]; 
       this.restrict = null; // either ignore or consider
-      this.environmentModuleCount = 0;
       this.needsEnvironment = false;
+      this.environmentClass = null
       this.environment = null;
       this.hasQuery = false;
       this.disableDrawing = false;
@@ -565,568 +565,575 @@ class Lsystem {
      
    */ 
   static Parse (cppSpec, opts = {}) {
-      const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_INCOMPLETE_INPUT = 3, P_TRANSITION=4;
+    const  P_ERROR=0, P_UNHANDLED = 1, P_HANDLED = 2, P_INCOMPLETE_INPUT = 3, P_TRANSITION=4;
     puts(JSON.stringify(opts), LSYS_PARSE);
-      let pos = 0;
-      let end = cppSpec.length;      
-      let m;                            // common match variable
-      let nestPos;                      // where we left line mode
-      let nesting = [];
-      let ls0;
-      if (opts?.lsystem) {
-         ls0 = opts.lsystem;
+    let pos = 0;
+    let end = cppSpec.length;      
+    let m;                            // common match variable
+    let nestPos;                      // where we left line mode
+    let nesting = [];
+    let ls0;
+    if (opts?.lsystem) {
+      ls0 = opts.lsystem;
+    } else {
+      ls0 = new Lsystem(cppSpec, 'main'); // preemptively naming it 
+    }
+    Lsystem.lsystems.clear();
+    Lsystem.lsystems.set('main', ls0);
+    Lsystem.globals.clear();
+    let labelSeen = false;    // have we seen the 'lsystem: xxx' label
+    
+    ls0.initParse();
+    parseHelper(ls0);    // this is the toplevel l-system
+
+    if (! ls0.Dlength) {
+      if (ls0.locals.has('n')) {
+        ls0.Dlength = ls0.locals.get('n');
+      } else if (ls0.globals.has('n')) {
+        ls0.Dlength = ls0.globals.get('n');
       } else {
-         ls0 = new Lsystem(cppSpec, 'main'); // preemptively naming it 
+        ls0.Dlength = 1;
+        puts('Derivation length not specified; defaulting to 1');
       }
-      Lsystem.lsystems.clear();
-      Lsystem.lsystems.set('main', ls0);
-      Lsystem.globals.clear();
-      let labelSeen = false;    // have we seen the 'lsystem: xxx' label
+    }
+    ls0.subsystems = Lsystem.lsystems;
+    ls0.environmentClass = opts?.enviroClass;
+    ls0.environment = null;
+    if (ls0.globals.has('enviroInitOpts')) {
+      ls0.enviroInitOpts = ls0.globals.get('enviroInitOpts');
+    } else {
+      ls0.enviroInitOpts = opts?.enviroInitOpts;
+    }
+
+    ls0.verbose=0;
+    ls0.show();
+
+    return ls0;
+
+    function findEOL (s, p) {
+      let r = `Start: ${p}`;
+      let lstart=p
+      do {
+        let eol_ = s.indexOf('\n', lstart);
+        if (eol_ == -1) {
+          return s.length;
+        } else {
+          lstart = eol_ + 1; // peek past end of line
+          r +=`, peek: pos: ${lstart} = '${s[lstart]}'`;
+          if(lstart >= s.length) {
+            puts(r, LSYS_PARSE);
+            return s.length;
+          } else if (s[lstart] == ' ' || s[lstart] == '\t') { // whitespace at BOL
+            if (s.slice(lstart,s.length-1).match(/[ \\t]+\\n/)) {
+              puts(r, LSYS_PARSE);
+              return eol_;
+            } else {
+              continue;
+            }
+          } else {
+            puts(r, LSYS_PARSE);
+            return eol_;
+          }
+        }
+      } while(1);
+    }
+
+    // this is a simple state machine, so all substates return to parent 
+    // eliminating tricky transition discovery.
+    // A sub L-system invokes a recursive call to this function.
+    // states are functions, parseResult contains a code and a nextState
+    // there is one state function call per line of input
+    function parseHelper (ls, isSubLs = false) {
+      let line='', eol = 0;
+      let multiline = '';
+      let linectr = 0;
+      if (!isSubLs && cppSpec === 'no specification') {
+        puts('nothing to parse');
+        return;
+      } 
+
+      let parseState  = inItems; // initial parse state
+      let parseResult = new ParseResult();       // {status, nextState}
+      let have_axiom=false;
+      let have_homomorphism=false;
+      while (pos < end) {
+        eol = findEOL(cppSpec,pos);
+        if ((eol - pos) < 1) {
+          puts("skipping short line: " + cppSpec.slice(pos,eol), LSYS_PARSE);
+          pos = eol + 1; // advance file pointer
+          continue;
+        }
+        // remove extra spaces and carriage returns
+        line = multiline + cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
+        // puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
+        pos = eol + 1; // advance file pointer
+        linectr++;
+
+        puts(`state: ${parseState.name}, ${pos} ${eol}, ${line}`, LSYS_PARSE);
+        parseResult.n = parseState.name;
+
+        parseState(ls, line, parseResult);
+
+        switch (parseResult.status) {
+        case P_ERROR:
+          return errorState(ls, line, linectr, pos, parseResult.emsg);
+        case P_TRANSITION:
+          parseState = parseResult.nextState;
+          if (parseState === wantLsystem && isSubLs) {
+            // we are in a sub Lsystem after an endlsystem statement, so
+            // return this completed lsystem to the main one;
+            multiline = '';
+            return ls;
+          }
+          // intentional fall through
+        case P_HANDLED:
+          multiline = '';
+          break;
+        case P_INCOMPLETE_INPUT: // inefficient, but simple
+          multiline += line;
+          break;
+        case P_UNHANDLED:
+          // not clear why we leave unhandled unhandled
+          //puts(`Unhandled parse result, on line: ${line}`);
+          multiline = '';
+          break;
+        default:
+          puts('unexpected parse result');
+          multiline = '';
+          return;
+        }
+      } // not at end of spec
+      return ls;
+    }
+    
+    function ParseResult (s=P_ERROR, n=errorState, msg='') {
+      return {status: s, nextState: n, emsg: msg};
+    }
+
+    // this picks up variable definitions and xxx: statements
+    // we exit inItems when axiom: is seen
+    function inItems (ls, line, pr) {
+      puts(`inItems looking at: ${line}`, LSYS_IN_ITEMS);
+      pr.status = P_HANDLED;
+
+      if (RE.var.test(line)) {
+        //m = line.matchAll(RE.assignNum);
+        m = line.matchAll(RE.assignAny);
+        if (m) {
+          try {
+            for (let parts of m) {
+              let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or'); //.replaceAll('!', ' not ');
+              if (labelSeen) {
+                let escope = new LsScope();
+                escope.init(ls.locals,ls.globals);
+                math.evaluate(parts[1]+'='+ parts2, escope);
+                ls.locals.set(parts[1], escope.get(parts[1]));
+                puts(`set local var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
+              } else {
+                math.evaluate(parts[1]+'='+ parts2, ls.globals);
+                puts(`set global var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
+              }
+              //ls.locals.set(parts[1], parts[2]);
+            }
+          } catch (error) {
+            puts(`Error setting variable: ${error}`);
+          }
+        }         
+        ls.show('vars');
+        //ls.show('functions');
+      } else if (null != ( m = line.match(RE.lsystem))) {
+        // this should happen only on the initial lsystem and covers the case
+        // of strictly valid lsystems with an 'lsystem: chars' statement
+        // otherwise, we should pick up the lsystem statement in wantLsystem
+        puts(`matched "lsystem: xxx" got: ${m[1]}`, LSYS_IN_ITEMS);
+        // sanity check here
+        let oldlabel = ls.label;
+        let thelsystem = Lsystem.lsystems.get(oldlabel);
+        if ((oldlabel != 'main') || ls != thelsystem) {
+          pr.status=P_ERROR;
+          pr.nextState=errorState;
+          pr.emsg = `lsystem name s.b. main, but is ${oldlabel}`;
+        } else {
+          Lsystem.lsystems.delete(oldlabel);
+          ls.label = m[1];
+          Lsystem.lsystems.set(ls.label, ls);
+          puts(`reset lsystem name to ${ls.label} from ${oldlabel}`, LSYS_IN_ITEMS);
+          labelSeen = true;
+          ls.show('label');
+        }
+      } else if (null !== ( m = line.match(RE.dlength))) {
+        puts(`matched "derivation length: " got: ${m[1]}`, LSYS_IN_ITEMS);
+        ls.Dlength = Number(m[1]);
+        ls.locals.set('Dlength', ls.Dlength)
+        ls.show('Dlength');
+      } else if (null !== (m = line.match(RE.ignore))) {
+        ls.ignore = Lsystem.strtolist(m[1]) 
+        ls.show('ignore');
+      } else if (null !== (m = line.match(RE.consider))) {
+        ls.consider = Lsystem.strtolist(m[1]) 
+        ls.show('consider');
+      } else if (null !== (m = line.match(RE.Start))) {
+        let isComplete = parseSkipBrackets(m[1]);
+        if (isComplete[1] !== null) {
+          ls.start = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+          puts(`found -> Start: ${ls.start}`, LSYS_IN_ITEMS);
+          ls.startX = math.compile(ls.start);
+        } else {
+          pr.status = P_INCOMPLETE_INPUT;
+        }
+      } else if (null !== (m = line.match(RE.StartEach))) {
+        let isComplete = parseSkipBrackets(m[1]);
+        if (isComplete[1] !== null) {
+          ls.startEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+          puts(`found -> StartEach: ${ls.startEach}`, LSYS_IN_ITEMS);
+          ls.startEachX = math.compile(ls.startEach);
+        } else {
+          pr.status = P_INCOMPLETE_INPUT;
+        }
+      } else if (null !== (m = line.match(RE.EndEach))) {
+        let isComplete = parseSkipBrackets(m[1]);
+        if (isComplete[1] !== null) {
+          ls.endEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+          puts(`found -> EndEach: ${ls.endEach}`, LSYS_IN_ITEMS);
+          ls.endEachX = math.compile(ls.endEach);
+        } else {
+          pr.status = P_INCOMPLETE_INPUT;
+        }
+      } else if (null !== (m = line.match(RE.End))) {
+        let isComplete = parseSkipBrackets(m[1]);
+        if (isComplete[1] !== null) {
+          ls.end = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
+          puts(`found -> End: ${ls.end}`, LSYS_IN_ITEMS);
+          ls.endX = math.compile(ls.end);
+        } else {
+          pr.status = P_INCOMPLETE_INPUT;
+        }
+      } else if (null !== (m = line.match(RE.axiom))) {
+        //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
+        let tmp = m[1].replaceAll(RE.ws, ''); // remove embedded ws in axiom
+        ls.axiom = parseSuccessor(tmp);
+        ls.show('axiom');
+        // create restrict if needed
+        if (ls.ignore.length) {
+          if (! ls.consider.length) {
+            ls.restrict = {ignore: ls.ignore};
+          } else {
+            throw new Error('Both ignore and consider cannot be used');
+          }
+        } else if (ls.consider.length) {
+          ls.restrict = {consider: ls.consider};
+        } else {
+          ls.restrict = null;
+        }
+        pr.status=P_TRANSITION;
+        pr.nextState = inProductions;
+      } else if (null != (m = line.match(RE.anyGlobal))) {
+        ls.globals.set(m[1], m[2]);
+        ls[m[1]] = m[2];    // why am i doing this?!!!
+        puts(`matched "anyGlobal:" ${m[1]} = ${m[2]}`, LSYS_IN_ITEMS);
+      } else {
+        pr.status = P_UNHANDLED;
+        puts(`unrecognized statement: ${line}`);
+      }
+      return pr;
+    }
+
+    function inProductions (ls, line, pr) {
+      pr.status = P_HANDLED;
+
+      puts(`inProductions looking at: ${line}`, LSYS_IN_PROD);
+      if (line.includes('homomorphism')) {
+        // should pick up warnings/no warnings
+        pr.status = P_TRANSITION;
+        pr.nextState = inHomomorphism;
+      } else if (line.includes('decomposition')) {
+        // should pick up warnings/no warnings
+        pr.status = P_TRANSITION;
+        pr.nextState = inDecomposition;
+      } else if (line.includes('endlsystem')) {
+        pr.status = P_TRANSITION;
+        pr.nextState = wantLsystem;
+      } else {
+        let rule = parseProduction(ls, line)
+        if (rule != null) {
+          ls.rules.push(rule);
+        } else {
+          pr.status = P_UNHANDLED;
+        }
+      } 
+      return pr;
+    }
+    function inDecomposition (ls, line, pr) {
+      pr.status = P_HANDLED;
       
-      ls0.initParse();
-      parseHelper(ls0);    // this is the toplevel l-system
-
-      if (! ls0.Dlength) {
-         if (ls0.locals.has('n')) {
-            ls0.Dlength = ls0.locals.get('n');
-         } else if (ls0.globals.has('n')) {
-            ls0.Dlength = ls0.globals.get('n');
-         } else {
-            ls0.Dlength = 1;
-            puts('Derivation length not specified; defaulting to 1');
-         }
+      if (ls.decomprules === null) ls.decomprules=[];
+      puts(`inDecomposition looking at: ${line}`, LSYS_IN_DECOMP ); // , 
+      if (line.includes('homomorphism')) {
+        // should pick up warnings/no warnings
+        pr.status = P_TRANSITION;
+        pr.nextState = inHomomorphism;
+      } else if (line.includes('decomposition')) {
+        // should pick up warnings/no warnings
+        pr.status = P_ERROR;
+        pr.nextState = errorState;
+        pr.emsg = "Can't follow a decomposition with decomposition";
+      } else if (line.includes('endlsystem')) {
+        pr.status = P_TRANSITION;
+        pr.nextState = wantLsystem;
+      } else if (m = line.match(RE.maxDepth)) {
+        ls.decompDepth = Number(m[1]);;
+      } else {
+        let rule = parseProduction(ls, line)
+        if (rule != null) {
+          ls.decomprules.push(rule);
+        } else {
+          pr.status = P_UNHANDLED;
+        }
       }
-      ls0.subsystems = Lsystem.lsystems;
-      ls0.enviroClass = opts?.enviroClass;
-      ls0.verbose=0;
-      ls0.show();
+      return pr;
+    }
+    function inHomomorphism (ls, line, pr) {
+      pr.status = P_HANDLED;
 
-      return ls0;
-
-      function findEOL (s, p) {
-         let r = `Start: ${p}`;
-         let lstart=p
-         do {
-            let eol_ = s.indexOf('\n', lstart);
-            if (eol_ == -1) {
-               return s.length;
-            } else {
-               lstart = eol_ + 1; // peek past end of line
-               r +=`, peek: pos: ${lstart} = '${s[lstart]}'`;
-               if(lstart >= s.length) {
-                  puts(r, LSYS_PARSE);
-                  return s.length;
-               } else if (s[lstart] == ' ' || s[lstart] == '\t') { // whitespace at BOL
-                  if (s.slice(lstart,s.length-1).match(/[ \\t]+\\n/)) {
-                     puts(r, LSYS_PARSE);
-                     return eol_;
-                  } else {
-                     continue;
-                  }
-               } else {
-                  puts(r, LSYS_PARSE);
-                  return eol_;
-               }
-            }
-         } while(1);
+      if (ls.homorules === null) ls.homorules=[];
+      puts(`inHomomorphism looking at: ${line}`, LSYS_IN_HOMO);
+      if (line.includes('homomorphism')) {
+        // should pick up warnings/no warnings
+        pr.status = P_ERROR;
+        pr.nextState = errorState;
+        pr.emsg ="Can't have a homomorphism section in homomorphism";
+      } else if (line.includes('decomposition')) {
+        // should pick up warnings/no warnings
+        pr.status = P_ERROR;
+        pr.nextState = errorState;
+        pr.emsg = "Can't follow a homomorphism with decomposition";
+      } else if (line.includes('endlsystem')) {
+        pr.status = P_TRANSITION;
+        pr.nextState = wantLsystem;
+      } else if (m = line.match(RE.maxDepth)) {
+        ls.homoDepth = Number(m[1]);
+      } else {
+        let rule = parseProduction(ls, line)
+        if (rule != null) {
+          ls.homorules.push(rule);
+        } else {
+          pr.status = P_UNHANDLED;
+        }
       }
-
-      // this is a simple state machine, so all substates return to parent 
-      // eliminating tricky transition discovery.
-      // A sub L-system invokes a recursive call to this function.
-      // states are functions, parseResult contains a code and a nextState
-      // there is one state function call per line of input
-      function parseHelper (ls, isSubLs = false) {
-         let line='', eol = 0;
-         let multiline = '';
-         let linectr = 0;
-         if (!isSubLs && cppSpec === 'no specification') {
-            puts('nothing to parse');
-            return;
-         } 
-
-         let parseState  = inItems; // initial parse state
-         let parseResult = new ParseResult();       // {status, nextState}
-         let have_axiom=false;
-         let have_homomorphism=false;
-         while (pos < end) {
-            eol = findEOL(cppSpec,pos);
-            if ((eol - pos) < 1) {
-               puts("skipping short line: " + cppSpec.slice(pos,eol), LSYS_PARSE);
-               pos = eol + 1; // advance file pointer
-               continue;
-            }
-            // remove extra spaces and carriage returns
-            line = multiline + cppSpec.slice(pos,eol).replaceAll(/\s\s+/g,' ');
-            // puts(`${pos}-${eol} : ${line}`, LSYS_PARSE);
-            pos = eol + 1; // advance file pointer
-            linectr++;
-
-           puts(`state: ${parseState.name}, ${pos} ${eol}, ${line}`, LSYS_PARSE);
-           parseResult.n = parseState.name;
-
-           parseState(ls, line, parseResult);
-
-           switch (parseResult.status) {
-           case P_ERROR:
-             return errorState(ls, line, linectr, pos, parseResult.emsg);
-           case P_TRANSITION:
-             parseState = parseResult.nextState;
-             if (parseState === wantLsystem && isSubLs) {
-               // we are in a sub Lsystem after an endlsystem statement, so
-               // return this completed lsystem to the main one;
-               multiline = '';
-               return ls;
-             }
-             // intentional fall through
-           case P_HANDLED:
-             multiline = '';
-             break;
-           case P_INCOMPLETE_INPUT: // inefficient, but simple
-             multiline += line;
-             break;
-           case P_UNHANDLED:
-             // not clear why we leave unhandled unhandled
-             //puts(`Unhandled parse result, on line: ${line}`);
-             multiline = '';
-             break;
-           default:
-             puts('unexpected parse result');
-             multiline = '';
-             return;
-           }
-         } // not at end of spec
-         return ls;
+      return pr;
+    }
+    function wantLsystem (ls, line, pr) {
+      pr.status = P_HANDLED;
+      puts(`wantLsystem looking at: ${line}`);
+      if (null != ( m = RE.lsystem.exec(line))) {
+        let lbl = m[1];
+        if (Lsystem.lsystems.get(lbl)) {
+          pr.status = P_ERROR;
+          pr.nextState = errorState;
+          pr.emsg = `Duplicate lsystem label: ${lbl}`;
+        } else {
+          // create a new lsystem and call parseHelper recursively
+          let sls = new Lsystem('', lbl);
+          sls.initParse(ls);
+          parseHelper(sls, true);       // this is a subLs
+          Lsystem.lsystems.set(lbl, sls); // update sublsystems map
+        }
       }
-      
-      function ParseResult (s=P_ERROR, n=errorState, msg='') {
-         return {status: s, nextState: n, emsg: msg};
-      }
+      return pr;
+    }
 
-     // this picks up variable definitions and xxx: statements
-     // we exit inItems when axiom: is seen
-     function inItems (ls, line, pr) {
-         puts(`inItems looking at: ${line}`, LSYS_IN_ITEMS);
-         pr.status = P_HANDLED;
-
-        if (RE.var.test(line)) {
-           //m = line.matchAll(RE.assignNum);
-            m = line.matchAll(RE.assignAny);
-            if (m) {
-               try {
-                  for (let parts of m) {
-                     let parts2 = parts[2].replaceAll('&&',' and ').replaceAll('||', 'or'); //.replaceAll('!', ' not ');
-                     if (labelSeen) {
-                        let escope = new LsScope();
-                        escope.init(ls.locals,ls.globals);
-                        math.evaluate(parts[1]+'='+ parts2, escope);
-                        ls.locals.set(parts[1], escope.get(parts[1]));
-                        puts(`set local var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
-                     } else {
-                        math.evaluate(parts[1]+'='+ parts2, ls.globals);
-                        puts(`set global var ${parts[1]} to ${parts2}`, LSYS_IN_ITEMS);
-                     }
-                     //ls.locals.set(parts[1], parts[2]);
-                  }
-               } catch (error) {
-                  puts(`Error setting variable: ${error}`);
-               }
-            }         
-            ls.show('vars');
-            //ls.show('functions');
-         } else if (null != ( m = line.match(RE.lsystem))) {
-            // this should happen only on the initial lsystem and covers the case
-            // of strictly valid lsystems with an 'lsystem: chars' statement
-            // otherwise, we should pick up the lsystem statement in wantLsystem
-            puts(`matched "lsystem: xxx" got: ${m[1]}`, LSYS_IN_ITEMS);
-            // sanity check here
-            let oldlabel = ls.label;
-            let thelsystem = Lsystem.lsystems.get(oldlabel);
-            if ((oldlabel != 'main') || ls != thelsystem) {
-               pr.status=P_ERROR;
-               pr.nextState=errorState;
-               pr.emsg = `lsystem name s.b. main, but is ${oldlabel}`;
-            } else {
-               Lsystem.lsystems.delete(oldlabel);
-               ls.label = m[1];
-               Lsystem.lsystems.set(ls.label, ls);
-               puts(`reset lsystem name to ${ls.label} from ${oldlabel}`, LSYS_IN_ITEMS);
-               labelSeen = true;
-               ls.show('label');
-            }
-         } else if (null !== ( m = line.match(RE.dlength))) {
-            puts(`matched "derivation length: " got: ${m[1]}`, LSYS_IN_ITEMS);
-            ls.Dlength = Number(m[1]);
-            ls.locals.set('Dlength', ls.Dlength)
-            ls.show('Dlength');
-         } else if (null !== (m = line.match(RE.ignore))) {
-            ls.ignore = Lsystem.strtolist(m[1]) 
-            ls.show('ignore');
-         } else if (null !== (m = line.match(RE.consider))) {
-            ls.consider = Lsystem.strtolist(m[1]) 
-            ls.show('consider');
-         } else if (null !== (m = line.match(RE.Start))) {
-            let isComplete = parseSkipBrackets(m[1]);
-            if (isComplete[1] !== null) {
-               ls.start = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
-               puts(`found -> Start: ${ls.start}`, LSYS_IN_ITEMS);
-               ls.startX = math.compile(ls.start);
-            } else {
-               pr.status = P_INCOMPLETE_INPUT;
-            }
-         } else if (null !== (m = line.match(RE.StartEach))) {
-            let isComplete = parseSkipBrackets(m[1]);
-            if (isComplete[1] !== null) {
-              ls.startEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
-              puts(`found -> StartEach: ${ls.startEach}`, LSYS_IN_ITEMS);
-              ls.startEachX = math.compile(ls.startEach);
-            } else {
-               pr.status = P_INCOMPLETE_INPUT;
-            }
-         } else if (null !== (m = line.match(RE.EndEach))) {
-            let isComplete = parseSkipBrackets(m[1]);
-            if (isComplete[1] !== null) {
-               ls.endEach = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
-               puts(`found -> EndEach: ${ls.endEach}`, LSYS_IN_ITEMS);
-               ls.endEachX = math.compile(ls.endEach);
-            } else {
-               pr.status = P_INCOMPLETE_INPUT;
-            }
-         } else if (null !== (m = line.match(RE.End))) {
-            let isComplete = parseSkipBrackets(m[1]);
-            if (isComplete[1] !== null) {
-               ls.end = m[1].slice(1,isComplete[1]-2).replaceAll(/\s*\n\s*/g, ' ');
-               puts(`found -> End: ${ls.end}`, LSYS_IN_ITEMS);
-               ls.endX = math.compile(ls.end);
-            } else {
-               pr.status = P_INCOMPLETE_INPUT;
-            }
-         } else if (null !== (m = line.match(RE.axiom))) {
-            //puts "$line -> $m -> [lindex $m 1] -> [strtolist [lindex $m 1]]"
-            let tmp = m[1].replaceAll(RE.ws, ''); // remove embedded ws in axiom
-            ls.axiom = parseSuccessor(tmp);
-            ls.show('axiom');
-            // create restrict if needed
-            if (ls.ignore.length) {
-               if (! ls.consider.length) {
-                  ls.restrict = {ignore: ls.ignore};
-               } else {
-                  throw new Error('Both ignore and consider cannot be used');
-               }
-            } else if (ls.consider.length) {
-               ls.restrict = {consider: ls.consider};
-            } else {
-               ls.restrict = null;
-            }
-            pr.status=P_TRANSITION;
-            pr.nextState = inProductions;
-         } else if (null != (m = line.match(RE.anyGlobal))) {
-            ls.globals.set(m[1], m[2]);
-            ls[m[1]] = m[2];    // why am i doing this?!!!
-            puts(`matched "anyGlobal:" ${m[1]} = ${m[2]}`, LSYS_IN_ITEMS);
-         } else {
-            pr.status = P_UNHANDLED;
-            puts(`unrecognized statement: ${line}`);
-         }
-         return pr;
-      }
-
-     function inProductions (ls, line, pr) {
-         pr.status = P_HANDLED;
-
-         puts(`inProductions looking at: ${line}`, LSYS_IN_PROD);
-         if (line.includes('homomorphism')) {
-            // should pick up warnings/no warnings
-            pr.status = P_TRANSITION;
-            pr.nextState = inHomomorphism;
-         } else if (line.includes('decomposition')) {
-            // should pick up warnings/no warnings
-            pr.status = P_TRANSITION;
-            pr.nextState = inDecomposition;
-         } else if (line.includes('endlsystem')) {
-            pr.status = P_TRANSITION;
-            pr.nextState = wantLsystem;
-         } else {
-            let rule = parseProduction(ls, line)
-            if (rule != null) {
-               ls.rules.push(rule);
-            } else {
-               pr.status = P_UNHANDLED;
-            }
-         } 
-         return pr;
-      }
-     function inDecomposition (ls, line, pr) {
-       pr.status = P_HANDLED;
-       
-         if (ls.decomprules === null) ls.decomprules=[];
-         puts(`inDecomposition looking at: ${line}`, LSYS_IN_DECOMP ); // , 
-         if (line.includes('homomorphism')) {
-            // should pick up warnings/no warnings
-            pr.status = P_TRANSITION;
-            pr.nextState = inHomomorphism;
-         } else if (line.includes('decomposition')) {
-            // should pick up warnings/no warnings
-            pr.status = P_ERROR;
-            pr.nextState = errorState;
-            pr.emsg = "Can't follow a decomposition with decomposition";
-         } else if (line.includes('endlsystem')) {
-            pr.status = P_TRANSITION;
-            pr.nextState = wantLsystem;
-         } else if (m = line.match(RE.maxDepth)) {
-            ls.decompDepth = Number(m[1]);;
-         } else {
-            let rule = parseProduction(ls, line)
-            if (rule != null) {
-               ls.decomprules.push(rule);
-            } else {
-               pr.status = P_UNHANDLED;
-            }
-         }
-         return pr;
-      }
-     function inHomomorphism (ls, line, pr) {
-         pr.status = P_HANDLED;
-
-         if (ls.homorules === null) ls.homorules=[];
-         puts(`inHomomorphism looking at: ${line}`, LSYS_IN_HOMO);
-         if (line.includes('homomorphism')) {
-            // should pick up warnings/no warnings
-            pr.status = P_ERROR;
-            pr.nextState = errorState;
-            pr.emsg ="Can't have a homomorphism section in homomorphism";
-         } else if (line.includes('decomposition')) {
-            // should pick up warnings/no warnings
-            pr.status = P_ERROR;
-            pr.nextState = errorState;
-            pr.emsg = "Can't follow a homomorphism with decomposition";
-         } else if (line.includes('endlsystem')) {
-            pr.status = P_TRANSITION;
-            pr.nextState = wantLsystem;
-         } else if (m = line.match(RE.maxDepth)) {
-           ls.homoDepth = Number(m[1]);
-         } else {
-            let rule = parseProduction(ls, line)
-            if (rule != null) {
-               ls.homorules.push(rule);
-            } else {
-               pr.status = P_UNHANDLED;
-            }
-         }
-         return pr;
-      }
-      function wantLsystem (ls, line, pr) {
-         pr.status = P_HANDLED;
-         puts(`wantLsystem looking at: ${line}`);
-         if (null != ( m = RE.lsystem.exec(line))) {
-            let lbl = m[1];
-            if (Lsystem.lsystems.get(lbl)) {
-               pr.status = P_ERROR;
-               pr.nextState = errorState;
-               pr.emsg = `Duplicate lsystem label: ${lbl}`;
-            } else {
-               // create a new lsystem and call parseHelper recursively
-               let sls = new Lsystem('', lbl);
-               sls.initParse(ls);
-               parseHelper(sls, true);       // this is a subLs
-               Lsystem.lsystems.set(lbl, sls); // update sublsystems map
-            }
-         }
-         return pr;
-      }
-
-      function errorState (ls, line,linectr, pos=0, msg) {
-         let err = `error in lsystem ${ls.label}, ${line}
+    function errorState (ls, line,linectr, pos=0, msg) {
+      let err = `error in lsystem ${ls.label}, ${line}
 at line:${linectr} | pos: ${pos}
 ${msg}`;
-         return err;
+      return err;
+    }
+
+    function parseProduction(ls, line) {
+      // break into pieces: [prodname:] leftside --> successor
+      // then break leftside into: [lcontext <] strictpredecessor [> rcontext] [: condition]
+      // prodname, lcontext, rcontext, and condition are optional. 
+      // condition is only for parameterized lsystems. 
+      // condition breaks into: [{precondition expr}] test [{postcondition expr}]
+      // TABOP is fairly consistent for parameterized systems, but
+      // kinda all over the map in terms of syntax. This tries to follow the grammar
+      // and meaning described in documentation of the software here:
+      // http://algorithmicbotany.org/virtual_laboratory/versions/L-studio-4.4.1-2976.zip
+      // 
+      // cpfg allows lcontext, strict predecessor, and rcontext to be strings of multiple
+      // modules. Having the strict predecessor be multiple modules doesn't play well with 
+      // the array implementation of the string, and I believe it can be worked around, by
+      // which I mean transformed into one or more productions with single module strict
+      // predecessors. So, it isn't supported, and will break on some LStudio example systems
+      
+      let rule = new LsProduction(); // empty rule
+      let leftside, predecessor, condition, successor;
+      let m, strict, dummy ;
+      let scope = null, needScope=false;
+      //puts(`in parseProduction: looking at ${line}`, LSYS_IN_PROD)
+
+      m = RE.prodTop.exec(line);        // .replaceAll(' ',''));
+      if (m == null) {
+        puts(`Unrecognized production: ${line}`, LSYS_PARSE, LSYS_IN_PROD); 
+        return null;
       }
+      //puts(m);
 
-      function parseProduction(ls, line) {
-         // break into pieces: [prodname:] leftside --> successor
-         // then break leftside into: [lcontext <] strictpredecessor [> rcontext] [: condition]
-         // prodname, lcontext, rcontext, and condition are optional. 
-         // condition is only for parameterized lsystems. 
-         // condition breaks into: [{precondition expr}] test [{postcondition expr}]
-         // TABOP is fairly consistent for parameterized systems, but
-         // kinda all over the map in terms of syntax. This tries to follow the grammar
-         // and meaning described in documentation of the software here:
-         // http://algorithmicbotany.org/virtual_laboratory/versions/L-studio-4.4.1-2976.zip
-         // 
-         // cpfg allows lcontext, strict predecessor, and rcontext to be strings of multiple
-         // modules. Having the strict predecessor be multiple modules doesn't play well with 
-         // the array implementation of the string, and I believe it can be worked around, by
-         // which I mean transformed into one or more productions with single module strict
-         // predecessors. So, it isn't supported, and will break on some LStudio example systems
-         
-         let rule = new LsProduction(); // empty rule
-         let leftside, predecessor, condition, successor;
-         let m, strict, dummy ;
-         let scope = null, needScope=false;
-         //puts(`in parseProduction: looking at ${line}`, LSYS_IN_PROD)
-
-         m = RE.prodTop.exec(line);        // .replaceAll(' ',''));
-         if (m == null) {
-            puts(`Unrecognized production: ${line}`, LSYS_PARSE, LSYS_IN_PROD); 
-            return null;
-         }
-         //puts(m);
-
-         // turn successor into a list of modules
-         // since we need to deal with nested parens, strtolist and simple REs don't work
-         rule.successor = parseSuccessor(m[2].replaceAll(RE.ws, ''));
-         // puts(`successor after parsing: ${rule.successor}`);
-         if (rule.successor.find(e=>'object' == typeof e)) {
-            needScope = true;
-         }
-         // --
-         leftside = RE.leftSide.exec(m[1]);
-
-         rule.leftContext = parseModules(leftside[1]);
-         rule.strictPredecessor = parseModules(leftside[2], true); // only one module allowed for strict predecessor
-         rule.rightContext = parseModules(leftside[3]);
-
-         condition = leftside[4];   // undefined or not
-         if (condition) {
-            condition = condition.trim().replaceAll(RE.ws, ' ');
-         }
-         puts(`parseProd: condition = ${condition}`, LSYS_PARSE, LSYS_PARSE_PROD);
-         if (condition) {
-            let pre = null;
-            let post = null;
-            let p0 = 0;
-            let p1 = 0;
-            let c;
-            
-            condition = condition.replaceAll('&&',' and ').replaceAll('||', 'or'); // .replaceAll('!', ' not ');
-            
-            if ( RE.pre_condition.test(condition)) {
-               while (condition[p0] != '{') { p0++; }
-               [c,p1] = Lsystem.skipbrackets(condition, p0,1,1); // skip braces right
-               pre = condition.slice(p0+1,p1-1);
-               condition = condition.slice(p1);
-               needScope=true;
-               rule.preCondition = pre;
-               puts(`pre-condition found: ${pre}`, LSYS_PARSE_PROD);
-            }
-            if (RE.post_condition.test(condition)) {
-               let p1 = condition.length - 1 ;
-               while (condition[p1] != '}') {p1--;}
-               [c,p0] = Lsystem.skipbrackets(condition, p1,-1,1); // skip braces left
-               post  = condition.slice(p0+2,p1);
-               condition = condition.slice(0,p0);
-               needScope=true;
-               rule.postCondition = post;
-               puts(`post-condition found: ${post}`, LSYS_PARSE_PROD);
-            }
-
-            if (condition.length == 1 && condition[0] == '*') {
-               if (pre || post) {
-                  condition = 'true';
-               } else {
-                  condition = null;
-               }
-            }
-
-            rule.strictCondition = condition;
-            // rule.preCondition = pre;
-            // rule.postCondition = post;
-            puts(`parseProd: condition = ${pre} | ${condition} ${post}`, LSYS_PARSE, LSYS_PARSE_PROD);
-         }
-         if (condition || needScope) {
-            rule.scope = new LsScope(rule.strictCondition, rule.preCondition, rule.postCondition);
-            puts("scope: " + Object.entries(rule.scope), LSYS_PARSE_PROD);
-         } 
-
-         puts(`rule: ${rule}`, LSYS_PARSE_PROD);
-         return rule;
+      // turn successor into a list of modules
+      // since we need to deal with nested parens, strtolist and simple REs don't work
+      rule.successor = parseSuccessor(m[2].replaceAll(RE.ws, ''));
+      // puts(`successor after parsing: ${rule.successor}`);
+      if (rule.successor.find(e=>'object' == typeof e)) {
+        needScope = true;
       }
+      // --
+      leftside = RE.leftSide.exec(m[1]);
 
-      // predecessors can't have nested function calls, they are either
-      // bare variables or values
-      function parseModules(s, isStrict = false, ls=ls0) {
-         let mods = [];
-         puts('parseModules looking at: ' + s, LSYS_PARSE_MOD);
-         if (s) {
-            let it = s.matchAll(RE.modules);
-            for (m of it) {
-               puts('parseModules matching: ' + m, LSYS_PARSE_MOD);
-               if (m[2] === undefined) {
-                  mods.push(m[1]);
-               } else {
-                  mods.push(new ParameterizedModule(m[1], m[2]));
-                  if (m[1].charAt(0) === '?') {
-                     ls.hasQuery = true;
-                     puts('lsystem hasQuery = true', LSYS_PARSE_MOD);
-                     if (m[1].charAt(1) === 'E') { // maybe this is a duplicate
-/* delete  this */                        ls.needsEnvironment = true;
-                     }
-                  }
-               }
-               if (isStrict) {     // only one module allowed for strict predecessor
-                  return mods[0];  // return just the module, not an array
-                  break;
-               }
-            }
-         }
-         return mods;
-      }
+      rule.leftContext = parseModules(leftside[1]);
+      rule.strictPredecessor = parseModules(leftside[2], true); // only one module allowed for strict predecessor
+      rule.rightContext = parseModules(leftside[3]);
 
-      // need to handle, e.g. A((y+fn(x))), for any nested depth of function calls
-      function parseSuccessor(s) {
-         puts(`parseSuccessor: ${s}`, LSYS_PARSE_SUCC);
-         let l = new Array();
-         let i = 0;
-         let m;
-         let re = RE.successorModule;
-         while (m = re.exec(s)){
-            puts(`matched: ${m[1]} : lastIndex = ${re.lastIndex}`, LSYS_PARSE_SUCC);
-            if (m[2] === undefined) {
-               l[i] = m[1];
-            } else {
-               let nested = 1;
-               let j = m.indices[2][0] + 1; // one past initial left paren
-               while (nested > 0 && j < m.indices[2][1]) {
-                  if (s[j] == ')') {
-                     nested--;
-                  } else if (s[j] == '(') {
-                     nested++;
-                  }
-                  j++;
-                  //puts(`j: ${j}`);
-               }
-               if (nested == 0) {
-                  let parms = s.substring(m.indices[2][0]+1, j-1);
-                  l[i] = new ParameterizedModule(m[1], parms);
-                  // reset s
-                  re.lastIndex = j;
-                  puts(`parms: ${parms} -> ${l[i].p.join(' ; ')}`, LSYS_PARSE_SUCC);
-               } else {
-                  let ss = s.substring(m.indices[2][0], j);
-                  throw new Error(`Error: end of input while parsing: ${ss}`);
-                  break;
-               }
-            }
-            puts(`module ${i} = ${l[i]}`, LSYS_PARSE_SUCC);
-            i++;
-         }
-         return l;
+      condition = leftside[4];   // undefined or not
+      if (condition) {
+        condition = condition.trim().replaceAll(RE.ws, ' ');
       }
-     function parseSkipBrackets(str) {
-         let res;
-         try {
-            res = Lsystem.skipbrackets(str, 0, 1, 1);
-         } catch(err) {
-            if (err?.cause?.code ===  'UnClosed') {
-               res = [null,null];
-            } else {
-               throw new Error(err.message);
-            }
-         }
-         return res;
-      }
+      puts(`parseProd: condition = ${condition}`, LSYS_PARSE, LSYS_PARSE_PROD);
+      if (condition) {
+        let pre = null;
+        let post = null;
+        let p0 = 0;
+        let p1 = 0;
+        let c;
+        
+        condition = condition.replaceAll('&&',' and ').replaceAll('||', 'or'); // .replaceAll('!', ' not ');
+        
+        if ( RE.pre_condition.test(condition)) {
+          while (condition[p0] != '{') { p0++; }
+          [c,p1] = Lsystem.skipbrackets(condition, p0,1,1); // skip braces right
+          pre = condition.slice(p0+1,p1-1);
+          condition = condition.slice(p1);
+          needScope=true;
+          rule.preCondition = pre;
+          puts(`pre-condition found: ${pre}`, LSYS_PARSE_PROD);
+        }
+        if (RE.post_condition.test(condition)) {
+          let p1 = condition.length - 1 ;
+          while (condition[p1] != '}') {p1--;}
+          [c,p0] = Lsystem.skipbrackets(condition, p1,-1,1); // skip braces left
+          post  = condition.slice(p0+2,p1);
+          condition = condition.slice(0,p0);
+          needScope=true;
+          rule.postCondition = post;
+          puts(`post-condition found: ${post}`, LSYS_PARSE_PROD);
+        }
 
-   }; // end of Parse
+        if (condition.length == 1 && condition[0] == '*') {
+          if (pre || post) {
+            condition = 'true';
+          } else {
+            condition = null;
+          }
+        }
+
+        rule.strictCondition = condition;
+        // rule.preCondition = pre;
+        // rule.postCondition = post;
+        puts(`parseProd: condition = ${pre} | ${condition} ${post}`, LSYS_PARSE, LSYS_PARSE_PROD);
+      }
+      if (condition || needScope) {
+        rule.scope = new LsScope(rule.strictCondition, rule.preCondition, rule.postCondition);
+        puts("scope: " + Object.entries(rule.scope), LSYS_PARSE_PROD);
+      } 
+
+      puts(`rule: ${rule}`, LSYS_PARSE_PROD);
+      return rule;
+    }
+
+    // predecessors can't have nested function calls, they are either
+    // bare variables or values
+    function parseModules(s, isStrict = false, ls=ls0) {
+      let mods = [];
+      puts('parseModules looking at: ' + s, LSYS_PARSE_MOD);
+      if (s) {
+        let it = s.matchAll(RE.modules);
+        for (m of it) {
+          puts('parseModules matching: ' + m, LSYS_PARSE_MOD);
+          if (m[2] === undefined) {
+            mods.push(m[1]);
+          } else {
+            mods.push(new ParameterizedModule(m[1], m[2]));
+            if (m[1].charAt(0) === '?') {
+              ls.hasQuery = true;
+              puts('lsystem hasQuery = true', LSYS_PARSE_MOD);
+              if (m[1].charAt(1) === 'E') { // maybe this is a duplicate
+                /* delete  this */                        ls.needsEnvironment = true;
+              }
+            }
+          }
+          if (isStrict) {     // only one module allowed for strict predecessor
+            return mods[0];  // return just the module, not an array
+            break;
+          }
+        }
+      }
+      return mods;
+    }
+
+    // need to handle, e.g. A((y+fn(x))), for any nested depth of function calls
+    function parseSuccessor(s) {
+      puts(`parseSuccessor: ${s}`, LSYS_PARSE_SUCC);
+      let l = new Array();
+      let i = 0;
+      let m;
+      let re = RE.successorModule;
+      while (m = re.exec(s)){
+        puts(`matched: ${m[1]} : lastIndex = ${re.lastIndex}`, LSYS_PARSE_SUCC);
+        if (m[2] === undefined) {
+          l[i] = m[1];
+        } else {
+          let nested = 1;
+          let j = m.indices[2][0] + 1; // one past initial left paren
+          while (nested > 0 && j < m.indices[2][1]) {
+            if (s[j] == ')') {
+              nested--;
+            } else if (s[j] == '(') {
+              nested++;
+            }
+            j++;
+            //puts(`j: ${j}`);
+          }
+          if (nested == 0) {
+            let parms = s.substring(m.indices[2][0]+1, j-1);
+            l[i] = new ParameterizedModule(m[1], parms);
+            // reset s
+            re.lastIndex = j;
+            puts(`parms: ${parms} -> ${l[i].p.join(' ; ')}`, LSYS_PARSE_SUCC);
+          } else {
+            let ss = s.substring(m.indices[2][0], j);
+            throw new Error(`Error: end of input while parsing: ${ss}`);
+            break;
+          }
+        }
+        puts(`module ${i} = ${l[i]}`, LSYS_PARSE_SUCC);
+        i++;
+      }
+      return l;
+    }
+    function parseSkipBrackets(str) {
+      let res;
+      try {
+        res = Lsystem.skipbrackets(str, 0, 1, 1);
+      } catch(err) {
+        if (err?.cause?.code ===  'UnClosed') {
+          res = [null,null];
+        } else {
+          throw new Error(err.message);
+        }
+      }
+      return res;
+    }
+
+  }; // end of Parse
 
 
    static flatten( list) {

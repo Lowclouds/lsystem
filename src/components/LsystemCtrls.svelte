@@ -228,9 +228,11 @@
           [cppSrc, enviroImports] = res;
           //console.log(`\nuiDoParse: cppSrc:${cppSrc}`);
           if (enviroImports != null && enviroImports.length > 0) {
-            //console.log(`\nenviroImports: ${enviroImports}`);
-            console.log(`\nFirst import is: ${enviroImports[0].name}`);
-            lsopts.enviroClass = enviroImports[0]
+             //console.log(`\nenviroImports: ${enviroImports}`);
+             console.log(`\nFirst import is: ${enviroImports[0][0].name}`);
+             //console.log(`\nInit opts is: ${enviroImports[0][1]}`);
+             lsopts.enviroClass = enviroImports[0][0];
+             lsopts.enviroInitOpts = enviroImports[0][1];
            // console.log(`uiDoParse: lsopts = ${lsopts.enviroClass}`);
           }
           // console.log(Object.keys(lsopts));

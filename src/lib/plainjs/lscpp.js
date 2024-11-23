@@ -1230,7 +1230,8 @@ function cppLsystem (spec) {
   //
   // need some logic to deal with reloading the same script
   // 
-  let enviroImports = null;
+  let enviroImports = [];
+  let enviroInitOpts = [];
   let ci=1;
 
   return new Promise((resolve, reject) => {
@@ -1244,11 +1245,13 @@ function cppLsystem (spec) {
         console.log(`trying to import: ${fpath}`);
         import(fpath)
           .then((emod) => {
-            const {default: enviroClass} = emod;
-            console.log(`loaded: ${enviroClass.name}`);
-            enviroImports.unshift(enviroClass); // first module is env
-            resumer(`include_${ci} = '${file}'\nincludeClass = '${enviroClass.name}'\n`);
-            ci++;
+             const {default: enviroClass, initOpts} = emod;
+             console.log(`loaded: ${enviroClass.name}`);
+             if (initOpts) {console.log(`initOps: ${JSON.stringify(initOpts)}`);}
+
+             enviroImports.unshift([enviroClass, initOpts]); // first module is env
+             resumer(`include_${ci} = '${file}'\nincludeClass = '${enviroClass.name}'\n`);
+             ci++;
           })
           .catch((error) => {
             //console.log(error.message.toString(),error.cause);
