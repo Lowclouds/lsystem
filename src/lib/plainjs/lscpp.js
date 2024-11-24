@@ -1270,7 +1270,7 @@ function cppLsystem (spec) {
         let pp = cpp_js(settings);
         // there's a bug in cpp.js that sometimes doesn't do all replacements
         // rerun cpp, then remove cr & blank lines;
-        let cppSpec =pp.run(data).replaceAll(/\r/g, '\n').replaceAll(/\s+\n/g, '\n'); 
+         let cppSpec =pp.run(data).replaceAll(/\r/g, '\n').replaceAll(/\s+\n\s*/g, '\n'); 
         console.log(`lscpp says: cppSpec:\n${cppSpec}`);
         resolve([cppSpec, enviroImports]);
       }
