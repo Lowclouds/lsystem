@@ -35,34 +35,44 @@
 // import {distance} from '/code/vendor/math.js'
 export default class enviroExample {
   #cname = 'example';
-  zeropt = null;
-  eResults;
-  #isInitialized = false;
-
   get name() {return this.#cname};
 
-  init(opts = {count: 0}) {
-  //   this.zeropt = null;
-    this.eResults = []; //Array.from({length: opts.count});
+  #isInitialized = false;
+  get isInitialized() {return this.#isInitialized;}
+
+  #zeropt = null;
+  get zeropt() {return this.#zeropt;}
+  #collisionThreshold =  0.01;
+  get collisionThreshold() {return this.#collisionThreshold;} 
+
+  eResults = [];;
+
+  init(opts = {collisionThreshold: 0.01}) {
+    this.eResults = [];
+    this.#collisionThreshold = opts?.collisionThreshold ?? this.#collisionThreshold;
     this.#isInitialized = true;
   }
 
    update(input) {
-      puts(`enviroDefault entry\nTurtle position: ${JSON.stringify(input.turtle.P)}, moduleIndex: ${input.mIndex}, moduleArgs: ${input.mArgs}`);
+      puts(`enviroDefault entry
+   Turtle position: ${JSON.stringify(input.turtle.P)}, 
+   moduleIndex: ${input.mIndex}, 
+   moduleArgs: ${input.mArgs}`);
       
       let eresult = {mIndex: input.mIndex, argVals: []}; // must return module index
       let tstr = 'xyz';
       let tndx = 0;
+
       eresult.argVals.push(input.mArgs[0]); // no change
 
       if (input.mArgs[0] === 0) {
-         this.zeropt = Object.values(input.turtle.P); // convert to an array
-         console.log(`this.zeropt = ${this.zeropt})`)
+         this.#zeropt = Object.values(input.turtle.P); // convert to an array
+         console.log(`this.#zeropt = ${this.#zeropt})`)
          eresult.argVals.push(0);
       } else {
          let pt = Object.values(input.turtle.P); // convert to an array
-         console.log(`distance(${this.zeropt}, ${pt})`)
-         if (this.zeropt && math.distance(this.zeropt, pt) < 0.01) {
+         console.log(`distance(${this.#zeropt}, ${pt})`)
+         if (this.#zeropt && math.distance(this.#zeropt, pt) < this.#collisionThreshold) {
             eresult.argVals.push(1);
          } else {
             eresult.argVals.push(0);
@@ -96,6 +106,5 @@ export default class enviroExample {
 }
 
 export const initOpts = {
-   maxCount: 100,
-   size: 1,
+   collisionThreshold: 0.01,
 };
